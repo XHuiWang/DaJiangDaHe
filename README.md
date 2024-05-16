@@ -1,1 +1,2 @@
-# DaJiangDaHe
+# DaJiangDaHe LoongArch Processor
+2024年龙芯杯LoongArch大江大河队代码仓库
