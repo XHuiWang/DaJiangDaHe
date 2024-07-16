@@ -4,9 +4,6 @@ module FU_ALU(                                      //A指令固定在B指令之
                                                     //EX_br会阻止B指令的执行，但不会阻止A指令的执行
                                                     //此处暂时认为BR+B的情况，B是预测结果对应位置的指令
                                                     //若BR+B情况下，B为BR地址后的指令，则要改用br_orig
-    input                       clk,
-    input                       rstn,
-    input                       stall,
 
     input           [31: 0]     EX_pc_a,            //A指令的PC值
     input           [31: 0]     EX_pc_b,            //B指令的PC值
@@ -24,46 +21,13 @@ module FU_ALU(                                      //A指令固定在B指令之
     input           [11: 0]     EX_alu_op_a,        //A指令的运算类型
     input           [11: 0]     EX_alu_op_b,        //B指令的运算类型
 
-    input                       EX_br_a,            //A指令是否需要修正预测的结果，在EX段发生跳转
-
     output  reg     [31: 0]     EX_alu_result_a,    //A指令的运算结果
-    output  reg     [31: 0]     EX_alu_result_b,    //B指令的运算结果
-    output  reg     [31: 0]     MEM_alu_result_a,
-    output  reg     [31: 0]     MEM_alu_result_b,
-    output  reg     [31: 0]     WB_alu_result_a,
-    output  reg     [31: 0]     WB_alu_result_b
+    output  reg     [31: 0]     EX_alu_result_b     //B指令的运算结果
 );
 logic   [31: 0]      EX_alu_src_a1;
 logic   [31: 0]      EX_alu_src_a2;
 logic   [31: 0]      EX_alu_src_b1;
 logic   [31: 0]      EX_alu_src_b2;
-
-always@(posedge clk,negedge rstn)
-begin
-    if(!rstn)
-    begin
-    end
-    else
-    begin
-        if(!stall)
-        begin
-            MEM_alu_result_a<=EX_alu_result_a;
-            WB_alu_result_a<=MEM_alu_result_a;
-            if(!EX_br_a)//不需要修正分支预测
-            begin
-                MEM_alu_result_b<=EX_alu_result_b;
-                WB_alu_result_b<=MEM_alu_result_b;
-            end
-            else //需要修正分支预测
-            begin
-                MEM_alu_result_b<=32'h0000_0000;
-                WB_alu_result_b<=32'h0000_0000;
-            end 
-        end       
-    end
-end
-
-
 
 Mux MUX_A1(
     .a(EX_pc_a),
