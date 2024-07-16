@@ -69,7 +69,7 @@ logic               EX_br_b;                        //B指令是否需要修正�
 logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
 logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
 
-assign  EX_mem_we_bb=EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
+assign  EX_mem_we_bb=EX_br_a?1'b0:EX_m em_we_b;      //若A指令需要修正预测结果，B指令不能写内存
 
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
