@@ -12,7 +12,7 @@
 2. 相关和影响：
    1. 如果有RAW相关（本质），例如两个ALU同时发射，或者ALU后面跟上BR，阻塞后一个的发射。只发射一个
       1. LD 在 ALU 前面，同周期有RAW，阻塞2个周期
-      2. ALU在下一个周期有RAW，阻塞1个周期
+         1. ALU在下一个周期有RAW，阻塞1个周期
    2. 两个BR同时发射，目前拒绝双BR发射。
    3. LD/SW单发一个
 
@@ -24,3 +24,8 @@
    3. n = 2, valid = 11, pointer = 0
    4. n > 2, valid = 11, pointer = n - 2
    5. n >= length - 2, full = 1
+
+
+
+### temp PROBLEM
+1. alu_src_select的信号的定义不一样
