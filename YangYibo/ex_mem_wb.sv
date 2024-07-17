@@ -12,6 +12,11 @@ module ex_mem_wb(
     input           [31: 0]     EX_imm_a,           //A指令的立即数
     input           [31: 0]     EX_imm_b,           //B指令的立即数
 
+    input           [ 4: 0]     EX_rf_raddr_a1,     //A指令的第一个寄存器的地址
+    input           [ 4: 0]     EX_rf_raddr_a2,     //A指令的第二个寄存器的地址
+    input           [ 4: 0]     EX_rf_raddr_b1,     //B指令的第一个寄存器的地址
+    input           [ 4: 0]     EX_rf_raddr_b2,     //B指令的第二个寄存器的地址
+
     input           [ 1: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
     input           [ 1: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
     input           [ 1: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
@@ -40,11 +45,20 @@ module ex_mem_wb(
     // output          [31: 0]     EX_pc_br_a,         //A指令修正时应跳转到的地址
     // output          [31: 0]     EX_pc_br_b,         //B指令修正时应跳转到的地址
 
+    output  reg                 WB_rf_we_a,         //A指令寄存器写使能
+    output  reg                 WB_rf_we_b,         //B指令寄存器写使能
+    output  reg     [ 4: 0]     WB_rf_waddr_a,      //A指令寄存器写地址
+    output  reg     [ 4: 0]     WB_rf_waddr_b,      //B指令寄存器写地址
+    output  reg     [31: 0]     WB_rf_wdata_a,      //A指令寄存器写数据
+    output  reg     [31: 0]     WB_rf_wdata_b,      //B指令寄存器写数据
+
     output                      EX_br,              //是否需要修正预测的结果
     output          [31: 0]     EX_pc_br            //修正时应跳转到的地址
 );
 logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_a2_f;               //A指令的第二个寄存器的值，经前递修正后
+logic   [31: 0]     EX_rf_rdata_b1_f;               //B指令的第一个寄存器的值，经前递修正后
+logic   [31: 0]     EX_rf_rdata_b2_f;               //B指令的第二个寄存器的值，经前递修正后
 
 logic   [31: 0]     EX_alu_result_a;                //A指令的运算结果
 logic   [31: 0]     EX_alu_result_b;                //B指令的运算结果
@@ -58,26 +72,32 @@ logic               MEM_rf_we_b;                    //B指令寄存器写使能
 logic   [ 4: 0]     MEM_rf_waddr_a;                 //A指令寄存器写地址
 logic   [ 4: 0]     MEM_rf_waddr_b;                 //B指令寄存器写地址
 
-logic               WB_rf_we_a;                     //A指令寄存器写使能
-logic               WB_rf_we_b;                     //B指令寄存器写使能
-logic   [ 4: 0]     WB_rf_waddr_a;                  //A指令寄存器写地址
-logic   [ 4: 0]     WB_rf_waddr_b;                  //B指令寄存器写地址
+// logic               WB_rf_we_a;                     //A指令寄存器写使能
+// logic               WB_rf_we_b;                     //B指令寄存器写使能
+// logic   [ 4: 0]     WB_rf_waddr_a;                  //A指令寄存器写地址
+// logic   [ 4: 0]     WB_rf_waddr_b;                  //B指令寄存器写地址
 
 logic               EX_br_a;                        //A指令是否需要修正预测的结果
-logic               EX_br_b;                        //B指令是否需要修正预测的结果
-logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
-logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
+// logic               EX_br_b;                        //B指令是否需要修正预测的结果
+// logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
+// logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
 
 logic               EX_mem_we_orig;                 //内存写使能 尚未考虑STIRE指令的W/H/B分类
 logic   [ 3: 0]     EX_mem_we;                      //内存写使能 已经考虑STIRE指令的W/H/B分类
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
-logic   [31: 0]     EX_mem_wdata_oirg;              //内存写数据 尚未考虑STORE指令的W/H/B分类
+logic   [31: 0]     EX_mem_wdata_orig;              //内存写数据 尚未考虑STORE指令的W/H/B分类
 logic   [31: 0]     EX_mem_wdata;                   //内存写数据 已经考虑STORE指令的W/H/B分类
 logic   [31: 0]     EX_mem_waddr;                   //内存写地址
-logic   [ 2: 0]     EX_mem_type;                    //内存写类型
+logic   [ 2: 0]     EX_mem_type;                    //访存类型
+
+logic   [31: 0]     MEM_mem_rdata;                  //内存读数据
+logic   [31: 0]     MEM_rf_wdata_a;                 //A指令寄存器写数据
+logic   [31: 0]     MEM_rf_wdata_b;                 //B指令寄存器写数据
+logic   [ 2: 0]     MEM_mem_type_a;                 //A指令访存类型
+logic   [ 2: 0]     MEM_mem_type_b;                 //B指令访存类型
 assign  EX_mem_we_orig    =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we_bb      =EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
-assign  EX_mem_wdata_oirg =EX_mem_we_a?EX_rf_rdata_a2_f:EX_rf_rdata_b2_f; //不会同时发射两条STORE指令
+assign  EX_mem_wdata_orig =EX_mem_we_a?EX_rf_rdata_a2_f:EX_rf_rdata_b2_f; //不会同时发射两条STORE指令
 assign  EX_mem_waddr      =EX_mem_we_a?EX_alu_result_a:EX_alu_result_b;   //不会同时发射两条STORE指令
 
 assign  EX_mem_type= EX_mem_type_a + EX_mem_type_b; //A、B至多有一个为STROE指令
@@ -103,8 +123,18 @@ always @(*)begin
     3'b001:begin EX_mem_we={4{EX_mem_we_orig}};             EX_mem_wdata=EX_mem_wdata_orig;end  //ST.W
     default:begin EX_mem_we=4'b0000;                        EX_mem_wdata=EX_mem_wdata_orig;end
   endcase
-  //LD
 end
+
+//MEM Mux of rf_wdata
+assign MEM_rf_wdata_a = MEM_alu_result_a;
+Mux  MEM_mux_rf_wdata_b(
+  .a(MEM_alu_result_b),
+  .b(MEM_mem_rdata),
+  .c(32'b0),  //TODO 乘法器 除法器
+  .s(MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101),//LOAD指令
+  .y(MEM_rf_wdata_b)
+);
+
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
     .EX_rf_rdata_a2(EX_rf_rdata_a2),
@@ -151,9 +181,6 @@ FU_ALU  FU_ALU_inst (
     .EX_alu_result_b(EX_alu_result_b)
 );
 FU_BR  FU_BR_inst (
-    .clk(clk),
-    .rstn(rstn),
-    .stall(stall),
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
@@ -166,6 +193,7 @@ FU_BR  FU_BR_inst (
     .EX_br_type_b(EX_br_type_b),
     .EX_br_pd_a(EX_br_pd_a),
     .EX_br_pd_b(EX_br_pd_b),
+    .EX_br_a(EX_br_a),
     .EX_br(EX_br),
     .EX_pc_br(EX_pc_br)
   );
@@ -184,25 +212,34 @@ Pipeline_Register  Pipeline_Register_inst (
     .EX_rf_we_b(EX_rf_we_b),
     .EX_rf_waddr_a(EX_rf_waddr_a),
     .EX_rf_waddr_b(EX_rf_waddr_b),
+    .EX_mem_type_a(EX_mem_type_a),
+    .EX_mem_type_b(EX_mem_type_b),
     .MEM_rf_we_a(MEM_rf_we_a),
     .MEM_rf_we_b(MEM_rf_we_b),
     .MEM_rf_waddr_a(MEM_rf_waddr_a),
     .MEM_rf_waddr_b(MEM_rf_waddr_b),
+    .MEM_rf_wdata_a(MEM_rf_wdata_a),
+    .MEM_rf_wdata_b(MEM_rf_wdata_b),
+    .MEM_mem_type_a(MEM_mem_type_a),
+    .MEM_mem_type_b(MEM_mem_type_b),
     .WB_rf_we_a(WB_rf_we_a),
     .WB_rf_we_b(WB_rf_we_b),
     .WB_rf_waddr_a(WB_rf_waddr_a),
-    .WB_rf_waddr_b(WB_rf_waddr_b)
+    .WB_rf_waddr_b(WB_rf_waddr_b),
+    .WB_rf_wdata_a(WB_rf_wdata_a),
+    .WB_rf_wdata_b(WB_rf_wdata_b)
   );
-
+logic   [31: 0]     dout_dm;
 blk_mem_gen_1 Data_Memory(
               .clka(clk),
               .clkb(clk),
-              .ena(icache_rready),//
+              .ena(1'b1),//
               .enb(1'b1),
               .wea(EX_mem_we),
               .web(4'b0000),
               .addra(EX_mem_waddr[14:2]),
-              .addrb(addr[11:0]),
+              // .addrb(addr[11:0]),
+              .addrb(12'h0),
               .dina(EX_mem_wdata),
               .dinb(32'd0),
               .douta(MEM_mem_rdata),

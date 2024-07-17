@@ -1,8 +1,4 @@
 module FU_BR(
-    input                       clk,
-    input                       rstn,
-    input                       stall,
-
     input           [31: 0]     EX_pc_a,            //A指令的PC值
     input           [31: 0]     EX_pc_b,            //B指令的PC值
     input           [31: 0]     EX_rf_rdata_a1,     //A指令的第一个寄存器的值
@@ -17,6 +13,7 @@ module FU_BR(
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转                  
 
+    output                      EX_br_a,            //A指令是否需要修正预测的结果
     output                      EX_br,              //是否需要修正预测的结果
     output          [31: 0]     EX_pc_br            //修正时应跳转到的地址
 );
@@ -25,7 +22,7 @@ logic               br_orig_b;      //B跳转指令是否本应跳转
 logic   [31: 0]     pc_br_orig_a;   //无分支预测时，A应跳转到的地址
 logic   [31: 0]     pc_br_orig_b;   //无分支预测时，B应跳转到的地址
 
-logic               EX_br_a;        //A指令是否需要修正预测的结果
+// logic               EX_br_a;        //A指令是否需要修正预测的结果
 logic               EX_br_b;        //B指令是否需要修正预测的结果
 logic   [31: 0]     EX_pc_br_a;     //A指令修正时应跳转到的地址
 logic   [31: 0]     EX_pc_br_b;     //B指令修正时应跳转到的地址

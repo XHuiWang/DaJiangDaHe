@@ -15,16 +15,24 @@ module Pipeline_Register(
     input                       EX_rf_we_b,         //B指令寄存器写使能
     input           [ 4: 0]     EX_rf_waddr_a,      //A指令寄存器写地址
     input           [ 4: 0]     EX_rf_waddr_b,      //B指令寄存器写地址
+    input           [ 2: 0]     EX_mem_type_a,      //A指令访存类型
+    input           [ 2: 0]     EX_mem_type_b,      //B指令访存类型
 
     output  reg                 MEM_rf_we_a,
     output  reg                 MEM_rf_we_b,
     output  reg     [ 4: 0]     MEM_rf_waddr_a,
     output  reg     [ 4: 0]     MEM_rf_waddr_b,
+    input           [31: 0]     MEM_rf_wdata_a,
+    input           [31: 0]     MEM_rf_wdata_b,
+    output  reg     [ 2: 0]     MEM_mem_type_a,
+    output  reg     [ 2: 0]     MEM_mem_type_b,
 
     output  reg                 WB_rf_we_a,
     output  reg                 WB_rf_we_b,
     output  reg     [ 4: 0]     WB_rf_waddr_a,
-    output  reg     [ 4: 0]     WB_rf_waddr_b
+    output  reg     [ 4: 0]     WB_rf_waddr_b,
+    output  reg     [31: 0]     WB_rf_wdata_a,
+    output  reg     [31: 0]     WB_rf_wdata_b
 );
  
 always@(posedge clk,negedge rstn)
@@ -53,11 +61,15 @@ begin
             MEM_rf_we_a<=EX_rf_we_a;
             MEM_rf_waddr_a<=EX_rf_waddr_a;
             MEM_rf_waddr_b<=EX_rf_waddr_b;
+            MEM_mem_type_a<=EX_mem_type_a;
+            MEM_mem_type_b<=EX_mem_type_b;
 
             WB_rf_we_a<=MEM_rf_we_a;
             WB_rf_we_b<=MEM_rf_we_b;
             WB_rf_waddr_a<=MEM_rf_waddr_a;
             WB_rf_waddr_b<=MEM_rf_waddr_b;
+            WB_rf_wdata_a<=MEM_rf_wdata_a;
+            WB_rf_wdata_b<=MEM_rf_wdata_b;
         end       
     end
 end
