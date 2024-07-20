@@ -39,13 +39,13 @@ module ID_REG (
 
     output PC_set o_PC_set1,
     output PC_set o_PC_set2,
-    output [ 4: 0] a_rf_raddr1,
-    output [ 4: 0] a_rf_raddr2,
-    output [ 4: 0] b_rf_raddr1,
-    output [ 4: 0] b_rf_raddr2,
+    output logic [ 4: 0] a_rf_raddr1,
+    output logic [ 4: 0] a_rf_raddr2,
+    output logic [ 4: 0] b_rf_raddr1,
+    output logic [ 4: 0] b_rf_raddr2,
 
-    output [ 1: 0] o_is_valid,
-    output [ 0: 0] o_is_full
+    output logic [ 1: 0] o_is_valid,
+    output logic [ 0: 0] o_is_full
     );
 
     parameter NUM = 16;

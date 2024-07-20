@@ -26,7 +26,7 @@ module IF1(
 
     input [31: 0] pc_predict,
     input [31: 0] pc_BR,
-    input [31: 0] EX_BR,
+    input [ 0: 0] EX_BR,
 
     output logic [31: 0] pc_IF1,
     output logic [ 0: 0] is_valid

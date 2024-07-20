@@ -40,7 +40,7 @@ module IF1_IF2(
             o_is_valid <= 2'b11;
         end
     end
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         o_PC1 <= i_PC1;
         o_PC2 <= i_PC2;
     end

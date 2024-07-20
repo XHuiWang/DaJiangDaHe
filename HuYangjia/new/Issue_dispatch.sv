@@ -28,7 +28,7 @@ module Issue_dispatch(
 
     output PC_set o_set1,
     output PC_set o_set2,
-    output [ 1: 0] o_usingNUM
+    output logic [ 1: 0] o_usingNUM
 
     );
 
@@ -64,8 +64,8 @@ module Issue_dispatch(
     assign o_set1.mem_we        = i_set1.mem_we       ;
     assign o_set1.ldst_type     = i_set1.ldst_type    ;
     assign o_set1.wb_sel        = i_set1.wb_sel       ;
-    assign o_set1.rf_raddr1     = rf_raddr1           ;
-    assign o_set1.rf_raddr2     = rf_raddr2           ;
+    assign o_set1.rf_raddr1     = i_set1.rf_raddr1    ;
+    assign o_set1.rf_raddr2     = i_set1.rf_raddr2    ;
     assign o_set1.rf_rdata1     = i_set1.rf_rdata1    ;
     assign o_set1.rf_rdata2     = i_set1.rf_rdata2    ;
 
@@ -83,8 +83,8 @@ module Issue_dispatch(
     assign o_set2.mem_we        = i_set2.mem_we       ;
     assign o_set2.ldst_type     = i_set2.ldst_type    ;
     assign o_set2.wb_sel        = i_set2.wb_sel       ;
-    assign o_set2.rf_raddr1     = rf_raddr1           ;
-    assign o_set2.rf_raddr2     = rf_raddr2           ;
+    assign o_set2.rf_raddr1     = i_set2.rf_raddr1    ;
+    assign o_set2.rf_raddr2     = i_set2.rf_raddr2    ;
     assign o_set2.rf_rdata1     = i_set2.rf_rdata1    ;
     assign o_set2.rf_rdata2     = i_set2.rf_rdata2    ;
 

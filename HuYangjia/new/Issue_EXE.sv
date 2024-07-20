@@ -43,6 +43,10 @@ module Issue_EXE(
 
     output logic [31: 0] EX_pc_a,            //A指令的PC值
     output logic [31: 0] EX_pc_b,            //B指令的PC值
+    output logic [ 4: 0] EX_rf_raddr_a1,     //A指令的第一个寄存器地址
+    output logic [ 4: 0] EX_rf_raddr_a2,     //A指令的第二个寄存器地址
+    output logic [ 4: 0] EX_rf_raddr_b1,     //B指令的第一个寄存器地址
+    output logic [ 4: 0] EX_rf_raddr_b2,     //B指令的第二个寄存器地址
     output logic [31: 0] EX_rf_rdata_a1,     //A指令的第一个寄存器的值
     output logic [31: 0] EX_rf_rdata_a2,     //A指令的第二个寄存器的值
     output logic [31: 0] EX_rf_rdata_b1,     //B指令的第一个寄存器的值
@@ -69,6 +73,8 @@ module Issue_EXE(
 
     output logic [ 0: 0]  EX_mem_we_a,        //A指令内存写使能
     output logic [ 0: 0]  EX_mem_we_b,        //B指令内存写使能
+    output logic [ 2: 0]  EX_mem_type_a,      //A指令内存访问类型
+    output logic [ 2: 0]  EX_mem_type_b,      //B指令内存访问类型
     output logic [ 0: 0]  EX_br,              //是否需要修正预测的结果
     output logic [31: 0]  EX_pc_br,           //修正时应跳转到的地址
 
@@ -105,6 +111,10 @@ module Issue_EXE(
     always @(posedge clk) begin
         EX_pc_a        <= i_set1.PC;
         EX_pc_b        <= i_set2.PC;
+        EX_rf_raddr_a1 <= i_set1.rf_raddr1;
+        EX_rf_raddr_a2 <= i_set1.rf_raddr2;
+        EX_rf_raddr_b1 <= i_set2.rf_raddr1;
+        EX_rf_raddr_b2 <= i_set2.rf_raddr2;
         EX_rf_rdata_a1 <= rdata_a1;
         EX_rf_rdata_a2 <= rdata_a2;
         EX_rf_rdata_b1 <= rdata_b1;
@@ -123,6 +133,8 @@ module Issue_EXE(
         // EX_br_pd_b        <= i_set2.o_inst_lawful;
         EX_rf_we_a        <= i_set1.rf_we;
         EX_rf_we_b        <= i_set2.rf_we;
+        EX_mem_type_a     <= i_set1.ldst_type[ 2: 0];
+        EX_mem_type_b     <= i_set2.ldst_type[ 2: 0];
         EX_rf_waddr_a     <= i_set1.rf_rd;
         EX_rf_waddr_b     <= i_set2.rf_rd;
         EX_mem_we_a       <= i_set1.mem_we;

@@ -23,7 +23,7 @@
 import Public_Info::*;
 module My_CPU_test(
     input clk,
-    input rst_n
+    input rstn
     );
     
     
@@ -31,6 +31,8 @@ module My_CPU_test(
     PC_set PC_set2_front;
     PC_set PC_set1_back ;
     PC_set PC_set2_back ;
+    PC_set set_final_1 ;
+    PC_set set_final_2 ;
 
 
     logic [31: 0] pc_predict;
@@ -72,6 +74,28 @@ module My_CPU_test(
     logic [31: 0] wdata_b;
     logic we_a;
     logic we_b;
+
+
+    logic [ 1: 0] i_usingNUM;
+  
+
+        
+    logic [ 4: 0] EX_rf_raddr_a1;
+    logic [ 4: 0] EX_rf_raddr_a2;
+    logic [ 4: 0] EX_rf_raddr_b1;
+    logic [ 4: 0] EX_rf_raddr_b2;
+    logic [ 2: 0] EX_mem_type_a;
+    logic [ 2: 0] EX_mem_type_b;
+    logic [ 0: 0] WB_rf_we_a;
+    logic [ 0: 0] WB_rf_we_b;
+    logic [ 4: 0] WB_rf_waddr_a;
+    logic [ 4: 0] WB_rf_waddr_b;
+    logic [31: 0] WB_rf_wdata_a;
+    logic [31: 0] WB_rf_wdata_b;
+    logic [ 0: 0] EX_br;
+    logic [31: 0] EX_pc_br;
+    
+    
   
     assign pc_predict = pc_IF1 + 8;
 
@@ -79,11 +103,11 @@ module My_CPU_test(
         .clk(clk),
         .rstn(rstn),
         .pc_predict(pc_predict),
-        .pc_BR(pc_BR),
+        .pc_BR(EX_pc_br),
+        .EX_BR(EX_br),
         .pc_IF1(pc_IF1),
         .is_valid(is_valid)
     );
-
 
     temp IMeM (
         .clka(clk),    // input wire clka
@@ -172,20 +196,29 @@ module My_CPU_test(
         .rdata_b2(rdata_b2),
         .addr(addr),
         .dout_rf(dout_rf),
-        .waddr_a(waddr_a),
-        .waddr_b(waddr_b),
-        .wdata_a(wdata_a),
-        .wdata_b(wdata_b),
-        .we_a(we_a),
-        .we_b(we_b)
+        .waddr_a(WB_rf_waddr_a),
+        .waddr_b(WB_rf_waddr_b),
+        .wdata_a(WB_rf_wdata_a),
+        .wdata_b(WB_rf_wdata_b),
+        .we_a(WB_rf_we_a),
+        .we_b(WB_rf_we_b)
+    );
+
+    Issue_dispatch  Issue_dispatch_inst (
+        .clk(clk),
+        .i_set1(PC_set1_back),
+        .i_set2(PC_set2_back),
+        .o_set1(set_final_1),
+        .o_set2(set_final_2),
+        .o_usingNUM(i_usingNUM)
     );
 
 
     Issue_EXE  Issue_EXE_inst (
         .clk(clk),
         .rstn(rstn),
-        .i_set1(PC_set1_back),
-        .i_set2(PC_set2_back),
+        .i_set1(set_final_1),
+        .i_set2(set_final_2),
         .rdata_a1(rdata_a1),
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
@@ -194,6 +227,10 @@ module My_CPU_test(
         .EX_b_enable(EX_b_enable),
         .EX_pc_a(EX_pc_a),
         .EX_pc_b(EX_pc_b),
+        .EX_rf_raddr_a1(EX_rf_raddr_a1),
+        .EX_rf_raddr_a2(EX_rf_raddr_a2),
+        .EX_rf_raddr_b1(EX_rf_raddr_b1),
+        .EX_rf_raddr_b2(EX_rf_raddr_b2),
         .EX_rf_rdata_a1(EX_rf_rdata_a1),
         .EX_rf_rdata_a2(EX_rf_rdata_a2),
         .EX_rf_rdata_b1(EX_rf_rdata_b1),
@@ -216,8 +253,54 @@ module My_CPU_test(
         .EX_rf_waddr_b(EX_rf_waddr_b),
         .EX_mem_we_a(EX_mem_we_a),
         .EX_mem_we_b(EX_mem_we_b),
+        .EX_mem_type_a(EX_mem_type_a),
+        .EX_mem_type_b(EX_mem_type_b),
         .EX_br(EX_br),
         .EX_pc_br(EX_pc_br),
         .EX_mem_we_bb(EX_mem_we_bb)
+    );
+
+    ex_mem_wb  ex_mem_wb_inst (
+        .clk(clk),
+        .rstn(rstn),
+        .stall(stall),
+        .EX_pc_a(EX_pc_a),
+        .EX_pc_b(EX_pc_b),
+        .EX_rf_rdata_a1(EX_rf_rdata_a1),
+        .EX_rf_rdata_a2(EX_rf_rdata_a2),
+        .EX_rf_rdata_b1(EX_rf_rdata_b1),
+        .EX_rf_rdata_b2(EX_rf_rdata_b2),
+        .EX_imm_a(EX_imm_a),
+        .EX_imm_b(EX_imm_b),
+        .EX_rf_raddr_a1(EX_rf_raddr_a1),
+        .EX_rf_raddr_a2(EX_rf_raddr_a2),
+        .EX_rf_raddr_b1(EX_rf_raddr_b1),
+        .EX_rf_raddr_b2(EX_rf_raddr_b2),
+        .EX_alu_src_sel_a1(EX_alu_src_sel_a1),
+        .EX_alu_src_sel_a2(EX_alu_src_sel_a2),
+        .EX_alu_src_sel_b1(EX_alu_src_sel_b1),
+        .EX_alu_src_sel_b2(EX_alu_src_sel_b2),
+        .EX_alu_op_a(EX_alu_op_a),
+        .EX_alu_op_b(EX_alu_op_b),
+        .EX_br_type_a(EX_br_type_a),
+        .EX_br_type_b(EX_br_type_b),
+        .EX_br_pd_a(EX_br_pd_a),
+        .EX_br_pd_b(EX_br_pd_b),
+        .EX_rf_we_a(EX_rf_we_a),
+        .EX_rf_we_b(EX_rf_we_b),
+        .EX_rf_waddr_a(EX_rf_waddr_a),
+        .EX_rf_waddr_b(EX_rf_waddr_b),
+        .EX_mem_we_a(EX_mem_we_a),
+        .EX_mem_we_b(EX_mem_we_b),
+        .EX_mem_type_a(EX_mem_type_a),
+        .EX_mem_type_b(EX_mem_type_b),
+        .WB_rf_we_a(WB_rf_we_a),
+        .WB_rf_we_b(WB_rf_we_b),
+        .WB_rf_waddr_a(WB_rf_waddr_a),
+        .WB_rf_waddr_b(WB_rf_waddr_b),
+        .WB_rf_wdata_a(WB_rf_wdata_a),
+        .WB_rf_wdata_b(WB_rf_wdata_b),
+        .EX_br(EX_br),
+        .EX_pc_br(EX_pc_br)
     );
 endmodule

@@ -52,7 +52,7 @@ module ex_mem_wb(
     output  reg     [31: 0]     WB_rf_wdata_a,      //A指令寄存器写数据
     output  reg     [31: 0]     WB_rf_wdata_b,      //B指令寄存器写数据
 
-    output                      EX_br,              //是否需要修正预测的结果
+    output          [ 0: 0]     EX_br,              //是否需要修正预测的结果
     output          [31: 0]     EX_pc_br            //修正时应跳转到的地址
 );
 logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存器的值，经前递修正后
@@ -231,18 +231,18 @@ Pipeline_Register  Pipeline_Register_inst (
   );
 logic   [31: 0]     dout_dm;
 blk_mem_gen_1 Data_Memory(
-              .clka(clk),
-              .clkb(clk),
-              .ena(1'b1),//
-              .enb(1'b1),
-              .wea(EX_mem_we),
-              .web(4'b0000),
-              .addra(EX_mem_waddr[14:2]),
-              // .addrb(addr[11:0]),
-              .addrb(12'h0),
-              .dina(EX_mem_wdata),
-              .dinb(32'd0),
-              .douta(MEM_mem_rdata),
-              .doutb(dout_dm)
-             );
+  .clka(clk),
+  .clkb(clk),
+  .ena(1'b1),//
+  .enb(1'b1),
+  .wea(EX_mem_we),
+  .web(4'b0000),
+  .addra(EX_mem_waddr[14:2]),
+  // .addrb(addr[11:0]),
+  .addrb(12'h0),
+  .dina(EX_mem_wdata),
+  .dinb(32'd0),
+  .douta(MEM_mem_rdata),
+  .doutb(dout_dm)
+  );
 endmodule
