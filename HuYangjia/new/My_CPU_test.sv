@@ -100,10 +100,10 @@ module My_CPU_test(
     logic [31: 0] EX_rf_rdata_b2;
     logic [31: 0] EX_imm_a;
     logic [31: 0] EX_imm_b;
-    logic [ 1: 0] EX_alu_src_sel_a1;
-    logic [ 1: 0] EX_alu_src_sel_a2;
-    logic [ 1: 0] EX_alu_src_sel_b1;
-    logic [ 1: 0] EX_alu_src_sel_b2;
+    logic [ 2: 0] EX_alu_src_sel_a1;
+    logic [ 2: 0] EX_alu_src_sel_a2;
+    logic [ 2: 0] EX_alu_src_sel_b1;
+    logic [ 2: 0] EX_alu_src_sel_b2;
     logic [11: 0] EX_alu_op_a;
     logic [11: 0] EX_alu_op_b;
     logic [ 3: 0] EX_br_type_a;
@@ -133,7 +133,8 @@ module My_CPU_test(
     logic [31: 0] EX_pc_br;
     
     // stall && flush
-    logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的stall信号，只作用于issue Buffer
+    logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
+    logic [ 0: 0] stall_dcache; // 由于Dcache缺失带来的真正的stall信号
     logic [ 0: 0] stall_full_issue; // 由于issue Buffer满带来的stall信号，只作用于Instruction Buffer
     logic [ 0: 0] stall_full_instr; // 由于Instruction Buffer满带来的stall信号，作用于IF1
     logic [ 0: 0] stall_ICache; // 由于Icache缺失带来的stall信号，作用于IF1的取值模块和IF1_IF2段间寄存器
@@ -141,7 +142,7 @@ module My_CPU_test(
 
     // temp测试
     assign stall_ICache = 0;
-    assign stall_DCache = 0;
+    assign stall_DCache = stall_dcache;
     assign flush_BR = EX_br;
     
   
@@ -324,7 +325,6 @@ module My_CPU_test(
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
         .rstn(rstn),
-        .stall(stall),
         .EX_pc_a(EX_pc_a),
         .EX_pc_b(EX_pc_b),
         .EX_rf_rdata_a1(EX_rf_rdata_a1),
@@ -362,6 +362,8 @@ module My_CPU_test(
         .WB_rf_wdata_a(WB_rf_wdata_a),
         .WB_rf_wdata_b(WB_rf_wdata_b),
         .EX_br(EX_br),
-        .EX_pc_br(EX_pc_br)
+        .EX_pc_br(EX_pc_br),
+        .stall_dcache(stall_dcache)
     );
+
 endmodule

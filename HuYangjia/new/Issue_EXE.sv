@@ -59,10 +59,10 @@ module Issue_EXE(
     output logic [31: 0] EX_imm_a,           //A指令的立即数
     output logic [31: 0] EX_imm_b,           //B指令的立即数
 
-    output logic [ 1: 0] EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
-    output logic [ 1: 0] EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
-    output logic [ 1: 0] EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
-    output logic [ 1: 0] EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
+    output logic [ 2: 0] EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
+    output logic [ 2: 0] EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
+    output logic [ 2: 0] EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
+    output logic [ 2: 0] EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
     output logic [11: 0] EX_alu_op_a,        //A指令的运算类型
     output logic [11: 0] EX_alu_op_b,        //B指令的运算类型
 
@@ -135,10 +135,10 @@ module Issue_EXE(
             EX_rf_rdata_b2 <= 32'h0000_0000;
             EX_imm_a       <= 32'h0000_0000;
             EX_imm_b       <= 32'h0000_0000;
-            EX_alu_src_sel_a1 <= 2'h0;
-            EX_alu_src_sel_a2 <= 2'h0;
-            EX_alu_src_sel_b1 <= 2'h0;
-            EX_alu_src_sel_b2 <= 2'h0;
+            EX_alu_src_sel_a1 <= 3'h0;
+            EX_alu_src_sel_a2 <= 3'h0;
+            EX_alu_src_sel_b1 <= 3'h0;
+            EX_alu_src_sel_b2 <= 3'h0;
             EX_alu_op_a       <= 12'h000;
             EX_alu_op_b       <= 12'h000;
             EX_br_type_a      <= 4'h0;

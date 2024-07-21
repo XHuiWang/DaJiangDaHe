@@ -208,7 +208,8 @@ module ID_Decode_edi_2(
     assign imm =        (beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | jirl_inst) ? ({(IF_IR[25] == 1'b1 ? 14'hffff: 14'd0), IF_IR[25:10], 2'h0}):
                         (b_inst | bl_inst) ? ({(IF_IR[9] == 1'b1 ? 4'hf : 4'd0), IF_IR[ 9: 0], IF_IR[25:10], 2'h0}) : 
                         (ld_inst | ldb_inst | ldh_inst | stb_inst | sth_inst | st_inst | ldbu_inst | ldhu_inst) ? ({(IF_IR[21] == 1'b1 ? 20'hfffff: 20'd0), IF_IR[21:10]}):
-                        (lu12i_inst ) ? ({(IF_IR[24] == 1'b1 ? 12'hfff: 12'd0),IF_IR[24: 5]}) :
+                        // (lu12i_inst ) ? ({(IF_IR[24] == 1'b1 ? 12'hfff: 12'd0),IF_IR[24: 5]}) :
+                        (lu12i_inst ) ? ({IF_IR[24: 5], 12'h000}) :
                         (pcaddu12i_inst ) ? ({IF_IR[24: 5], 12'h0}) :
                         (slti_inst | sltui_inst | addi_inst ) ? ({(IF_IR[21] == 1'b1 ? 20'hfffff: 20'd0), IF_IR[21:10]}) :
                         (andi_inst | ori_inst   | xori_inst) ? ({20'd0, IF_IR[21:10]}) : 
@@ -220,18 +221,21 @@ module ID_Decode_edi_2(
     assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~data_valid | rf_rd == 0)) ? 1'b0 : 1'b1;
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
-    assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 3'h1 :
-                          (~(lu12i_inst)) ? 3'h2 : 3'h4;
-    assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 3'h1 :
-                          (add_inst | sub_inst | slt_inst | sltu_inst | nor_inst | and_inst | or_inst | xor_inst | sll_inst | srl_inst | sra_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? 3'h2 : 3'h4;
+    assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 3'h1 ://pc
+                          (~(lu12i_inst)) ? 3'h2 :          //rf 
+                          3'h4;                             //0
+    assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 3'h1 : //imm
+                          (add_inst | sub_inst | slt_inst | sltu_inst | nor_inst | and_inst | or_inst | xor_inst | sll_inst | srl_inst |
+                           sra_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? 3'h2 :                           //rf  
+                           3'h4;                                                                                                            //4
     assign alu_op = (add_inst | addi_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | pcaddu12i_inst |
-                     sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst) ? 12'h001 :
+                     sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst | lu12i_inst) ? 12'h001 :
                     (sub_inst | beq_inst | bne_inst) ? 12'h002 :
                     (slt_inst | slti_inst | blt_inst | bge_inst) ? 12'h004 :
                     (sltu_inst | sltui_inst | bltu_inst | bgeu_inst) ? 12'h008 :
                     (and_inst | andi_inst) ? 12'h010 :
-                    (nor_inst) ? 12'h020 :
-                    (or_inst | ori_inst) ? 12'h040 :
+                    (or_inst | ori_inst) ? 12'h020 :
+                    (nor_inst) ? 12'h040 :
                     (xor_inst | xori_inst) ? 12'h080 :
                     (sll_inst | slli_inst) ? 12'h100 :
                     (srl_inst | srli_inst) ? 12'h200 :
