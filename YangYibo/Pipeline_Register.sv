@@ -15,6 +15,8 @@ module Pipeline_Register(
     input                       EX_rf_we_b,         //B指令寄存器写使能
     input           [ 4: 0]     EX_rf_waddr_a,      //A指令寄存器写地址
     input           [ 4: 0]     EX_rf_waddr_b,      //B指令寄存器写地址
+    input           [ 5: 0]     EX_wb_mux_select_b,
+    output  reg     [ 5: 0]     MEM_wb_mux_select_b,
     input           [ 2: 0]     EX_mem_type_a,      //A指令访存类型
     input           [ 2: 0]     EX_mem_type_b,      //B指令访存类型
 
@@ -63,11 +65,13 @@ begin
             if(!EX_br_a) begin 
                 MEM_alu_result_b<=EX_alu_result_b;
                 MEM_rf_we_b<=EX_rf_we_b;
+                MEM_wb_mux_select_b<=EX_wb_mux_select_b;
             end
             //需要修正分支预测
             else begin 
                 MEM_alu_result_b<=32'h0000_0000;
                 MEM_rf_we_b<=1'b0;
+                MEM_wb_mux_select_b<=6'b000000;
             end 
             MEM_alu_result_a<=EX_alu_result_a;
             MEM_rf_we_a<=EX_rf_we_a;

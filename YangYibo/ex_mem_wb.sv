@@ -38,7 +38,7 @@ module ex_mem_wb(
     input           [ 2: 0]     EX_mem_type_a,      //A指令内存写类型
     input           [ 2: 0]     EX_mem_type_b,      //B指令内存写类型
 
-    input           [ 5: 0]     MEM_mux_select,     //MEM段B指令RF写回数据多选器独热码
+    input           [ 5: 0]     EX_wb_mux_select_b,  //MEM段B指令RF写回数据多选器独热码
 
     output  reg                 WB_rf_we_a,         //A指令寄存器写使能
     output  reg                 WB_rf_we_b,         //B指令寄存器写使能
@@ -67,6 +67,7 @@ logic               MEM_rf_we_a;                    //A指令寄存器写使能
 logic               MEM_rf_we_b;                    //B指令寄存器写使能
 logic   [ 4: 0]     MEM_rf_waddr_a;                 //A指令寄存器写地址
 logic   [ 4: 0]     MEM_rf_waddr_b;                 //B指令寄存器写地址
+logic   [ 5: 0]     MEM_wb_mux_select_b;            //MEM段B指令RF写回数据多选器独热码
 
 // logic               WB_rf_we_a;                     //A指令寄存器写使能
 // logic               WB_rf_we_b;                     //B指令寄存器写使能
@@ -130,9 +131,9 @@ assign MEM_rf_wdata_a = MEM_alu_result_a;
 //   .s((MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101)?3'b010:3'b001),//LOAD指令
 //   .y(MEM_rf_wdata_b)
 // );
-assign MEM_rf_wdata_b = {32{MEM_mux_select[0]}}&MEM_alu_result_b | {32{MEM_mux_select[1]}}&MEM_mem_rdata | 
-                        {32{MEM_mux_select[2]}}&32'b0 | {32{MEM_mux_select[3]}}&32'b0 | 
-                        {32{MEM_mux_select[4]}}&32'b0 | {32{MEM_mux_select[5]}}&32'b0; 
+assign MEM_rf_wdata_b = {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata | 
+                        {32{MEM_wb_mux_select_b[2]}}&32'b0 | {32{MEM_wb_mux_select_b[3]}}&32'b0 | 
+                        {32{MEM_wb_mux_select_b[4]}}&32'b0 | {32{MEM_wb_mux_select_b[5]}}&32'b0; 
 // MEM段B指令RF写回数据多选器独热码 
 // 6'b00_0001: ALU
 // 6'b00_0010: LD类型指令
@@ -222,6 +223,7 @@ Pipeline_Register  Pipeline_Register_inst (
     .EX_rf_we_b(EX_rf_we_b),
     .EX_rf_waddr_a(EX_rf_waddr_a),
     .EX_rf_waddr_b(EX_rf_waddr_b),
+    .EX_wb_mux_select_b(EX_wb_mux_select_b),
     .EX_mem_type_a(EX_mem_type_a),
     .EX_mem_type_b(EX_mem_type_b),
     .MEM_rf_we_a(MEM_rf_we_a),
@@ -232,6 +234,7 @@ Pipeline_Register  Pipeline_Register_inst (
     .MEM_rf_wdata_b(MEM_rf_wdata_b),
     .MEM_mem_type_a(MEM_mem_type_a),
     .MEM_mem_type_b(MEM_mem_type_b),
+    .MEM_wb_mux_select_b(MEM_wb_mux_select_b),
     .WB_rf_we_a(WB_rf_we_a),
     .WB_rf_we_b(WB_rf_we_b),
     .WB_rf_waddr_a(WB_rf_waddr_a),
