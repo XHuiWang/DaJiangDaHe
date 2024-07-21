@@ -38,11 +38,7 @@ module ex_mem_wb(
     input           [ 2: 0]     EX_mem_type_a,      //A指令内存写类型
     input           [ 2: 0]     EX_mem_type_b,      //B指令内存写类型
 
-    // 双BR的跳转处理在本模块内进行，只输出一组跳转信号
-    // output                      EX_br_a,            //A指令是否需要修正预测的结果
-    // output                      EX_br_b,            //B指令是否需要修正预测的结果
-    // output          [31: 0]     EX_pc_br_a,         //A指令修正时应跳转到的地址
-    // output          [31: 0]     EX_pc_br_b,         //B指令修正时应跳转到的地址
+    input           [ 5: 0]     MEM_mux_select,     //MEM段B指令RF写回数据多选器独热码
 
     output  reg                 WB_rf_we_a,         //A指令寄存器写使能
     output  reg                 WB_rf_we_b,         //B指令寄存器写使能
@@ -87,7 +83,7 @@ logic   [ 3: 0]     EX_mem_we;                      //内存写使能 已经考�
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
 logic   [31: 0]     EX_mem_wdata_orig;              //内存写数据 尚未考虑STORE指令的W/H/B分类
 logic   [31: 0]     EX_mem_wdata;                   //内存写数据 已经考虑STORE指令的W/H/B分类
-logic   [31: 0]     EX_mem_waddr;                   //内存写地址
+logic   [31: 0]     EX_mem_waddr;                   //内存写地址 也是内存读地址
 logic   [ 2: 0]     EX_mem_type;                    //访存类型
 
 logic   [31: 0]     MEM_mem_rdata;                  //内存读数据
@@ -97,7 +93,7 @@ logic   [ 2: 0]     MEM_mem_type_a;                 //A指令访存类型
 logic   [ 2: 0]     MEM_mem_type_b;                 //B指令访存类型
 assign  EX_mem_we_orig    =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we_bb      =EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
-assign  EX_mem_wdata_orig =(EX_mem_type_a==3'b000) ? EX_rf_rdata_a2_f:EX_rf_rdata_b2_f; //不会同时发射两条访存指令
+assign  EX_mem_wdata_orig =(EX_mem_type_a==3'b000) ? EX_rf_rdata_b2_f:EX_rf_rdata_a2_f; //不会同时发射两条访存指令
 assign  EX_mem_waddr      =(EX_mem_type_a==3'b000) ? EX_alu_result_b:EX_alu_result_a;   //不会同时发射两条访存指令
 
 assign  EX_mem_type= EX_mem_type_a + EX_mem_type_b; //A、B至多有一个为STROE指令
@@ -127,13 +123,23 @@ end
 
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
-Mux  MEM_mux_rf_wdata_b(
-  .a(MEM_alu_result_b),
-  .b(MEM_mem_rdata),
-  .c(32'b0),  //TODO 乘法器 除法器
-  .s((MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101)?3'b010:3'b001),//LOAD指令
-  .y(MEM_rf_wdata_b)
-);
+// Mux  MEM_mux_rf_wdata_b(
+//   .a(MEM_alu_result_b),
+//   .b(MEM_mem_rdata),
+//   .c(32'b0),  //TODO 乘法器 除法器
+//   .s((MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101)?3'b010:3'b001),//LOAD指令
+//   .y(MEM_rf_wdata_b)
+// );
+assign MEM_rf_wdata_b = {32{MEM_mux_select[0]}}&MEM_alu_result_b | {32{MEM_mux_select[1]}}&MEM_mem_rdata | 
+                        {32{MEM_mux_select[2]}}&32'b0 | {32{MEM_mux_select[3]}}&32'b0 | 
+                        {32{MEM_mux_select[4]}}&32'b0 | {32{MEM_mux_select[5]}}&32'b0; 
+// MEM段B指令RF写回数据多选器独热码 
+// 6'b00_0001: ALU
+// 6'b00_0010: LD类型指令
+// 6'b00_0100: MUL  取低32位
+// 6'b00_1000: MULH 取高32位
+// 6'b01_0000: DIV 取商
+// 6'b10_0000: MOD 取余
 
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
