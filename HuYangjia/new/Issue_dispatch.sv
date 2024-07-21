@@ -24,6 +24,7 @@ module Issue_dispatch(
     input [ 0: 0] clk,
     input PC_set i_set1,
     input PC_set i_set2,
+    input [ 1: 0] i_is_valid,
 
 
     output PC_set o_set1,
@@ -46,8 +47,8 @@ module Issue_dispatch(
 
 
 
-    logic [ 1: 0] i_is_valid;
-    assign i_is_valid = {i_set1.o_valid, i_set2.o_valid};
+    logic [ 1: 0] is_valid;
+    assign is_valid = {i_set1.o_valid & i_is_valid[1], i_set2.o_valid & i_is_valid[0]};
 
 
     assign o_set1.instruction   = i_set1.instruction  ;
@@ -95,7 +96,7 @@ module Issue_dispatch(
             o_usingNUM = 2'b00;
         end
         else begin
-            case (i_is_valid)
+            case (is_valid)
                 2'b00: begin
                     o_set1.o_valid = 1'b0;
                     o_set2.o_valid = 1'b0;
@@ -131,9 +132,9 @@ module Issue_dispatch(
     assign ld_exist[0] = (o_usingNUM == 2) ? ~(i_set2.ldst_type[3]) : 0;
 
 
-    assign double_BR   = (i_is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
-    assign double_LDSW = (i_is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
-    assign RAW_exist   = (i_is_valid == 2'b11 && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
+    assign double_BR   = (is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
+    assign double_LDSW = (is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
+    assign RAW_exist   = (is_valid == 2'b11 && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
 
 
     always @(posedge clk) begin

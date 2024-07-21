@@ -54,15 +54,11 @@ module ID_Decode_edi_2(
     logic [ 0: 0] wb_sel;
 
 
-    logic [ 0: 0] flush;
-    logic [ 0: 0] stall;
-
-
     assign PC_set.instruction = IF_IR;
     assign PC_set.PC = PC;
     assign PC_set.o_inst_lawful = o_inst_lawful;
     assign PC_set.o_valid = o_valid;
-    assign PC_set.inst_type = inst_type;
+    assign PC_set.inst_type = 0; // TODO:
     assign PC_set.br_type = br_type;
     assign PC_set.imm = imm;
     assign PC_set.rf_rd = rf_rd;
@@ -76,7 +72,7 @@ module ID_Decode_edi_2(
     assign PC_set.ldst_type = ldst_type;
     assign PC_set.wb_sel = wb_sel;
 
-    assign o_valid = ((data_valid & ~stall) & (o_inst_lawful & ~flush));
+    assign o_valid = data_valid & o_inst_lawful;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
                             sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
                             xor_inst | andi_inst | ori_inst | xori_inst | sll_inst | srl_inst | 
@@ -186,7 +182,8 @@ module ID_Decode_edi_2(
                             (b_inst    )  ? 4'b0100 :
                             (bl_inst   )  ? 4'b0101 :
                             (jirl_inst )  ? 4'b0011 : 4'b0000;
-    assign br_type = (ID_status && data_valid) ? br_type_temp : 4'b0000;
+    assign br_type = (data_valid) ? br_type_temp : 4'b0000;
+    // assign br_type = (ID_status && data_valid) ? br_type_temp : 4'b0000;
 
     // 0000 ld.w
     // 0001 st.w
@@ -220,7 +217,8 @@ module ID_Decode_edi_2(
     assign rf_raddr1 = IF_IR[ 9: 5];
     assign rf_raddr2 = ( stb_inst | sth_inst | st_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
-    assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
+    assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~data_valid | rf_rd == 0)) ? 1'b0 : 1'b1;
+    // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
     assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 3'h1 :
                           (~(lu12i_inst)) ? 3'h2 : 3'h4;
@@ -238,7 +236,8 @@ module ID_Decode_edi_2(
                     (sll_inst | slli_inst) ? 12'h100 :
                     (srl_inst | srli_inst) ? 12'h200 :
                     (sra_inst | srai_inst) ? 12'h400 : 12'h800;
-    assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
+    assign mem_we = ((stb_inst | sth_inst | st_inst) & data_valid) ? 1'b1 : 1'b0;
+    // assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
     assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
                     
                         

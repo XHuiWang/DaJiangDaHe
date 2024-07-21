@@ -36,6 +36,10 @@ module ID_REG (
 
     input [ 1: 0] i_usingNUM,
 
+    // stall&flush
+    input [ 0: 0] flush_BR,
+    input [ 0: 0] stall_DCache,
+
 
     output PC_set o_PC_set1,
     output PC_set o_PC_set2,
@@ -55,6 +59,10 @@ module ID_REG (
 
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
+    assign flush = flush_BR;
+    assign stall = stall_DCache;
+
+
     PC_set PC_set_Buffer[NUM];
 
     logic [ 6: 0] length; // 缓存数组的长度+将要存入的数据的长度
@@ -81,20 +89,62 @@ module ID_REG (
     assign tail_plus_1 = (tail + 1) - ((tail + 1 >= NUM ? NUM : 0));
     assign tail_plus_2 = (tail + 2) - ((tail + 2 >= NUM ? NUM : 0));
 
+    PC_set error_set;
+    assign error_set.instruction = 32'd0;
+    assign error_set.PC = 32'd0;
+    assign error_set.o_inst_lawful = 1'b0;
+    assign error_set.o_valid = 1'b0;
+    assign error_set.inst_type = 5'd0;
+    assign error_set.br_type = 4'd0;
+    assign error_set.imm = 32'd0;
+    assign error_set.rf_rd = 5'd0;
+    assign error_set.rf_we = 1'b0;
+    assign error_set.alu_src1_sel = 3'd0;
+    assign error_set.alu_src2_sel = 3'd0;
+    assign error_set.alu_op = 12'd0;
+    assign error_set.mem_we = 1'b0;
+    assign error_set.ldst_type = 4'd0;
+    assign error_set.wb_sel = 1'b0;
+    assign error_set.rf_raddr1 = 5'd0;
+    assign error_set.rf_raddr2 = 5'd0;
+    assign error_set.rf_rdata1 = 32'd0;
+    assign error_set.rf_rdata2 = 32'd0;
 
-    always @(posedge clk) begin
-        case (length_add)
-            2'd1: begin
-                PC_set_Buffer[head] <= i_PC_set1;
-            end
-            2'd2: begin
-                PC_set_Buffer[head] <= i_PC_set1;
-                PC_set_Buffer[head_plus_1] <= i_PC_set2;
-            end
-            default: begin
-                
-            end
-        endcase
+
+
+    always @(posedge clk, negedge rstn) begin
+        if( !rstn ) begin
+            PC_set_Buffer[ 0] <= error_set;
+            PC_set_Buffer[ 1] <= error_set;
+            PC_set_Buffer[ 2] <= error_set;
+            PC_set_Buffer[ 3] <= error_set;
+            PC_set_Buffer[ 4] <= error_set;
+            PC_set_Buffer[ 5] <= error_set;
+            PC_set_Buffer[ 6] <= error_set;
+            PC_set_Buffer[ 7] <= error_set;
+            PC_set_Buffer[ 8] <= error_set;
+            PC_set_Buffer[ 9] <= error_set;
+            PC_set_Buffer[10] <= error_set;
+            PC_set_Buffer[11] <= error_set;
+            PC_set_Buffer[12] <= error_set;
+            PC_set_Buffer[13] <= error_set;
+            PC_set_Buffer[14] <= error_set;
+            PC_set_Buffer[15] <= error_set;
+        end
+        else begin 
+            case (length_add)
+                2'd1: begin
+                    PC_set_Buffer[head] <= i_PC_set1;
+                end
+                2'd2: begin
+                    PC_set_Buffer[head] <= i_PC_set1;
+                    PC_set_Buffer[head_plus_1] <= i_PC_set2;
+                end
+                default: begin
+                    
+                end
+            endcase
+        end
     end
 
 
@@ -104,14 +154,15 @@ module ID_REG (
             tail <= 5'b0;
         end
         else if(flush) begin
-            tail <= head;
+            tail <= 0;
+            head <= 0;
         end
         else if(stall) begin
             tail <= tail;
             head <= next_head;
         end
         else begin
-            tail <= tail + i_usingNUM;
+            tail <= ( |i_usingNUM ) ? (i_usingNUM[0]) ? tail_plus_1 : tail_plus_2 : tail;
             head <= next_head;
         end
     end
@@ -126,6 +177,7 @@ module ID_REG (
         end
         else if(stall) begin
             o_is_valid <= 2'b00;
+            // TODO: 修正,STALL信号后面的行为有待商榷，DCache Miss结束后的行为是什么
         end
         else begin
             case (length)

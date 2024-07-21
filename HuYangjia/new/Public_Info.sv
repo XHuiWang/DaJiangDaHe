@@ -28,7 +28,7 @@ package Public_Info;
         logic [ 0: 0] o_inst_lawful;
         logic [ 0: 0] o_valid      ;
         logic [ 4: 0] inst_type    ;
-        logic [ 8: 0] br_type      ; 
+        logic [ 3: 0] br_type      ; 
         logic [31: 0] imm          ;
         logic [ 4: 0] rf_rd        ;
         logic [ 0: 0] rf_we        ;
