@@ -131,7 +131,7 @@ Mux  MEM_mux_rf_wdata_b(
   .a(MEM_alu_result_b),
   .b(MEM_mem_rdata),
   .c(32'b0),  //TODO 乘法器 除法器
-  .s(MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101),//LOAD指令
+  .s((MEM_mem_type_b==3'b010 || MEM_mem_type_b==3'b011  || MEM_mem_type_b==3'b100 || MEM_mem_type_b==3'b101)?3'b010:3'b001),//LOAD指令
   .y(MEM_rf_wdata_b)
 );
 
