@@ -1,7 +1,6 @@
 module ex_mem_wb(
     input                       clk,
     input                       rstn,
-    input                       stall,
 
     input           [31: 0]     EX_pc_a,            //A指令的PC值
     input           [31: 0]     EX_pc_b,            //B指令的PC值
@@ -53,7 +52,8 @@ module ex_mem_wb(
     output  reg     [31: 0]     WB_rf_wdata_b,      //B指令寄存器写数据
 
     output          [ 0: 0]     EX_br,              //是否需要修正预测的结果
-    output          [31: 0]     EX_pc_br            //修正时应跳转到的地址
+    output          [31: 0]     EX_pc_br,           //修正时应跳转到的地址
+    output  wire                stall_dcache         //dache发出的stall信号
 );
 logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_a2_f;               //A指令的第二个寄存器的值，经前递修正后
@@ -197,10 +197,14 @@ FU_BR  FU_BR_inst (
     .EX_br(EX_br),
     .EX_pc_br(EX_pc_br)
   );
+
+logic   stall_div;
+// logic   stall_dcache;
+assign stall_dcache = 1'b0; //TODO
 Pipeline_Register  Pipeline_Register_inst (
     .clk(clk),
     .rstn(rstn),
-    .stall(stall),
+    .stall_dcache(stall_dcache),
     .EX_br_a(EX_br_a),
     .EX_alu_result_a(EX_alu_result_a),
     .EX_alu_result_b(EX_alu_result_b),
