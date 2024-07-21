@@ -16,10 +16,10 @@ module ex_mem_wb(
     input           [ 4: 0]     EX_rf_raddr_b1,     //B指令的第一个寄存器的地址
     input           [ 4: 0]     EX_rf_raddr_b2,     //B指令的第二个寄存器的地址
 
-    input           [ 1: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
     input           [11: 0]     EX_alu_op_a,        //A指令的运算类型
     input           [11: 0]     EX_alu_op_b,        //B指令的运算类型
 

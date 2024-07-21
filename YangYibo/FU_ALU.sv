@@ -14,10 +14,10 @@ module FU_ALU(                                      //A指令固定在B指令之
     input           [31: 0]     EX_rf_rdata_b2,     //B指令的第二个寄存器的值
     input           [31: 0]     EX_imm_a,           //A指令的立即数
     input           [31: 0]     EX_imm_b,           //B指令的立即数
-    input           [ 1: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
-    input           [ 1: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
+    input           [ 2: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
     input           [11: 0]     EX_alu_op_a,        //A指令的运算类型
     input           [11: 0]     EX_alu_op_b,        //B指令的运算类型
 
