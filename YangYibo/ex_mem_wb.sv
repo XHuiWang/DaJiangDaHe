@@ -97,8 +97,8 @@ logic   [ 2: 0]     MEM_mem_type_a;                 //A指令访存类型
 logic   [ 2: 0]     MEM_mem_type_b;                 //B指令访存类型
 assign  EX_mem_we_orig    =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we_bb      =EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
-assign  EX_mem_wdata_orig =EX_mem_we_a?EX_rf_rdata_a2_f:EX_rf_rdata_b2_f; //不会同时发射两条STORE指令
-assign  EX_mem_waddr      =EX_mem_we_a?EX_alu_result_a:EX_alu_result_b;   //不会同时发射两条STORE指令
+assign  EX_mem_wdata_orig =(EX_mem_type_a==3'b000) ? EX_rf_rdata_a2_f:EX_rf_rdata_b2_f; //不会同时发射两条访存指令
+assign  EX_mem_waddr      =(EX_mem_type_a==3'b000) ? EX_alu_result_b:EX_alu_result_a;   //不会同时发射两条访存指令
 
 assign  EX_mem_type= EX_mem_type_a + EX_mem_type_b; //A、B至多有一个为STROE指令
 always @(*)begin
