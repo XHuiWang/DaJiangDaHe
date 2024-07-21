@@ -41,6 +41,8 @@ module Issue_dispatch(
 
     logic [ 0: 0] double_BR;
     logic [ 0: 0] double_LDSW;
+    logic [ 0: 0] LDSW_plus_any;
+    logic [ 0: 0] any_plus_LDSW;
     logic [ 0: 0] RAW_exist;
     logic [ 1: 0] ld_exist;
 
@@ -65,6 +67,7 @@ module Issue_dispatch(
     assign o_set1.mem_we        = i_set1.mem_we       ;
     assign o_set1.ldst_type     = i_set1.ldst_type    ;
     assign o_set1.wb_sel        = i_set1.wb_sel       ;
+    assign o_set1.mux_sel       = i_set1.mux_sel      ;
     assign o_set1.rf_raddr1     = i_set1.rf_raddr1    ;
     assign o_set1.rf_raddr2     = i_set1.rf_raddr2    ;
     assign o_set1.rf_rdata1     = i_set1.rf_rdata1    ;
@@ -84,6 +87,7 @@ module Issue_dispatch(
     assign o_set2.mem_we        = i_set2.mem_we       ;
     assign o_set2.ldst_type     = i_set2.ldst_type    ;
     assign o_set2.wb_sel        = i_set2.wb_sel       ;
+    assign o_set2.mux_sel       = i_set2.mux_sel      ;
     assign o_set2.rf_raddr1     = i_set2.rf_raddr1    ;
     assign o_set2.rf_raddr2     = i_set2.rf_raddr2    ;
     assign o_set2.rf_rdata1     = i_set2.rf_rdata1    ;
@@ -103,8 +107,8 @@ module Issue_dispatch(
                     o_usingNUM = 2'b00;
                 end
                 2'b10: begin
-                    o_set1.o_valid = 1'b1;
-                    o_set2.o_valid = 1'b0;
+                    o_set1.o_valid =  o_set1.ldst_type[3];
+                    o_set2.o_valid = ~o_set1.ldst_type[3];
                     o_usingNUM = 2'b01;
                 end
                 2'b01: begin
@@ -114,7 +118,12 @@ module Issue_dispatch(
                 end
                 2'b11: begin
                     // 两个合法，开始检测
-                    if(double_BR || double_LDSW || RAW_exist) begin
+                    if(LDSW_plus_any) begin
+                        o_set1.o_valid = 1'b0;
+                        o_set2.o_valid = 1'b1;
+                        o_usingNUM = 2'd1;
+                    end
+                    else if(double_BR || RAW_exist) begin
                         o_set1.o_valid = 1'b1;
                         o_set2.o_valid = 1'b0;
                         o_usingNUM = 2'd1;
@@ -128,17 +137,18 @@ module Issue_dispatch(
             endcase
         end
     end
-    assign ld_exist[1] = (o_usingNUM != 0) ? ~(i_set1.ldst_type[3]) : 0;
-    assign ld_exist[0] = (o_usingNUM == 2) ? ~(i_set2.ldst_type[3]) : 0;
+    assign ld_exist = (LDSW_plus_any & (o_usingNUM != 2'b00)) | (any_plus_LDSW & (o_usingNUM == 2'd2)) | ((is_valid == 2'b10) & (o_usingNUM != 2'b00) & ~o_set1.ldst_type[3]);
 
 
-    assign double_BR   = (is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
-    assign double_LDSW = (is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
-    assign RAW_exist   = (is_valid == 2'b11 && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
+    assign double_BR     = (is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
+    assign LDSW_plus_any = (is_valid == 2'b11) ? ~(i_set1.ldst_type[3]) : 0; // 前LDSW，后任意
+    assign any_plus_LDSW = (is_valid == 2'b11) ? ~(i_set2.ldst_type[3]) : 0; // 前LDSW，后任意
+    assign double_LDSW   = (is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
+    assign RAW_exist     = (is_valid == 2'b11 && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
 
 
     always @(posedge clk) begin
-        last_ld <= |ld_exist;
+        last_ld <= ld_exist;
         rf_waddr <= (ld_exist[1]) ? i_set1.rf_rd : i_set2.rf_rd;
     end
 

@@ -78,6 +78,7 @@ module Issue_EXE(
 
     output logic [ 0: 0]  EX_mem_we_a,        //A指令内存写使能
     output logic [ 0: 0]  EX_mem_we_b,        //B指令内存写使能
+    output logic [ 5: 0]  EX_mux_sel,         //B指令WB来源选择信号
     output logic [ 2: 0]  EX_mem_type_a,      //A指令内存访问类型
     output logic [ 2: 0]  EX_mem_type_b       //B指令内存访问类型
     // output logic [ 0: 0]  EX_br,              //是否需要修正预测的结果
@@ -149,6 +150,7 @@ module Issue_EXE(
             EX_rf_we_b        <= 1'b0;
             EX_mem_type_a     <= 3'h0;
             EX_mem_type_b     <= 3'h0;
+            EX_mux_sel        <= 5'h00;
             EX_rf_waddr_a     <= 5'h00;
             EX_rf_waddr_b     <= 5'h00;
             EX_mem_we_a       <= 1'b0;
@@ -179,6 +181,7 @@ module Issue_EXE(
             EX_br_pd_b        <= EX_br_pd_b;
             EX_rf_we_a        <= EX_rf_we_a;
             EX_rf_we_b        <= EX_rf_we_b;
+            EX_mux_sel        <= EX_mux_sel;
             EX_mem_type_a     <= EX_mem_type_a;
             EX_mem_type_b     <= EX_mem_type_b;
             EX_rf_waddr_a     <= EX_rf_waddr_a;
@@ -212,6 +215,7 @@ module Issue_EXE(
             // TODO: 预测跳转
             EX_rf_we_a        <= i_set1.rf_we & EX_a_enable;
             EX_rf_we_b        <= i_set2.rf_we & EX_b_enable;
+            EX_mux_sel        <= i_set2.mux_sel & {6{EX_b_enable}};
             EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
             EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
             EX_rf_waddr_a     <= i_set1.rf_rd;

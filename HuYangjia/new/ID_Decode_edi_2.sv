@@ -52,6 +52,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
     logic [ 0: 0] wb_sel;
+    logic [ 0: 0] mux_sel; // B通道WB来源的选择信号
 
 
     assign PC_set.instruction = IF_IR;
@@ -71,15 +72,9 @@ module ID_Decode_edi_2(
     assign PC_set.mem_we = mem_we;
     assign PC_set.ldst_type = ldst_type;
     assign PC_set.wb_sel = wb_sel;
+    assign PC_set.mux_sel = mux_sel;
 
-    assign o_valid = data_valid & o_inst_lawful;
-    assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
-                            sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
-                            xor_inst | andi_inst | ori_inst | xori_inst | sll_inst | srl_inst | 
-                            sra_inst | slli_inst | srli_inst | srai_inst | st_inst | sth_inst | 
-                            stb_inst | ld_inst | ldh_inst | ldb_inst | ldhu_inst | ldbu_inst | 
-                            beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | 
-                            b_inst | bl_inst | jirl_inst);
+
 
     // 对每一种指令的存在进行检测
     wire add_inst;
@@ -171,6 +166,27 @@ module ID_Decode_edi_2(
     assign b_inst         = (IF_IR [31:26] == 6'h14)     ? 1'b1 : 1'b0;
     assign bl_inst        = (IF_IR [31:26] == 6'h15)     ? 1'b1 : 1'b0;
     assign jirl_inst      = (IF_IR [31:26] == 6'h13)     ? 1'b1 : 1'b0;
+
+    assign o_valid = data_valid & o_inst_lawful;
+    assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
+                            sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
+                            xor_inst | andi_inst | ori_inst | xori_inst | sll_inst | srl_inst | 
+                            sra_inst | slli_inst | srli_inst | srai_inst | st_inst | sth_inst | 
+                            stb_inst | ld_inst | ldh_inst | ldb_inst | ldhu_inst | ldbu_inst | 
+                            beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | 
+                            b_inst | bl_inst | jirl_inst);
+
+    // mux_sel
+    // MEM段B指令RF写回数据多选器独热码 
+    // 6'b00_0001: ALU
+    // 6'b00_0010: LD类型指令
+    // 6'b00_0100: MUL  取低32位
+    // 6'b00_1000: MULH 取高32位
+    // 6'b01_0000: DIV 取商
+    // 6'b10_0000: MOD 取余
+    assign mux_sel = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst) ? 6'b00_0010 :
+                     6'b00_0000;
+
 
     logic [ 8: 0] br_type_temp;
     assign br_type_temp =   (beq_inst  )  ? 4'b0110 : 

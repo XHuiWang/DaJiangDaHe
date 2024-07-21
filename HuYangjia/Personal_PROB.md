@@ -29,3 +29,5 @@
 
 ### temp PROBLEM
 1. alu_src_select的信号的定义不一样
+2. TODO: dispatch的问题
+3. wb_sel信号的指定

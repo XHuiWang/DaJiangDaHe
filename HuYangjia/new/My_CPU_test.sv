@@ -118,6 +118,7 @@ module My_CPU_test(
     logic [ 0: 0] EX_mem_we_b;
     logic [ 2: 0] EX_mem_type_a;
     logic [ 2: 0] EX_mem_type_b;
+    logic [ 5: 0] EX_mux_select;
   
   
 
@@ -313,6 +314,7 @@ module My_CPU_test(
         .EX_br_pd_b(EX_br_pd_b),
         .EX_rf_we_a(EX_rf_we_a),
         .EX_rf_we_b(EX_rf_we_b),
+        .EX_mux_sel(EX_mux_select),
         .EX_rf_waddr_a(EX_rf_waddr_a),
         .EX_rf_waddr_b(EX_rf_waddr_b),
         .EX_mem_we_a(EX_mem_we_a),
@@ -355,6 +357,7 @@ module My_CPU_test(
         .EX_mem_we_b(EX_mem_we_b),
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b),
+        .EX_wb_mux_select_b(EX_mux_select),
         .WB_rf_we_a(WB_rf_we_a),
         .WB_rf_we_b(WB_rf_we_b),
         .WB_rf_waddr_a(WB_rf_waddr_a),
