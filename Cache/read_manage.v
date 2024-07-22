@@ -23,14 +23,14 @@
 module read_manage(
     input [127:0] r_data_mem,
     input [1:0]  offset,
-    output reg  [31:0] inst_from_icache
+    output reg  [63:0] inst_from_icache
     );
 always @(*) begin
     case(offset)
-    2'b00: inst_from_icache = r_data_mem[31:0];
-    2'b01: inst_from_icache = r_data_mem[63:32];
-    2'b10: inst_from_icache = r_data_mem[95:64];
-    2'b11: inst_from_icache = r_data_mem[127:96];
+    2'b00: inst_from_icache = r_data_mem[63:0];
+    2'b01: inst_from_icache = r_data_mem[95:32];
+    2'b10: inst_from_icache = r_data_mem[127:64];
+    2'b11: inst_from_icache = {32'b0, r_data_mem[127:96]};
 endcase
 end
 endmodule

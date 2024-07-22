@@ -28,7 +28,7 @@ module Return_buffer(
     input              i_rlast,
     input     [31:0]   i_rdata,
     output  reg  [127:0]  w_data,
-    output  reg  [31:0]   inst_from_retbuf
+    output  reg  [63:0]   inst_from_retbuf
     );
 
     always @(posedge clk) begin
@@ -39,10 +39,10 @@ module Return_buffer(
 
     always @(*) begin
         case(offset)
-            2'b00: inst_from_retbuf = w_data[31:0];
-            2'b01: inst_from_retbuf = w_data[63:32];
-            2'b10: inst_from_retbuf = w_data[95:64];
-            2'b11: inst_from_retbuf = w_data[127:96];
+            2'b00: inst_from_retbuf = w_data[63:0];
+            2'b01: inst_from_retbuf = w_data[95:32];
+            2'b10: inst_from_retbuf = w_data[127:64];
+            2'b11: inst_from_retbuf = {32'b0, w_data[127:96]};
         endcase
     end
 

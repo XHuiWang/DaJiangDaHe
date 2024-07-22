@@ -7,7 +7,7 @@ module Icache(
     input                   rvalid,
     input       [31:0]      raddr,
     input                   Is_flush,
-    input                   uncache,
+    //input                   uncache,
     //cache操作
     //input       [31:0]      icache_opcode,//cache操作
 
@@ -17,9 +17,9 @@ module Icache(
     //to cpu
     output                  rready,
     //双发射，一次送出两条指令
-    output      [31:0]      rdata,
+    output      [63:0]      rdata,
     //用于指示[63:32]是否有效
-   // output                  flag_valid,
+    output       wire       flag_valid,
 
 
 
@@ -58,15 +58,15 @@ module Icache(
     wire  [127:0] r_data_mem ;
     wire  [127:0] w_data ;
     wire  [1:0]   offset ;
-    wire  [31:0]  inst_from_icache ;
-    wire  [31:0]  inst_from_retbuf ;
+    wire  [63:0]  inst_from_icache ;
+    wire  [63:0]  inst_from_retbuf ;
     wire          data_from_mem_sel ;
     wire          way_sel ;
     wire          LRU_update ;
     wire          flu ;
     reg           flu_reg ;
     wire          fbuf_clear ;
-    wire  [31:0]  mux2_1_out ;
+    wire  [63:0]  mux2_1_out ;
     wire          miss_LRU_update ;
     wire          miss_lru_way ;
 
@@ -78,9 +78,10 @@ module Icache(
     assign hit = {hit2,hit1};
     assign offset = addr[3:2];
     assign w_tagv = {addr[31:12],1'b1};
-    assign rdata =(flu | flu_reg) ? 32'd0 : mux2_1_out;
+    assign rdata =(flu | flu_reg) ? 64'd0 : mux2_1_out;
     assign flu = Is_flush;
     assign i_arlen = 8'd3;
+    assign flag_valid = offset == 2'b11 ? 0 : 1;
 
     always @(posedge clk) begin
         if(flu) flu_reg <= flu;
@@ -141,7 +142,7 @@ module Icache(
         .inst_from_icache (inst_from_icache)
     );
 
-    mux2_1 mux2_1_inst(
+    mux_2_1_icache mux2_1_inst(
         .din1 (inst_from_icache),
         .din2 (inst_from_retbuf),
         .sel  (data_from_mem_sel),
