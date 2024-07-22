@@ -57,6 +57,7 @@ begin
         WB_rf_waddr_b<=5'b00000;
         WB_rf_wdata_a<=32'h0000_0000;
         WB_rf_wdata_b<=32'h0000_0000;
+        MEM_wb_mux_select_b<=6'b000000;
     end
     else begin
         //EX->MEM
