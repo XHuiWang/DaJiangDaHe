@@ -55,7 +55,7 @@ module IF1(
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            pc_IF1 <= 0;
+            pc_IF1 <= 32'h1c00_0000;
         end
         else if(EX_BR) begin
             pc_IF1 <= pc_BR;
