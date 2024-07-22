@@ -57,11 +57,14 @@ module IF1(
         if( !rstn ) begin
             pc_IF1 <= 0;
         end
+        else if(EX_BR) begin
+            pc_IF1 <= pc_BR;
+        end
         else if(stall ) begin
             pc_IF1 <= pc_IF1;
         end
         else begin
-            pc_IF1 <= (EX_BR) ? pc_BR : pc_predict;
+            pc_IF1 <= pc_predict;
         end
     end
 endmodule
