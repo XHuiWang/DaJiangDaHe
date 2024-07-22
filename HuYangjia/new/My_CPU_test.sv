@@ -145,6 +145,8 @@ module My_CPU_test(
     assign stall_ICache = 0;
     assign stall_DCache = stall_dcache;
     assign flush_BR = EX_br;
+    assign stall_full_issue = o_is_full_2;
+    assign stall_full_instr = o_is_full;
     
   
     assign pc_predict = pc_IF1 + 8;
