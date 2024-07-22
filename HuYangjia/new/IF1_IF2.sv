@@ -49,7 +49,7 @@ module IF1_IF2(
             o_is_valid <= 2'b00;
         end
         else begin
-            if(flush || i_is_valid) begin
+            if(flush || ~i_is_valid) begin
                 o_is_valid <= 2'b00;
             end
             else begin
