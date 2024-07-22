@@ -27,6 +27,8 @@ module IF1_IF2(
     input [31: 0] i_PC1,
     input [31: 0] i_PC2,
 
+    input [ 0: 0] i_is_valid,
+
     // flush&stall信号
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_ICache,
@@ -47,7 +49,7 @@ module IF1_IF2(
             o_is_valid <= 2'b00;
         end
         else begin
-            if(flush) begin
+            if(flush || i_is_valid) begin
                 o_is_valid <= 2'b00;
             end
             else begin

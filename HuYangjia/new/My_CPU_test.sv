@@ -182,6 +182,7 @@ module My_CPU_test(
         .i_PC1(pc_IF1),
         .i_PC2(pc_IF1+4),
         .flush_BR(flush_BR),
+        .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
         .o_PC1(i_PC1),
         .o_PC2(i_PC2),
