@@ -35,11 +35,11 @@ module RF #(
 );
     reg [DATA_WIDTH -1:0]  rf [0:(1<<ADDR_WIDTH)-1];    //寄存器堆
     //异步读
-    assign rdata_a1 = (raddr_a1 == waddr_b && waddr_b != 0) ? wdata_b : ((raddr_a1 == waddr_a && waddr_a != 0) ? wdata_a : rf[raddr_a1]);   
-    assign rdata_a2 = (raddr_a2 == waddr_b && waddr_b != 0) ? wdata_b : ((raddr_a2 == waddr_a && waddr_a != 0) ? wdata_a : rf[raddr_a2]);   
-    assign rdata_b1 = (raddr_b1 == waddr_b && waddr_b != 0) ? wdata_b : ((raddr_b1 == waddr_a && waddr_a != 0) ? wdata_a : rf[raddr_b1]);   
-    assign rdata_b2 = (raddr_b2 == waddr_b && waddr_b != 0) ? wdata_b : ((raddr_b2 == waddr_a && waddr_a != 0) ? wdata_a : rf[raddr_b2]);   
-    assign dout_rf  = (addr     == waddr_b && waddr_b != 0) ? wdata_b : ((addr     == waddr_a && waddr_a != 0) ? wdata_a : rf[addr    ]);   
+    assign rdata_a1 = (raddr_a1 == waddr_b && waddr_b != 0 && we_b) ? wdata_b : ((raddr_a1 == waddr_a && waddr_a != 0 && we_a) ? wdata_a : rf[raddr_a1]);   
+    assign rdata_a2 = (raddr_a2 == waddr_b && waddr_b != 0 && we_b) ? wdata_b : ((raddr_a2 == waddr_a && waddr_a != 0 && we_a) ? wdata_a : rf[raddr_a2]);   
+    assign rdata_b1 = (raddr_b1 == waddr_b && waddr_b != 0 && we_b) ? wdata_b : ((raddr_b1 == waddr_a && waddr_a != 0 && we_a) ? wdata_a : rf[raddr_b1]);   
+    assign rdata_b2 = (raddr_b2 == waddr_b && waddr_b != 0 && we_b) ? wdata_b : ((raddr_b2 == waddr_a && waddr_a != 0 && we_a) ? wdata_a : rf[raddr_b2]);   
+    assign dout_rf  = (addr     == waddr_b && waddr_b != 0 && we_b) ? wdata_b : ((addr     == waddr_a && waddr_a != 0 && we_a) ? wdata_a : rf[addr    ]);   
 
     initial begin
         foreach (rf[i]) rf[i] = 32'h0000_0000;      //初始化寄存器堆

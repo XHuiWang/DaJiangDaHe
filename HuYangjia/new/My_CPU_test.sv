@@ -61,7 +61,7 @@ module My_CPU_test(
 
     // RegFile中的信号
     logic [ 0: 0] clk;
-    logic [31: 0] raddr_a1;
+    logic [ 4: 0] raddr_a1;
     logic [ 4: 0] raddr_a2;
     logic [ 4: 0] raddr_b1;
     logic [ 4: 0] raddr_b2;
