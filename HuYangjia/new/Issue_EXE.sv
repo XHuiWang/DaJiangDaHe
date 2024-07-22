@@ -167,7 +167,7 @@ module Issue_EXE(
             EX_mem_we_b       <= EX_mem_we_b;
         end
         else begin
-            if( i_set1.inst_type != 10'h002 ) begin
+            if( i_set1.inst_type == 10'h002 ) begin
                 EX_pc_a           <= i_set2.PC;
                 EX_pc_b           <= i_set1.PC;
                 EX_rf_raddr_a1    <= i_set2.rf_raddr1;
