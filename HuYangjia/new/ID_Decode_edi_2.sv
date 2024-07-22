@@ -52,7 +52,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
     logic [ 0: 0] wb_sel;
-    logic [ 0: 0] mux_sel; // B通道WB来源的选择信号
+    logic [ 5: 0] mux_sel; // B通道WB来源的选择信号
 
 
     assign PC_set.instruction = IF_IR;
