@@ -94,10 +94,28 @@ module Issue_EXE(
     assign flush = flush_BR;
     assign stall = stall_DCache;
 
+    logic [ 0: 0] Issue_a_enable;
+    logic [ 0: 0] Issue_b_enable;
+    assign Issue_a_enable = ~flush & ~stall & i_set1.o_valid;
+    assign Issue_b_enable = ~flush & ~stall & i_set2.o_valid;
 
-    assign EX_a_enable = ~flush & ~stall & i_set1.o_valid;
-    assign EX_b_enable = ~flush & ~stall & i_set2.o_valid;
-
+    always @(posedge clk, negedge rstn) begin
+        if( !rstn ) begin
+            EX_a_enable <= 1'b0;
+            EX_b_enable <= 1'b0;
+        end
+        else begin
+            if(i_set1.inst_type != 10'h001) begin
+                EX_a_enable <= Issue_b_enable;
+                EX_b_enable <= Issue_a_enable;
+            end
+            else begin
+                EX_a_enable <= Issue_a_enable;
+                EX_b_enable <= Issue_b_enable;
+            end
+        end
+    end
+    
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
@@ -167,8 +185,8 @@ module Issue_EXE(
             EX_mem_we_b       <= EX_mem_we_b;
         end
         else begin
-            if( i_set1.inst_type == 10'h002 ) begin
-                EX_pc_a           <= i_set2.PC;
+            if( i_set1.inst_type != 10'h001 ) begin
+                EX_pc_a           <= 32'hffff_ffff;
                 EX_pc_b           <= i_set1.PC;
                 EX_rf_raddr_a1    <= i_set2.rf_raddr1;
                 EX_rf_raddr_a2    <= i_set2.rf_raddr2;
@@ -186,20 +204,20 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set1.alu_src2_sel;
                 EX_alu_op_a       <= i_set2.alu_op;
                 EX_alu_op_b       <= i_set1.alu_op;
-                EX_br_type_a      <= i_set2.br_type & {4{EX_b_enable}};
-                EX_br_type_b      <= i_set1.br_type & {4{EX_a_enable}};
+                EX_br_type_a      <= i_set2.br_type & {4{Issue_b_enable}};
+                EX_br_type_b      <= i_set1.br_type & {4{Issue_a_enable}};
                 EX_br_pd_a        <= 0;
                 EX_br_pd_b        <= 0;
                 // TODO: 预测跳转
-                EX_rf_we_a        <= i_set2.rf_we & EX_b_enable;
-                EX_rf_we_b        <= i_set1.rf_we & EX_a_enable;
-                EX_mux_sel        <= i_set1.mux_sel & {6{EX_a_enable}};
-                EX_mem_type_a     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
-                EX_mem_type_b     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
+                EX_rf_we_a        <= i_set2.rf_we & Issue_b_enable;
+                EX_rf_we_b        <= i_set1.rf_we & Issue_a_enable;
+                EX_mux_sel        <= i_set1.mux_sel & {6{Issue_a_enable}};
+                EX_mem_type_a     <= i_set2.ldst_type[ 2: 0] & {3{Issue_b_enable}};
+                EX_mem_type_b     <= i_set1.ldst_type[ 2: 0] & {3{Issue_a_enable}};
                 EX_rf_waddr_a     <= i_set2.rf_rd;
                 EX_rf_waddr_b     <= i_set1.rf_rd;
-                EX_mem_we_a       <= i_set2.mem_we & EX_b_enable;
-                EX_mem_we_b       <= i_set1.mem_we & EX_a_enable;
+                EX_mem_we_a       <= i_set2.mem_we & Issue_b_enable;
+                EX_mem_we_b       <= i_set1.mem_we & Issue_a_enable;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -220,20 +238,20 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set2.alu_src2_sel;
                 EX_alu_op_a       <= i_set1.alu_op;
                 EX_alu_op_b       <= i_set2.alu_op;
-                EX_br_type_a      <= i_set1.br_type & {4{EX_a_enable}};
-                EX_br_type_b      <= i_set2.br_type & {4{EX_b_enable}};
+                EX_br_type_a      <= i_set1.br_type & {4{Issue_a_enable}};
+                EX_br_type_b      <= i_set2.br_type & {4{Issue_b_enable}};
                 EX_br_pd_a        <= 0;
                 EX_br_pd_b        <= 0;
                 // TODO: 预测跳转
-                EX_rf_we_a        <= i_set1.rf_we & EX_a_enable;
-                EX_rf_we_b        <= i_set2.rf_we & EX_b_enable;
-                EX_mux_sel        <= i_set2.mux_sel & {6{EX_b_enable}};
-                EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
-                EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
+                EX_rf_we_a        <= i_set1.rf_we & Issue_a_enable;
+                EX_rf_we_b        <= i_set2.rf_we & Issue_b_enable;
+                EX_mux_sel        <= i_set2.mux_sel & {6{Issue_b_enable}};
+                EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{Issue_a_enable}};
+                EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{Issue_b_enable}};
                 EX_rf_waddr_a     <= i_set1.rf_rd;
                 EX_rf_waddr_b     <= i_set2.rf_rd;
-                EX_mem_we_a       <= i_set1.mem_we & EX_a_enable;
-                EX_mem_we_b       <= i_set2.mem_we & EX_b_enable;
+                EX_mem_we_a       <= i_set1.mem_we & Issue_a_enable;
+                EX_mem_we_b       <= i_set2.mem_we & Issue_b_enable;
             end
             
         end
