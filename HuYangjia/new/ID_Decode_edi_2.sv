@@ -34,7 +34,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] o_valid;
     logic [ 0: 0] o_inst_lawful;
 
-    logic [ 4: 0] inst_type;
+    logic [ 9: 0] inst_type;
     logic [ 3: 0] br_type; 
 
     logic [31: 0] imm;
@@ -59,7 +59,7 @@ module ID_Decode_edi_2(
     assign PC_set.PC = PC;
     assign PC_set.o_inst_lawful = o_inst_lawful;
     assign PC_set.o_valid = o_valid;
-    assign PC_set.inst_type = 0; // TODO:
+    assign PC_set.inst_type = inst_type; // TODO: DONE
     assign PC_set.br_type = br_type;
     assign PC_set.imm = imm;
     assign PC_set.rf_rd = rf_rd;
@@ -185,7 +185,12 @@ module ID_Decode_edi_2(
     // 6'b01_0000: DIV 取商
     // 6'b10_0000: MOD 取余
     assign mux_sel = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst) ? 6'b00_0010 :
-                     6'b00_0000;
+                     6'b00_0001;
+
+
+    // inst_type
+    assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'b00_0000_0010 :
+                        10'b00_0000_0001;
 
 
     logic [ 8: 0] br_type_temp;

@@ -95,47 +95,24 @@ module Issue_EXE(
     assign stall = stall_DCache;
 
 
-
-    // PC_set error_set;
-    // assign error_set.o_valid = 1'b0;
-
-    // always @(*) begin
-    //     if( !rstn ) begin
-    //         EX_a_enable <= 1'b0;
-    //         EX_b_enable <= 1'b0;
-    //     end
-    //     else if(flush) begin
-    //         EX_a_enable <= 1'b0;
-    //         EX_b_enable <= 1'b0;
-    //     end
-    //     else if(stall) begin
-    //         EX_a_enable <= 1'b0;
-    //         EX_b_enable <= 1'b0;
-    //     end
-    //     else begin
-    //         EX_a_enable <= i_set1.o_valid;
-    //         EX_b_enable <= i_set2.o_valid;
-    //     end
-    // end
-
     assign EX_a_enable = ~flush & ~stall & i_set1.o_valid;
     assign EX_b_enable = ~flush & ~stall & i_set2.o_valid;
 
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            EX_pc_a        <= 32'h0000_0000;
-            EX_pc_b        <= 32'h0000_0000;
-            EX_rf_raddr_a1 <= 5'h00;
-            EX_rf_raddr_a2 <= 5'h00;
-            EX_rf_raddr_b1 <= 5'h00;
-            EX_rf_raddr_b2 <= 5'h00;
-            EX_rf_rdata_a1 <= 32'h0000_0000;
-            EX_rf_rdata_a2 <= 32'h0000_0000;
-            EX_rf_rdata_b1 <= 32'h0000_0000;
-            EX_rf_rdata_b2 <= 32'h0000_0000;
-            EX_imm_a       <= 32'h0000_0000;
-            EX_imm_b       <= 32'h0000_0000;
+            EX_pc_a           <= 32'h0000_0000;
+            EX_pc_b           <= 32'h0000_0000;
+            EX_rf_raddr_a1    <= 5'h00;
+            EX_rf_raddr_a2    <= 5'h00;
+            EX_rf_raddr_b1    <= 5'h00;
+            EX_rf_raddr_b2    <= 5'h00;
+            EX_rf_rdata_a1    <= 32'h0000_0000;
+            EX_rf_rdata_a2    <= 32'h0000_0000;
+            EX_rf_rdata_b1    <= 32'h0000_0000;
+            EX_rf_rdata_b2    <= 32'h0000_0000;
+            EX_imm_a          <= 32'h0000_0000;
+            EX_imm_b          <= 32'h0000_0000;
             EX_alu_src_sel_a1 <= 3'h0;
             EX_alu_src_sel_a2 <= 3'h0;
             EX_alu_src_sel_b1 <= 3'h0;
@@ -157,18 +134,18 @@ module Issue_EXE(
             EX_mem_we_b       <= 1'b0;
         end
         else if(stall) begin
-            EX_pc_a        <= EX_pc_a;
-            EX_pc_b        <= EX_pc_b;
-            EX_rf_raddr_a1 <= EX_rf_raddr_a1;
-            EX_rf_raddr_a2 <= EX_rf_raddr_a2;
-            EX_rf_raddr_b1 <= EX_rf_raddr_b1;
-            EX_rf_raddr_b2 <= EX_rf_raddr_b2;
-            EX_rf_rdata_a1 <= EX_rf_rdata_a1;
-            EX_rf_rdata_a2 <= EX_rf_rdata_a2;
-            EX_rf_rdata_b1 <= EX_rf_rdata_b1;
-            EX_rf_rdata_b2 <= EX_rf_rdata_b2;
-            EX_imm_a       <= EX_imm_a;
-            EX_imm_b       <= EX_imm_b;
+            EX_pc_a           <= EX_pc_a;
+            EX_pc_b           <= EX_pc_b;
+            EX_rf_raddr_a1    <= EX_rf_raddr_a1;
+            EX_rf_raddr_a2    <= EX_rf_raddr_a2;
+            EX_rf_raddr_b1    <= EX_rf_raddr_b1;
+            EX_rf_raddr_b2    <= EX_rf_raddr_b2;
+            EX_rf_rdata_a1    <= EX_rf_rdata_a1;
+            EX_rf_rdata_a2    <= EX_rf_rdata_a2;
+            EX_rf_rdata_b1    <= EX_rf_rdata_b1;
+            EX_rf_rdata_b2    <= EX_rf_rdata_b2;
+            EX_imm_a          <= EX_imm_a;
+            EX_imm_b          <= EX_imm_b;
             EX_alu_src_sel_a1 <= EX_alu_src_sel_a1;
             EX_alu_src_sel_a2 <= EX_alu_src_sel_a2;
             EX_alu_src_sel_b1 <= EX_alu_src_sel_b1;
@@ -190,38 +167,75 @@ module Issue_EXE(
             EX_mem_we_b       <= EX_mem_we_b;
         end
         else begin
-            EX_pc_a        <= i_set1.PC;
-            EX_pc_b        <= i_set2.PC;
-            EX_rf_raddr_a1 <= i_set1.rf_raddr1;
-            EX_rf_raddr_a2 <= i_set1.rf_raddr2;
-            EX_rf_raddr_b1 <= i_set2.rf_raddr1;
-            EX_rf_raddr_b2 <= i_set2.rf_raddr2;
-            EX_rf_rdata_a1 <= rdata_a1;
-            EX_rf_rdata_a2 <= rdata_a2;
-            EX_rf_rdata_b1 <= rdata_b1;
-            EX_rf_rdata_b2 <= rdata_b2;
-            EX_imm_a       <= i_set1.imm;
-            EX_imm_b       <= i_set2.imm;
-            EX_alu_src_sel_a1 <= i_set1.alu_src1_sel;
-            EX_alu_src_sel_a2 <= i_set1.alu_src2_sel;
-            EX_alu_src_sel_b1 <= i_set2.alu_src1_sel;
-            EX_alu_src_sel_b2 <= i_set2.alu_src2_sel;
-            EX_alu_op_a       <= i_set1.alu_op;
-            EX_alu_op_b       <= i_set2.alu_op;
-            EX_br_type_a      <= i_set1.br_type & {4{EX_a_enable}};
-            EX_br_type_b      <= i_set2.br_type & {4{EX_b_enable}};
-            EX_br_pd_a        <= 0;
-            EX_br_pd_b        <= 0;
-            // TODO: 预测跳转
-            EX_rf_we_a        <= i_set1.rf_we & EX_a_enable;
-            EX_rf_we_b        <= i_set2.rf_we & EX_b_enable;
-            EX_mux_sel        <= i_set2.mux_sel & {6{EX_b_enable}};
-            EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
-            EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
-            EX_rf_waddr_a     <= i_set1.rf_rd;
-            EX_rf_waddr_b     <= i_set2.rf_rd;
-            EX_mem_we_a       <= i_set1.mem_we & EX_a_enable;
-            EX_mem_we_b       <= i_set2.mem_we & EX_b_enable;
+            if( i_set1.inst_type != 10'h002 ) begin
+                EX_pc_a           <= i_set2.PC;
+                EX_pc_b           <= i_set1.PC;
+                EX_rf_raddr_a1    <= i_set2.rf_raddr1;
+                EX_rf_raddr_a2    <= i_set2.rf_raddr2;
+                EX_rf_raddr_b1    <= i_set1.rf_raddr1;
+                EX_rf_raddr_b2    <= i_set1.rf_raddr2;
+                EX_rf_rdata_a1    <= rdata_b1;
+                EX_rf_rdata_a2    <= rdata_b2;
+                EX_rf_rdata_b1    <= rdata_a1;
+                EX_rf_rdata_b2    <= rdata_a2;
+                EX_imm_a          <= i_set2.imm;
+                EX_imm_b          <= i_set1.imm;
+                EX_alu_src_sel_a1 <= i_set2.alu_src1_sel;
+                EX_alu_src_sel_a2 <= i_set2.alu_src2_sel;
+                EX_alu_src_sel_b1 <= i_set1.alu_src1_sel;
+                EX_alu_src_sel_b2 <= i_set1.alu_src2_sel;
+                EX_alu_op_a       <= i_set2.alu_op;
+                EX_alu_op_b       <= i_set1.alu_op;
+                EX_br_type_a      <= i_set2.br_type & {4{EX_b_enable}};
+                EX_br_type_b      <= i_set1.br_type & {4{EX_a_enable}};
+                EX_br_pd_a        <= 0;
+                EX_br_pd_b        <= 0;
+                // TODO: 预测跳转
+                EX_rf_we_a        <= i_set2.rf_we & EX_b_enable;
+                EX_rf_we_b        <= i_set1.rf_we & EX_a_enable;
+                EX_mux_sel        <= i_set1.mux_sel & {6{EX_a_enable}};
+                EX_mem_type_a     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
+                EX_mem_type_b     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
+                EX_rf_waddr_a     <= i_set2.rf_rd;
+                EX_rf_waddr_b     <= i_set1.rf_rd;
+                EX_mem_we_a       <= i_set2.mem_we & EX_b_enable;
+                EX_mem_we_b       <= i_set1.mem_we & EX_a_enable;
+            end
+            else begin
+                EX_pc_a           <= i_set1.PC;
+                EX_pc_b           <= i_set2.PC;
+                EX_rf_raddr_a1    <= i_set1.rf_raddr1;
+                EX_rf_raddr_a2    <= i_set1.rf_raddr2;
+                EX_rf_raddr_b1    <= i_set2.rf_raddr1;
+                EX_rf_raddr_b2    <= i_set2.rf_raddr2;
+                EX_rf_rdata_a1    <= rdata_a1;
+                EX_rf_rdata_a2    <= rdata_a2;
+                EX_rf_rdata_b1    <= rdata_b1;
+                EX_rf_rdata_b2    <= rdata_b2;
+                EX_imm_a          <= i_set1.imm;
+                EX_imm_b          <= i_set2.imm;
+                EX_alu_src_sel_a1 <= i_set1.alu_src1_sel;
+                EX_alu_src_sel_a2 <= i_set1.alu_src2_sel;
+                EX_alu_src_sel_b1 <= i_set2.alu_src1_sel;
+                EX_alu_src_sel_b2 <= i_set2.alu_src2_sel;
+                EX_alu_op_a       <= i_set1.alu_op;
+                EX_alu_op_b       <= i_set2.alu_op;
+                EX_br_type_a      <= i_set1.br_type & {4{EX_a_enable}};
+                EX_br_type_b      <= i_set2.br_type & {4{EX_b_enable}};
+                EX_br_pd_a        <= 0;
+                EX_br_pd_b        <= 0;
+                // TODO: 预测跳转
+                EX_rf_we_a        <= i_set1.rf_we & EX_a_enable;
+                EX_rf_we_b        <= i_set2.rf_we & EX_b_enable;
+                EX_mux_sel        <= i_set2.mux_sel & {6{EX_b_enable}};
+                EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{EX_a_enable}};
+                EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{EX_b_enable}};
+                EX_rf_waddr_a     <= i_set1.rf_rd;
+                EX_rf_waddr_b     <= i_set2.rf_rd;
+                EX_mem_we_a       <= i_set1.mem_we & EX_a_enable;
+                EX_mem_we_b       <= i_set2.mem_we & EX_b_enable;
+            end
+            
         end
     end
 endmodule
