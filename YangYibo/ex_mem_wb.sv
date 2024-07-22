@@ -79,25 +79,28 @@ logic               EX_br_a;                        //A指令是否需要修正�
 // logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
 // logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
 
-logic               EX_mem_we_orig;                 //内存写使能 尚未考虑STIRE指令的W/H/B分类
-logic   [ 3: 0]     EX_mem_we;                      //内存写使能 已经考虑STIRE指令的W/H/B分类
+logic               EX_mem_we_orig;                 //内存写使能 尚未考虑STORE指令的W/H/B分类
+logic   [ 3: 0]     EX_mem_we;                      //内存写使能 已经考虑STORE指令的W/H/B分类
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
 logic   [31: 0]     EX_mem_wdata_orig;              //内存写数据 尚未考虑STORE指令的W/H/B分类
 logic   [31: 0]     EX_mem_wdata;                   //内存写数据 已经考虑STORE指令的W/H/B分类
 logic   [31: 0]     EX_mem_waddr;                   //内存写地址 也是内存读地址
 logic   [ 2: 0]     EX_mem_type;                    //访存类型
 
-logic   [31: 0]     MEM_mem_rdata;                  //内存读数据
+logic   [31: 0]     MEM_mem_rdata_orig;             //内存读数据，尚未考虑LOAD指令的W/B/H/BU/HU分类
+logic   [31: 0]     MEM_mem_rdata;                  //内存读数据，已经考虑LOAD指令的W/B/H/BU/HU分类
 logic   [31: 0]     MEM_rf_wdata_a;                 //A指令寄存器写数据
 logic   [31: 0]     MEM_rf_wdata_b;                 //B指令寄存器写数据
 logic   [ 2: 0]     MEM_mem_type_a;                 //A指令访存类型
 logic   [ 2: 0]     MEM_mem_type_b;                 //B指令访存类型
+logic   [ 2: 0]     MEM_mem_type;                   //访存类型
 assign  EX_mem_we_orig    =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we_bb      =EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
 assign  EX_mem_wdata_orig =EX_mem_type_a==3'b000 ? EX_rf_rdata_b2_f:EX_rf_rdata_a2_f; //不会同时发射两条访存指令，A指令不会是LD指令
 assign  EX_mem_waddr      =EX_mem_type_a==3'b000 ? EX_alu_result_b:EX_alu_result_a;   //mem_type000对应非访存或LD.W，只要mem_type_a是000，A就不是访存指令
 
 assign  EX_mem_type= EX_mem_type_a + EX_mem_type_b; //A、B至多有一个为STROE指令
+assign MEM_mem_type=MEM_mem_type_a +MEM_mem_type_b; //A、B至多有一个为STROE指令
 always @(*)begin
   //ST
   case(EX_mem_type)         
@@ -119,6 +122,44 @@ always @(*)begin
     end
     3'b001:begin EX_mem_we={4{EX_mem_we_orig}};             EX_mem_wdata=EX_mem_wdata_orig;end  //ST.W
     default:begin EX_mem_we=4'b0000;                        EX_mem_wdata=EX_mem_wdata_orig;end
+  endcase
+
+    //LD
+  case(MEM_mem_type)         
+    3'b010:begin                                                 //LD.B
+      case(MEM_alu_result_b[1:0])//龙芯架构32位精简版采用小尾端的存储方式
+      2'b00:MEM_mem_rdata={{24{MEM_mem_rdata_orig[7]}},MEM_mem_rdata_orig[7:0]}; 
+      2'b01:MEM_mem_rdata={{24{MEM_mem_rdata_orig[15]}},MEM_mem_rdata_orig[15:8]};
+      2'b10:MEM_mem_rdata={{24{MEM_mem_rdata_orig[23]}},MEM_mem_rdata_orig[23:16]};
+      2'b11:MEM_mem_rdata={{24{MEM_mem_rdata_orig[31]}},MEM_mem_rdata_orig[31:24]};
+      default:MEM_mem_rdata={{24{MEM_mem_rdata_orig[7]}},MEM_mem_rdata_orig[7:0]};
+      endcase
+    end
+    3'b011:begin                                                 //LD.H
+      case(MEM_alu_result_b[1])
+      1'b0:MEM_mem_rdata={{16{MEM_mem_rdata_orig[15]}},MEM_mem_rdata_orig[15:0]};   
+      1'b1:MEM_mem_rdata={{16{MEM_mem_rdata_orig[31]}},MEM_mem_rdata_orig[31:16]};
+      default:MEM_mem_rdata={{16{MEM_mem_rdata_orig[15]}},MEM_mem_rdata_orig[15:0]};   
+      endcase
+    end
+    3'b000:MEM_mem_rdata=MEM_mem_rdata_orig;                                //LD.W
+    3'b100:begin                                                 //LD.BU
+      case(MEM_alu_result_b[1:0])//龙芯架构32位精简版采用小尾端的存储方式
+      2'b00:MEM_mem_rdata={{24{1'b0}},MEM_mem_rdata_orig[7:0]}; 
+      2'b01:MEM_mem_rdata={{24{1'b0}},MEM_mem_rdata_orig[15:8]};
+      2'b10:MEM_mem_rdata={{24{1'b0}},MEM_mem_rdata_orig[23:16]};
+      2'b11:MEM_mem_rdata={{24{1'b0}},MEM_mem_rdata_orig[31:24]};
+      default:MEM_mem_rdata={{24{1'b0}},MEM_mem_rdata_orig[7:0]};
+      endcase
+    end
+    3'b101:begin                                                 //LD.HU
+      case(MEM_alu_result_b[1])
+      1'b0:MEM_mem_rdata={{16{1'b0}},MEM_mem_rdata_orig[15:0]};   
+      1'b1:MEM_mem_rdata={{16{1'b0}},MEM_mem_rdata_orig[31:16]};
+      default:MEM_mem_rdata={{16{1'b0}},MEM_mem_rdata_orig[15:0]};   
+      endcase
+    end
+    default:MEM_mem_rdata=MEM_mem_rdata_orig;
   endcase
 end
 
@@ -255,7 +296,7 @@ blk_mem_gen_1 Data_Memory(
   .addrb(12'h0),
   .dina(EX_mem_wdata),
   .dinb(32'd0),
-  .douta(MEM_mem_rdata),
+  .douta(MEM_mem_rdata_orig),
   .doutb(dout_dm)
   );
 endmodule
