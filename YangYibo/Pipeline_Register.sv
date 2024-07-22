@@ -59,29 +59,27 @@ begin
         WB_rf_wdata_b<=32'h0000_0000;
         MEM_wb_mux_select_b<=6'b000000;
     end
-    else begin
+    else if(!stall_dcache)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         //EX->MEM
-        if(!stall_dcache)begin
-            //不需要修正分支预测
-            if(!EX_br_a) begin 
-                MEM_alu_result_b<=EX_alu_result_b;
-                MEM_rf_we_b<=EX_rf_we_b;
-                MEM_wb_mux_select_b<=EX_wb_mux_select_b;
-            end
-            //需要修正分支预测
-            else begin 
-                MEM_alu_result_b<=32'h0000_0000;
-                MEM_rf_we_b<=1'b0;
-                MEM_wb_mux_select_b<=6'b000000;
-            end 
-            MEM_alu_result_a<=EX_alu_result_a;
-            MEM_rf_we_a<=EX_rf_we_a;
-            MEM_rf_waddr_a<=EX_rf_waddr_a;
-            MEM_rf_waddr_b<=EX_rf_waddr_b;
-            MEM_mem_type_a<=EX_mem_type_a;
-            MEM_mem_type_b<=EX_mem_type_b;
+        //不需要修正分支预测
+        if(!EX_br_a) begin 
+            MEM_alu_result_b<=EX_alu_result_b;
+            MEM_rf_we_b<=EX_rf_we_b;
+            MEM_wb_mux_select_b<=EX_wb_mux_select_b;
         end
-        else begin end
+        //需要修正分支预测
+        else begin 
+            MEM_alu_result_b<=32'h0000_0000;
+            MEM_rf_we_b<=1'b0;
+            MEM_wb_mux_select_b<=6'b000000;
+        end 
+        MEM_alu_result_a<=EX_alu_result_a;
+        MEM_rf_we_a<=EX_rf_we_a;
+        MEM_rf_waddr_a<=EX_rf_waddr_a;
+        MEM_rf_waddr_b<=EX_rf_waddr_b;
+        MEM_mem_type_a<=EX_mem_type_a;
+        MEM_mem_type_b<=EX_mem_type_b;
+
         //MEM->WB
         WB_alu_result_a<=MEM_alu_result_a;
         WB_alu_result_b<=MEM_alu_result_b;
@@ -92,6 +90,7 @@ begin
         WB_rf_wdata_a<=MEM_rf_wdata_a;
         WB_rf_wdata_b<=MEM_rf_wdata_b;
     end
+    else begin end
 end
 
 endmodule
