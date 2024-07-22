@@ -217,7 +217,7 @@ module ID_Decode_edi_2(
     // 1000 others
     assign ldst_type[3] =  ~(ld_inst | st_inst   | ldb_inst  | ldh_inst  | ldbu_inst | ldhu_inst | stb_inst | sth_inst);
     assign ldst_type[2] =  (sth_inst | stb_inst  | ldhu_inst | ldbu_inst);
-    assign ldst_type[1] =  (sth_inst | stb_inst  | ldhu_inst | ldb_inst );
+    assign ldst_type[1] =  (sth_inst | stb_inst  | ldh_inst  | ldb_inst );
     assign ldst_type[0] =  (sth_inst | ldhu_inst | ldh_inst  | st_inst  );
 
     wire imm_exist ;

@@ -42,6 +42,8 @@ module IF2_PreDecoder(
     logic [ 0: 0] bl_inst;
     logic [ 0: 0] jirl_inst;
 
+    logic [31: 0] imm;
+
     
     assign beq_inst       = (IF_IR [31:26] == 6'h16)     ? 1'b1 : 1'b0;
     assign bne_inst       = (IF_IR [31:26] == 6'h17)     ? 1'b1 : 1'b0;
@@ -59,20 +61,20 @@ module IF2_PreDecoder(
     // 10 b,bl
     // 11 jirl
 
-    assign o_valid = data_valid
-    assign br_type =   (beq_inst  )  ? 2'b01 : 
-                            (bne_inst  )  ? 2'b01 :
-                            (blt_inst  )  ? 2'b01 :
-                            (bge_inst  )  ? 2'b01 :
-                            (bltu_inst )  ? 2'b01 :
-                            (bgeu_inst )  ? 2'b01 :
-                            (b_inst    )  ? 2'b10 :
-                            (bl_inst   )  ? 2'b10 :
-                            (jirl_inst )  ? 2'b11 : 2'b00;
+    assign o_valid = data_valid;
+    assign br_type =    (beq_inst  )  ? 2'b01 : 
+                        (bne_inst  )  ? 2'b01 :
+                        (blt_inst  )  ? 2'b01 :
+                        (bge_inst  )  ? 2'b01 :
+                        (bltu_inst )  ? 2'b01 :
+                        (bgeu_inst )  ? 2'b01 :
+                        (b_inst    )  ? 2'b10 :
+                        (bl_inst   )  ? 2'b10 :
+                        (jirl_inst )  ? 2'b11 : 2'b00;
 
 
     assign imm =    (beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | jirl_inst) ? ({(IF_IR[25] == 1'b1 ? 14'hffff: 14'd0), IF_IR[25:10], 2'h0}):
-                    (b_inst | bl_inst) ? ({(IF_IR[9] == 1'b1 ? 14'hf : 14'd0), IF_IR[ 9: 0], IF_IR[25:10], 2'h0}) : 0;
+                    (b_inst | bl_inst) ? ({(IF_IR[9] == 1'b1 ? 4'hf : 4'd0), IF_IR[ 9: 0], IF_IR[25:10], 2'h0}) : 32'd0;
 
     assign PC_pre = PC + imm;
     assign o_PC   = PC;
