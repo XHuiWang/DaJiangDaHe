@@ -98,6 +98,9 @@ logic   [31: 0]     MEM_rf_wdata_b;                 //B指令寄存器写数据
 logic   [ 2: 0]     MEM_mem_type_a;                 //A指令访存类型
 logic   [ 2: 0]     MEM_mem_type_b;                 //B指令访存类型
 logic   [ 2: 0]     MEM_mem_type;                   //访存类型
+logic               MEM_mem_ready;
+logic               stall_dcache;                   //~MEM_mem_ready
+logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
 // assign  EX_mem_we_orig    =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we         =EX_mem_we_a | EX_mem_we_bb;       //A、B至多有一个为STROE指令
 assign  EX_mem_we_bb      =EX_br_a?1'b0:EX_mem_we_b;      //若A指令需要修正预测结果，B指令不能写内存
@@ -240,6 +243,8 @@ FU_BR  FU_BR_inst (
     .EX_br_type_b(EX_br_type_b),
     .EX_br_pd_a(EX_br_pd_a),
     .EX_br_pd_b(EX_br_pd_b),
+    // .stall_dcache(stall_dcache),
+    .stall_dcache_buf(stall_dcache_buf),
     .EX_br_a(EX_br_a),
     .EX_br(EX_br),
     .EX_pc_br(EX_pc_br)
@@ -297,11 +302,14 @@ logic   [31: 0]     dout_dm;
 //   .doutb(dout_dm)
 //   );
 
-logic           MEM_mem_ready;
+
 assign EX_mem_rvalid = EX_wb_mux_select_b[1];
 assign EX_mem_wvalid = EX_mem_we;
 assign MEM_mem_ready = MEM_mem_rready | MEM_mem_wready;
 assign stall_dcache  = ~MEM_mem_ready;
+always @(posedge clk) begin
+  stall_dcache_buf <= stall_dcache;
+end
 // dcache_name DCache(
 //   .clk(clk),
 //   .rstn(rstn),
