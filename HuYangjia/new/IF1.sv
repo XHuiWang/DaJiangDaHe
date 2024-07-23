@@ -39,19 +39,18 @@ module IF1(
 
     // logic [ 0: 0] flush;
     logic [ 0: 0] stall;
+    logic [ 0: 0] is_valid_temp;
     assign stall = stall_ICache | stall_full_instr;
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            is_valid <= 0;
-        end
-        else if(stall) begin
-            is_valid <= 0;
+            is_valid_temp <= 0;
         end
         else begin
-            is_valid <= 1;
+            is_valid_temp <= 1;
         end
     end
+    assign is_valid = ~stall & is_valid_temp;
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin

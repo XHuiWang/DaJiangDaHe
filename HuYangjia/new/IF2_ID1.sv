@@ -100,7 +100,7 @@ module IF2_ID1(
     logic [ 1: 0] length_add; // 将要存入的数据的长度
     logic [ 6: 0] temp_length; // 临时长度,队头减队尾，有可能为负数
     assign temp_length = head - tail;
-    assign length_left = temp_length + ((temp_length >= 0) ? 0 : NUM);
+    assign length_left = temp_length + ((temp_length[6] == 0) ? 0 : NUM);
     assign length_add  = (is_valid[1] ? (is_valid[0] ? 2 : 1) : 0 );
     assign length = length_left + length_add;
 
@@ -280,7 +280,7 @@ module IF2_ID1(
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end
-        else if(length_left > NUM - 4) begin
+        else if(length_left >= NUM - 4) begin
             o_is_full <= 1'b1;
         end
         else begin

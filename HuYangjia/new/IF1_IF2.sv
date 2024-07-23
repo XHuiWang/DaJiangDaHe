@@ -44,19 +44,20 @@ module IF1_IF2(
     assign flush = flush_BR;
     assign stall = stall_ICache;
 
+    logic [ 1: 0] o_is_valid_temp;
+
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            o_is_valid <= 2'b00;
+            o_is_valid_temp <= 2'b00;
+        end
+        else if(stall) begin
+            o_is_valid_temp <= o_is_valid_temp;
         end
         else begin
-            if(flush || ~i_is_valid) begin
-                o_is_valid <= 2'b00;
-            end
-            else begin
-                o_is_valid <= 2'b11;
-            end
+            o_is_valid_temp <= {2{i_is_valid}};
         end
     end
+    assign o_is_valid = o_is_valid_temp & {2{~flush}} & {2{~stall}};
     always @(posedge clk) begin
         if(stall) begin
             o_PC1 <= o_PC1;
