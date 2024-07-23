@@ -36,7 +36,7 @@ assign EX_pc_br_a   =br_orig_a?pc_br_orig_a:(EX_pc_a+32'd4); //修正后的地�
 assign EX_pc_br_b   =br_orig_b?pc_br_orig_b:(EX_pc_b+32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
 
 assign EX_br_orig   =EX_br_a|EX_br_b;
-assign EX_bt        =EX_br_orig&(~stall_dcache_buf); 
+assign EX_br        =EX_br_orig&(~stall_dcache_buf); 
     //MEM段dcache stall流水线时，若EX段为BR指令，在stall的整个期间（stall_dcache为1以及其后的第一个为0的周期）
     //EX段的EX_BR仅在第一个周期可以被置1
 assign EX_pc_br =(EX_br_a)?EX_pc_br_a:EX_pc_br_b;  
