@@ -96,13 +96,17 @@ module Issue_EXE(
 
     logic [ 0: 0] Issue_a_enable;
     logic [ 0: 0] Issue_b_enable;
-    assign Issue_a_enable = ~flush & ~stall & i_set1.o_valid;
-    assign Issue_b_enable = ~flush & ~stall & i_set2.o_valid;
+    assign Issue_a_enable = ~flush & i_set1.o_valid;
+    assign Issue_b_enable = ~flush & i_set2.o_valid;
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
             EX_a_enable <= 1'b0;
             EX_b_enable <= 1'b0;
+        end
+        else if(stall) begin
+            EX_a_enable <= EX_a_enable;
+            EX_b_enable <= EX_b_enable;
         end
         else begin
             if(i_set1.inst_type != 10'h001) begin

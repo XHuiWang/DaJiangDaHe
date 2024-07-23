@@ -54,6 +54,7 @@ module ID_REG (
 
     parameter NUM = 16;
 
+    logic [ 1: 0] o_is_valid_temp;
     logic [ 1: 0] i_is_valid;
     assign i_is_valid = {i_PC_set1.o_valid, i_PC_set2.o_valid};
 
@@ -168,32 +169,33 @@ module ID_REG (
         end
     end
 
-    // o_is_valid 是否有效
+    // o_is_valid_temp 是否有效
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            o_is_valid <= 2'b00;
+            o_is_valid_temp <= 2'b00;
         end
         else if(flush) begin
-            o_is_valid <= 2'b00;
+            o_is_valid_temp <= 2'b00;
         end
-        else if(stall) begin
-            o_is_valid <= 2'b00;
-            // TODO: 修正,STALL信号后面的行为有待商榷，DCache Miss结束后的行为是什么
-        end
+        // else if(stall) begin
+        //     o_is_valid_temp <= 2'b00;
+        //     // TODO: 修正,STALL信号后面的行为有待商榷，DCache Miss结束后的行为是什么
+        // end
         else begin
             case (length)
                 7'd0: begin
-                    o_is_valid <= 2'b00;
+                    o_is_valid_temp <= 2'b00;
                 end
                 7'd1: begin
-                    o_is_valid <= 2'b10;
+                    o_is_valid_temp <= 2'b10;
                 end
                 default: begin
-                    o_is_valid <= 2'b11;
+                    o_is_valid_temp <= 2'b11;
                 end
             endcase
         end
     end
+    assign o_is_valid = o_is_valid_temp;
 
     // o_is_full 是否满
     always @(posedge clk, negedge rstn) begin
@@ -208,7 +210,7 @@ module ID_REG (
         end
     end
 
-    // 输出固定使用tail的两个，同时根据长度制定o_is_valid
+    // 输出固定使用tail的两个，同时根据长度制定o_is_valid_temp
     assign o_PC_set1 = PC_set_Buffer[tail];
     assign o_PC_set2 = PC_set_Buffer[tail_plus_1];
 
