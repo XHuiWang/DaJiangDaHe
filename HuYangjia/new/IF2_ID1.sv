@@ -280,7 +280,7 @@ module IF2_ID1(
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end
-        else if(length_left >= NUM - 4) begin
+        else if(length_left >= NUM - 6) begin
             o_is_full <= 1'b1;
         end
         else begin
