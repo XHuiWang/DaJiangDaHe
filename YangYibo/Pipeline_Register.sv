@@ -2,6 +2,7 @@ module Pipeline_Register(
     input                       clk,
     input                       rstn,
     input                       stall_dcache,
+    input                       stall_div,
     
     input                       EX_br_a,            //A指令是否需要修正预测的结果，在EX段发生跳转
     input           [31: 0]     EX_alu_result_a,    //A指令的运算结果
@@ -10,6 +11,11 @@ module Pipeline_Register(
     output  reg     [31: 0]     MEM_alu_result_b,
     output  reg     [31: 0]     WB_alu_result_a,
     output  reg     [31: 0]     WB_alu_result_b,
+
+    input           [31: 0]     EX_mul_tmp1,        //乘法器临时结果1
+    input           [31: 0]     EX_mul_tmp2,        //乘法器临时结果2
+    output  reg     [31: 0]     MEM_mul_tmp1,
+    output  reg     [31: 0]     MEM_mul_tmp2,
 
     input                       EX_rf_we_a,         //A指令寄存器写使能
     input                       EX_rf_we_b,         //B指令寄存器写使能
@@ -58,20 +64,26 @@ begin
         WB_rf_wdata_a<=32'h0000_0000;
         WB_rf_wdata_b<=32'h0000_0000;
         MEM_wb_mux_select_b<=6'b000000;
+        MEM_mul_tmp1<=32'h0000_0000;
+        MEM_mul_tmp2<=32'h0000_0000;
     end
-    else if(!stall_dcache)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
+    else if(!stall_dcache&&!stall_div)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         //EX->MEM
         //不需要修正分支预测
         if(!EX_br_a) begin 
             MEM_alu_result_b<=EX_alu_result_b;
             MEM_rf_we_b<=EX_rf_we_b;
             MEM_wb_mux_select_b<=EX_wb_mux_select_b;
+            MEM_mul_tmp1<=EX_mul_tmp1;
+            MEM_mul_tmp2<=EX_mul_tmp2;
         end
         //需要修正分支预测
         else begin 
             MEM_alu_result_b<=32'h0000_0000;
             MEM_rf_we_b<=1'b0;
             MEM_wb_mux_select_b<=6'b000000;
+            MEM_mul_tmp1<=32'h0000_0000;
+            MEM_mul_tmp2<=32'h0000_0000;
         end 
         MEM_alu_result_a<=EX_alu_result_a;
         MEM_rf_we_a<=EX_rf_we_a;
