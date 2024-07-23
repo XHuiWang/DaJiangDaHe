@@ -307,8 +307,13 @@ assign EX_mem_rvalid = EX_wb_mux_select_b[1];
 assign EX_mem_wvalid = EX_mem_we;
 assign MEM_mem_ready = MEM_mem_rready | MEM_mem_wready;
 assign stall_dcache  = ~MEM_mem_ready;
-always @(posedge clk) begin
-  stall_dcache_buf <= stall_dcache;
+always @(posedge clk, negedge rstn) begin
+  if(!rstn)begin
+    stall_dcache_buf <= 1'b0;
+  end
+  else begin
+    stall_dcache_buf <= stall_dcache;
+  end
 end
 // dcache_name DCache(
 //   .clk(clk),
