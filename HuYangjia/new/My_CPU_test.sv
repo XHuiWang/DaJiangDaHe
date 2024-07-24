@@ -466,6 +466,7 @@ module My_CPU_test(
         .rdata_b2(rdata_b2),
         .flush_BR(flush_BR),
         .stall_DCache(stall_DCache),
+        .stall_div(stall_div),
         .EX_a_enable(EX_a_enable),
         .EX_b_enable(EX_b_enable),
         .EX_pc_a(EX_pc_a),
