@@ -74,6 +74,9 @@ module ex_mem_wb(
     output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 B指令的寄存器写地址
     output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 B指令的寄存器写数据
 );
+logic   [31: 0]     WB_pc_a;                        //A指令的PC
+logic   [31: 0]     WB_pc_b;                        //B指令的PC
+
 logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_a2_f;               //A指令的第二个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_b1_f;               //B指令的第一个寄存器的值，经前递修正后
