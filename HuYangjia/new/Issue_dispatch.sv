@@ -33,8 +33,8 @@ module Issue_dispatch(
 
     );
 
-    logic [ 0: 0] flush;
-    logic [ 0: 0] stall;
+    // logic [ 0: 0] flush;
+    // logic [ 0: 0] stall;
 
     logic [ 0: 0] last_ld;
     logic [ 4: 0] rf_waddr;
@@ -102,73 +102,66 @@ module Issue_dispatch(
 
     // 对于处在前面A位置，但是在B位置发射的指令，dispatch位置不变，在Issue_EXE根据选择信号抉择
     always @(*) begin
-        if(flush || stall) begin
-            o_set1.o_valid = 1'b0;
-            o_set2.o_valid = 1'b0;
-            o_usingNUM = 2'b00;
-        end
-        else begin
-            case (is_valid)
-                2'b00: begin
+        case (is_valid)
+            2'b00: begin
+                o_set1.o_valid = 1'b0;
+                o_set2.o_valid = 1'b0;
+                o_usingNUM = 2'b00;
+            end
+            2'b10: begin
+                if( !lock_in_1) begin
+                    o_set1.o_valid = 1'b1;
+                    o_set2.o_valid = 1'b0;
+                    o_usingNUM = 2'd1;
+                end
+                else begin
                     o_set1.o_valid = 1'b0;
                     o_set2.o_valid = 1'b0;
                     o_usingNUM = 2'b00;
                 end
-                2'b10: begin
-                    if( !lock_in_1) begin
+            end
+            2'b01: begin
+                o_set1.o_valid = 1'b0;
+                o_set2.o_valid = 1'b0;
+                o_usingNUM = 2'b00;
+            end
+            2'b11: begin
+                // 两个合法，开始检测
+                
+                if( lock_in_1 ) begin
+                    o_set1.o_valid = 1'b0;
+                    o_set2.o_valid = 1'b0;
+                    o_usingNUM = 2'b00;
+                end
+                else begin
+                    if( lock_in_2 ) begin
                         o_set1.o_valid = 1'b1;
                         o_set2.o_valid = 1'b0;
                         o_usingNUM = 2'd1;
                     end
                     else begin
-                        o_set1.o_valid = 1'b0;
-                        o_set2.o_valid = 1'b0;
-                        o_usingNUM = 2'b00;
-                    end
-                end
-                2'b01: begin
-                    o_set1.o_valid = 1'b0;
-                    o_set2.o_valid = 1'b0;
-                    o_usingNUM = 2'b00;
-                end
-                2'b11: begin
-                    // 两个合法，开始检测
-                    
-                    if( lock_in_1 ) begin
-                        o_set1.o_valid = 1'b0;
-                        o_set2.o_valid = 1'b0;
-                        o_usingNUM = 2'b00;
-                    end
-                    else begin
-                        if( lock_in_2 ) begin
+                        // 都没有互锁现象
+                        if(LDSW_Mul_Div_plus_any) begin
+                            // 第一个指令只能发射在B位置
                             o_set1.o_valid = 1'b1;
                             o_set2.o_valid = 1'b0;
                             o_usingNUM = 2'd1;
                         end
+                        else if(double_BR || RAW_exist) begin
+                            o_set1.o_valid = 1'b1;
+                            o_set2.o_valid = 1'b0;
+                            o_usingNUM = 2'd1;
+                        end
+                        // TODO: 也许可以合并
                         else begin
-                            // 都没有互锁现象
-                            if(LDSW_Mul_Div_plus_any) begin
-                                // 第一个指令只能发射在B位置
-                                o_set1.o_valid = 1'b1;
-                                o_set2.o_valid = 1'b0;
-                                o_usingNUM = 2'd1;
-                            end
-                            else if(double_BR || RAW_exist) begin
-                                o_set1.o_valid = 1'b1;
-                                o_set2.o_valid = 1'b0;
-                                o_usingNUM = 2'd1;
-                            end
-                            // TODO: 也许可以合并
-                            else begin
-                                o_set1.o_valid = 1'b1;
-                                o_set2.o_valid = 1'b1;
-                                o_usingNUM = 2'd2;
-                            end
+                            o_set1.o_valid = 1'b1;
+                            o_set2.o_valid = 1'b1;
+                            o_usingNUM = 2'd2;
                         end
                     end
                 end
-            endcase
-        end
+            end
+        endcase
     end
     // assign ld_exist = (LDSW_Mul_Div_plus_any & (o_usingNUM != 2'b00)) | (any_plus_LDSW & (o_usingNUM == 2'd2)) | ((is_valid == 2'b10) & (o_usingNUM != 2'b00) & ~o_set1.ldst_type[3]);
     assign ld_exist[1] = (o_usingNUM != 2'd0) & ~o_set1.ldst_type[3];

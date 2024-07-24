@@ -80,11 +80,11 @@ module IF2_ID1(
     logic [ 4: 0] head_plus_2; // 第2个装填位置
     logic [ 4: 0] tail_plus_1; // 第1个取用位置
     logic [ 4: 0] tail_plus_2; // 第2个取用位置
-    assign next_head   = (head + length_add) - (((head + length_add) >= NUM ? NUM : 0));
-    assign head_plus_1 = (head + 1) - ((head + 1 >= NUM ? NUM : 0));
-    assign head_plus_2 = (head + 2) - ((head + 2 >= NUM ? NUM : 0));
-    assign tail_plus_1 = (tail + 1) - ((tail + 1 >= NUM ? NUM : 0));
-    assign tail_plus_2 = (tail + 2) - ((tail + 2 >= NUM ? NUM : 0));
+    
+    logic [ 6: 0] length; // 缓存数组的长度+将要存入的数据的长度
+    logic [ 6: 0] length_left; // 缓存数组的长度
+    logic [ 1: 0] length_add; // 将要存入的数据的长度
+    logic [ 6: 0] temp_length; // 临时长度,队头减队尾，有可能为负数
 
 
 
@@ -93,10 +93,12 @@ module IF2_ID1(
     logic [31: 0] IR_Buffer[0:NUM-1];
     
 
-    logic [ 6: 0] length; // 缓存数组的长度+将要存入的数据的长度
-    logic [ 6: 0] length_left; // 缓存数组的长度
-    logic [ 1: 0] length_add; // 将要存入的数据的长度
-    logic [ 6: 0] temp_length; // 临时长度,队头减队尾，有可能为负数
+    assign next_head   = (head + length_add) - (((head + length_add) >= NUM ? NUM : 0));
+    assign head_plus_1 = (head + 1) - ((head + 1 >= NUM ? NUM : 0));
+    assign head_plus_2 = (head + 2) - ((head + 2 >= NUM ? NUM : 0));
+    assign tail_plus_1 = (tail + 1) - ((tail + 1 >= NUM ? NUM : 0));
+    assign tail_plus_2 = (tail + 2) - ((tail + 2 >= NUM ? NUM : 0));
+
     assign temp_length = head - tail;
     assign length_left = temp_length + ((temp_length[6] == 0) ? 0 : NUM);
     assign length_add  = (is_valid[1] ? (is_valid[0] ? 2 : 1) : 0 );

@@ -22,8 +22,8 @@
 `include "Public_Info.sv"
 import Public_Info::*;
 module My_CPU_test(
-    input           aclk,
-    input           aresetn,
+    input           clk,
+    input           rstn,
     input    [ 7:0] intrpt, 
     //AXI interface 
     //read reqest
@@ -129,7 +129,6 @@ module My_CPU_test(
 
 
     // RegFile中的信号
-    logic [ 0: 0] clk;
     logic [ 4: 0] raddr_a1;
     logic [ 4: 0] raddr_a2;
     logic [ 4: 0] raddr_b1;
@@ -138,7 +137,7 @@ module My_CPU_test(
     logic [31: 0] rdata_a2;
     logic [31: 0] rdata_b1;
     logic [31: 0] rdata_b2;
-    logic [ 4: 0] addr;
+    logic [ 4: 0] addr = 0;
     logic [31: 0] dout_rf;
     logic [ 4: 0] waddr_a;
     logic [ 4: 0] waddr_b;
@@ -510,7 +509,7 @@ module My_CPU_test(
         .EX_mem_we_b(EX_mem_we_b),
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b),
-        .EX_sign_bit(EX_sign_bit),
+        .EX_sign_bit(EX_signed),
         .EX_div_en(EX_div_en)
     );
 
