@@ -41,7 +41,7 @@ module Issue_dispatch(
 
     logic [ 0: 0] double_BR;
     logic [ 0: 0] double_LDSW;
-    logic [ 0: 0] LDSW_plus_any;
+    logic [ 0: 0] LDSW_Mul_Div_plus_any;
     // logic [ 0: 0] any_plus_LDSW;
     logic [ 0: 0] RAW_exist;
     logic [ 1: 0] ld_exist;
@@ -74,6 +74,8 @@ module Issue_dispatch(
     assign o_set1.rf_raddr2     = i_set1.rf_raddr2    ;
     assign o_set1.rf_rdata1     = i_set1.rf_rdata1    ;
     assign o_set1.rf_rdata2     = i_set1.rf_rdata2    ;
+    assign o_set1.sign_bit      = i_set1.sign_bit     ;
+
 
     assign o_set2.instruction   = i_set2.instruction  ;
     assign o_set2.PC            = i_set2.PC           ;
@@ -94,6 +96,7 @@ module Issue_dispatch(
     assign o_set2.rf_raddr2     = i_set2.rf_raddr2    ;
     assign o_set2.rf_rdata1     = i_set2.rf_rdata1    ;
     assign o_set2.rf_rdata2     = i_set2.rf_rdata2    ;
+    assign o_set2.sign_bit      = i_set2.sign_bit     ;
 
     // 对于处在前面A位置，但是在B位置发射的指令，dispatch位置不变，在Issue_EXE根据选择信号抉择
     always @(*) begin
@@ -142,7 +145,8 @@ module Issue_dispatch(
                         end
                         else begin
                             // 都没有互锁现象
-                            if(LDSW_plus_any) begin
+                            if(LDSW_Mul_Div_plus_any) begin
+                                // 第一个指令只能发射在B位置
                                 o_set1.o_valid = 1'b1;
                                 o_set2.o_valid = 1'b0;
                                 o_usingNUM = 2'd1;
@@ -164,14 +168,15 @@ module Issue_dispatch(
             endcase
         end
     end
-    // assign ld_exist = (LDSW_plus_any & (o_usingNUM != 2'b00)) | (any_plus_LDSW & (o_usingNUM == 2'd2)) | ((is_valid == 2'b10) & (o_usingNUM != 2'b00) & ~o_set1.ldst_type[3]);
+    // assign ld_exist = (LDSW_Mul_Div_plus_any & (o_usingNUM != 2'b00)) | (any_plus_LDSW & (o_usingNUM == 2'd2)) | ((is_valid == 2'b10) & (o_usingNUM != 2'b00) & ~o_set1.ldst_type[3]);
     assign ld_exist[1] = (o_usingNUM != 2'd0) & ~o_set1.ldst_type[3];
     assign ld_exist[0] = (o_usingNUM == 2'd2) & ~o_set2.ldst_type[3];
 
 
     assign double_BR     = (is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
-    assign LDSW_plus_any = (is_valid == 2'b11) ? ~(i_set1.ldst_type[3]) : 0; // 前LDSW，后任意
-    // assign any_plus_LDSW = (is_valid == 2'b11) ? ~(i_set2.ldst_type[3]) : 0; // 前LDSW，后任意
+    assign LDSW_Mul_Div_plus_any = (is_valid == 2'b11) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，后任意
+    
+
     assign double_LDSW   = (is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
     assign RAW_exist     = (is_valid == 2'b11 && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
 

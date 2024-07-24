@@ -53,6 +53,7 @@ module ID_Decode_edi_2(
     logic [ 3: 0] ldst_type;
     logic [ 0: 0] wb_sel;
     logic [ 5: 0] mux_sel; // B通道WB来源的选择信号
+    logic [ 0: 0] sign_bit; // 符号位,运用于乘除法
 
 
     assign PC_set.instruction = IF_IR;
@@ -73,6 +74,7 @@ module ID_Decode_edi_2(
     assign PC_set.ldst_type = ldst_type;
     assign PC_set.wb_sel = wb_sel;
     assign PC_set.mux_sel = mux_sel;
+    assign PC_set.sign_bit = sign_bit;
 
 
 
@@ -122,6 +124,14 @@ module ID_Decode_edi_2(
     wire bl_inst;
     wire jirl_inst;
 
+    wire mul_inst;
+    wire mulh_inst;
+    wire mulhu_inst;
+    wire div_inst;
+    wire mod_inst;
+    wire divu_inst;
+    wire modu_inst;
+
     assign add_inst       = (IF_IR [31:15] == 17'h00020) ? 1'b1 : 1'b0;
     assign sub_inst       = (IF_IR [31:15] == 17'h00022) ? 1'b1 : 1'b0;
     assign addi_inst      = (IF_IR [31:22] == 10'h00a)   ? 1'b1 : 1'b0;
@@ -167,6 +177,14 @@ module ID_Decode_edi_2(
     assign bl_inst        = (IF_IR [31:26] == 6'h15)     ? 1'b1 : 1'b0;
     assign jirl_inst      = (IF_IR [31:26] == 6'h13)     ? 1'b1 : 1'b0;
 
+    assign mul_inst       = (IF_IR [31:15] == 17'h00038) ? 1'b1 : 1'b0;
+    assign mulh_inst      = (IF_IR [31:15] == 17'h00039) ? 1'b1 : 1'b0;
+    assign mulhu_inst     = (IF_IR [31:15] == 17'h0003a) ? 1'b1 : 1'b0;
+    assign div_inst       = (IF_IR [31:15] == 17'h00040) ? 1'b1 : 1'b0;
+    assign mod_inst       = (IF_IR [31:15] == 17'h00041) ? 1'b1 : 1'b0;
+    assign divu_inst      = (IF_IR [31:15] == 17'h00042) ? 1'b1 : 1'b0;
+    assign modu_inst      = (IF_IR [31:15] == 17'h00043) ? 1'b1 : 1'b0;
+
     assign o_valid = data_valid & o_inst_lawful;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
                             sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
@@ -174,7 +192,15 @@ module ID_Decode_edi_2(
                             sra_inst | slli_inst | srli_inst | srai_inst | st_inst | sth_inst | 
                             stb_inst | ld_inst | ldh_inst | ldb_inst | ldhu_inst | ldbu_inst | 
                             beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | 
-                            b_inst | bl_inst | jirl_inst);
+                            b_inst | bl_inst | jirl_inst | mul_inst | mulh_inst | mulhu_inst | 
+                            div_inst | mod_inst | divu_inst | modu_inst);
+
+
+    
+    // sign_bit, 1为有符号数  
+    assign sign_bit = (mulhu_inst | divu_inst | modu_inst) ? 1'b0 : 1'b1;
+    
+    
 
     // mux_sel
     // MEM段B指令RF写回数据多选器独热码 
@@ -185,12 +211,22 @@ module ID_Decode_edi_2(
     // 6'b01_0000: DIV 取商
     // 6'b10_0000: MOD 取余
     assign mux_sel = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst) ? 6'b00_0010 :
+                     (mul_inst) ? 6'b00_0100 :
+                     (mulh_inst | mulhu_inst) ? 6'b00_1000 :
+                     (div_inst | divu_inst) ? 6'b01_0000 :
+                     (mod_inst | modu_inst) ? 6'b10_0000 :
                      6'b00_0001;
 
 
     // inst_type
-    assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'b00_0000_0010 :
-                        10'b00_0000_0001;
+    // 10'h001: others(including alu and branch and so on)
+    // 10'h002: 5 ld and 3 st
+    // 10'h004: 3 mul 
+    // 10'h008: 4 div
+    assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'h002 :
+                       (mul_inst | mulh_inst | mulhu_inst) ? 10'h004 :
+                       (div_inst | mod_inst | divu_inst | modu_inst) ? 10'h008 : 
+                       10'h001;
 
 
     logic [ 8: 0] br_type_temp;
@@ -240,6 +276,7 @@ module ID_Decode_edi_2(
     assign rf_raddr2 = ( stb_inst | sth_inst | st_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
     assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~data_valid | rf_rd == 0)) ? 1'b0 : 1'b1;
+    // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
     assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 3'h1 ://pc
@@ -247,7 +284,8 @@ module ID_Decode_edi_2(
                           3'h4;                             //0
     assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 3'h1 : //imm
                           (add_inst | sub_inst | slt_inst | sltu_inst | nor_inst | and_inst | or_inst | xor_inst | sll_inst | srl_inst |
-                           sra_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? 3'h2 :                           //rf  
+                           sra_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | mul_inst | mulh_inst | mulhu_inst |
+                           div_inst | divu_inst | mod_inst | modu_inst) ? 3'h2 :                           //rf  
                            3'h4;                                                                                                            //4
     assign alu_op = (add_inst | addi_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | pcaddu12i_inst |
                      sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst | lu12i_inst) ? 12'h001 :

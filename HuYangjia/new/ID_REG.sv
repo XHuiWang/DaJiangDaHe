@@ -111,6 +111,7 @@ module ID_REG (
     assign error_set.rf_raddr2 = 5'd0;
     assign error_set.rf_rdata1 = 32'd0;
     assign error_set.rf_rdata2 = 32'd0;
+    assign error_set.sign_bit = 1'b0;
 
 
 

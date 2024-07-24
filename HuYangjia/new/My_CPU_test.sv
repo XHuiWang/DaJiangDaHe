@@ -178,6 +178,9 @@ module My_CPU_test(
     logic [ 2: 0] EX_mem_type_a;
     logic [ 2: 0] EX_mem_type_b;
     logic [ 5: 0] EX_mux_select;
+    logic [ 0: 0] EX_signed;
+    logic [ 0: 0] EX_div_en;
+
 
     // AXI
     assign wid = awid;
@@ -290,6 +293,7 @@ module My_CPU_test(
     logic [ 0: 0] stall_full_instr; // 由于Instruction Buffer满带来的stall信号，作用于IF1
     logic [ 0: 0] stall_ICache; // 由于Icache缺失带来的逻辑的stall信号，作用于IF1的取值模块和IF1_IF2段间寄存器
     logic [ 0: 0] stall_iCache; // 由于Icache缺失带来的真正的stall信号
+    logic [ 0: 0] stall_div;// 由于除法器忙带来的stall信号
     logic [ 0: 0] flush_BR; // 由于分支预测错误带来的flush信号，作用于两个Buffer和IF1_IF2段间寄存器，作用于ICache(在Miss则停止操作)
 
     // temp测试
@@ -495,7 +499,7 @@ module My_CPU_test(
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b)
     );
-    
+
 
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
@@ -530,6 +534,7 @@ module My_CPU_test(
         .EX_mem_we_b(EX_mem_we_b),
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b),
+        .EX_signed(EX_signed),
         .EX_wb_mux_select_b(EX_mux_select),
         .WB_rf_we_a(WB_rf_we_a),
         .WB_rf_we_b(WB_rf_we_b),
@@ -546,7 +551,9 @@ module My_CPU_test(
         .EX_mem_addr(EX_mem_addr),
         .EX_mem_type(EX_mem_type),
         .EX_mem_wdata(EX_mem_wdata),
-        .MEM_mem_rdata(MEM_mem_rdata)
+        .MEM_mem_rdata(MEM_mem_rdata),
+        .EX_div_en(EX_div_en),
+        .stall_div(stall_div)
     );
 
     dcache  dcache_inst (

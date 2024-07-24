@@ -80,12 +80,10 @@ module Issue_EXE(
     output logic [ 0: 0]  EX_mem_we_b,        //B指令内存写使能
     output logic [ 5: 0]  EX_mux_sel,         //B指令WB来源选择信号
     output logic [ 2: 0]  EX_mem_type_a,      //A指令内存访问类型
-    output logic [ 2: 0]  EX_mem_type_b       //B指令内存访问类型
-    // output logic [ 0: 0]  EX_br,              //是否需要修正预测的结果
-    // output logic [31: 0]  EX_pc_br,           //修正时应跳转到的地址
-
-    // output logic [ 0: 0]  EX_mem_we_bb        //考虑A为BR指令时的修正问题后，B指令内存写使能      
-
+    output logic [ 2: 0]  EX_mem_type_b,      //B指令内存访问类型
+    
+    output logic [ 0: 0] EX_sign_bit,        //符号位,运用于乘除法 // 1为有符号数
+    output logic [ 0: 0] EX_div_en           //除法使能
 
     );
 
@@ -154,6 +152,8 @@ module Issue_EXE(
             EX_rf_waddr_b     <= 5'h00;
             EX_mem_we_a       <= 1'b0;
             EX_mem_we_b       <= 1'b0;
+            EX_div_en         <= 1'b0;
+            EX_sign_bit       <= 1'b0;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -187,6 +187,8 @@ module Issue_EXE(
             EX_rf_waddr_b     <= EX_rf_waddr_b;
             EX_mem_we_a       <= EX_mem_we_a;
             EX_mem_we_b       <= EX_mem_we_b;
+            EX_div_en         <= EX_div_en;
+            EX_sign_bit       <= EX_sign_bit;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -222,6 +224,8 @@ module Issue_EXE(
                 EX_rf_waddr_b     <= i_set1.rf_rd;
                 EX_mem_we_a       <= i_set2.mem_we & Issue_b_enable;
                 EX_mem_we_b       <= i_set1.mem_we & Issue_a_enable;
+                EX_sign_bit       <= i_set1.sign_bit;
+                EX_div_en         <= (i_set1.inst_type == 10'h008) & Issue_a_enable;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -256,6 +260,8 @@ module Issue_EXE(
                 EX_rf_waddr_b     <= i_set2.rf_rd;
                 EX_mem_we_a       <= i_set1.mem_we & Issue_a_enable;
                 EX_mem_we_b       <= i_set2.mem_we & Issue_b_enable;
+                EX_sign_bit       <= i_set2.sign_bit;
+                EX_div_en         <= (i_set2.inst_type == 10'h008) & Issue_b_enable;
             end
             
         end

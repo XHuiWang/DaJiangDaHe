@@ -43,5 +43,6 @@ package Public_Info;
         logic [ 4: 0] rf_raddr2    ;
         logic [31: 0] rf_rdata1    ;
         logic [31: 0] rf_rdata2    ;
+        logic [ 0: 0] sign_bit     ; // 符号位,运用于乘除法 // 1为有符号数
     } PC_set;
 endpackage
