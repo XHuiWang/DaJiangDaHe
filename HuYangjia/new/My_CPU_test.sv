@@ -304,7 +304,7 @@ module My_CPU_test(
     assign stall_full_instr = o_is_full;
     
   
-    assign pc_predict = pc_IF1 + (~is_valid) ? 0 : ((pc_IF1[ 3: 2] == 2'b11) ? 4: 8);
+    assign pc_predict = pc_IF1 + ((~is_valid) ? 0 : ((pc_IF1[ 3: 2] == 2'b11) ? 4: 8));
 
     IF1  IF1_inst (
         .clk(clk),
