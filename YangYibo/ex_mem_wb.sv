@@ -292,11 +292,11 @@ end
 
 //debug interface
 assign debug0_wb_pc = WB_pc_b;
-assign debug0_wb_rf_we = {4{WB_rf_we_b}};
+assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_div_buf)}};
 assign debug0_wb_rf_wnum = WB_rf_waddr_b;
 assign debug0_wb_rf_wdata = WB_rf_wdata_b;
 assign debug1_wb_pc = WB_pc_a;
-assign debug1_wb_rf_we = {4{WB_rf_we_a}};
+assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_div_buf)}};
 assign debug1_wb_rf_wnum = WB_rf_waddr_a;
 assign debug1_wb_rf_wdata = WB_rf_wdata_a;
 endmodule
