@@ -35,10 +35,7 @@ module Write_buffer(
     reg  [127:0]  d_wdata_4_reg; 
     always @(posedge clk) begin
         if(wbuf_we) d_wdata_4_reg <= d_wdata_4;
-    end
-
-    always @(posedge clk) begin
-        if(d_wready) d_wdata_4_reg <= {32'b0, d_wdata_4_reg[127:32]};
+        else if(d_wready) d_wdata_4_reg <= {32'b0, d_wdata_4_reg[127:32]};
     end
 
     assign d_wdata = d_wdata_4_reg[31:0];
