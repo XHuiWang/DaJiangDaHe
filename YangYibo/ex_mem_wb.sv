@@ -63,7 +63,16 @@ module ex_mem_wb(
 
     //div
     input                       EX_div_en,          //除法器使能，stall使其在33个EX有效
-    output  wire                stall_div           //除法器暂停信号
+    output  wire                stall_div,          //除法器暂停信号
+
+    output  wire      [31: 0]   debug0_wb_pc,       //写回段 A指令的pc
+    output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 A指令的寄存器写使能
+    output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 A指令的寄存器写地址
+    output  wire      [31: 0]   debug0_wb_rf_wdata, //写回段 A指令的寄存器写数据
+    output  wire      [31: 0]   debug1_wb_pc,       //写回段 B指令的pc
+    output  wire      [ 3: 0]   debug1_wb_rf_we,    //写回段 B指令的寄存器写使能
+    output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 B指令的寄存器写地址
+    output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 B指令的寄存器写数据
 );
 logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_a2_f;               //A指令的第二个寄存器的值，经前递修正后
@@ -83,10 +92,10 @@ logic   [ 4: 0]     MEM_rf_waddr_a;                 //A指令寄存器写地址
 logic   [ 4: 0]     MEM_rf_waddr_b;                 //B指令寄存器写地址
 logic   [ 5: 0]     MEM_wb_mux_select_b;            //MEM段B指令RF写回数据多选器独热码
 
-logic   [31: 0]     EX_mul_tmp1;                    //乘法临时结果的第一个加数
-logic   [31: 0]     EX_mul_tmp2;                    //乘法临时结果的第二个加数
-logic   [31: 0]     MEM_mul_tmp1;                   //乘法临时结果的第一个加数
-logic   [31: 0]     MEM_mul_tmp2;                   //乘法临时结果的第二个加数
+logic   [63: 0]     EX_mul_tmp1;                    //乘法临时结果的第一个加数
+logic   [63: 0]     EX_mul_tmp2;                    //乘法临时结果的第二个加数
+logic   [63: 0]     MEM_mul_tmp1;                   //乘法临时结果的第一个加数
+logic   [63: 0]     MEM_mul_tmp2;                   //乘法临时结果的第二个加数
 logic   [63: 0]     MEM_mul_res;                    //乘法结果
 logic   [31: 0]     MEM_div_quo;                    //除法商
 logic   [31: 0]     MEM_div_rem;                    //除法余数
@@ -221,6 +230,10 @@ Pipeline_Register  Pipeline_Register_inst (
     .rstn(rstn),
     .stall_dcache(stall_dcache),
     .stall_div(stall_div),
+    .EX_pc_a(EX_pc_a),
+    .EX_pc_b(EX_pc_b),
+    .WB_pc_a(WB_pc_a),
+    .WB_pc_b(WB_pc_b),
     .EX_br_a(EX_br_a),
     .EX_alu_result_a(EX_alu_result_a),
     .EX_alu_result_b(EX_alu_result_b),
@@ -274,5 +287,13 @@ always @(posedge clk, negedge rstn) begin
   end
 end
 
-
+//debug interface
+assign debug0_wb_pc = WB_pc_a;
+assign debug0_wb_rf_we = {4{WB_rf_we_a}};
+assign debug0_wb_rf_wnum = WB_rf_waddr_a;
+assign debug0_wb_rf_wdata = WB_rf_wdata_a;
+assign debug1_wb_pc = WB_pc_b;
+assign debug1_wb_rf_we = {4{WB_rf_we_b}};
+assign debug1_wb_rf_wnum = WB_rf_waddr_b;
+assign debug1_wb_rf_wdata = WB_rf_wdata_b;
 endmodule
