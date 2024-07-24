@@ -100,10 +100,8 @@ module My_CPU_test(
     // IF1_IF2
     logic [ 1: 0] IF1_IF2_valid;
 
-    logic [ 0: 0] clk;
-    logic [ 0: 0] rstn;
-    // logic [31: 0] i_PC1_IF1;
-    // logic [31: 0] i_PC2_IF1;
+
+    // IF2_ID1
     logic [31: 0] i_PC1;
     logic [31: 0] i_IR1;
     logic [31: 0] i_PC2;

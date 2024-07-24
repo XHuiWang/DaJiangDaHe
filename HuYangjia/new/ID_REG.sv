@@ -71,11 +71,6 @@ module ID_REG (
     logic [ 6: 0] length_left; // 缓存数组的长度
     logic [ 1: 0] length_add; // 将要存入的数据的长度
     logic [ 6: 0] temp_length; // 临时长度,队头减队尾，有可能为负数
-    assign temp_length = head - (tail + i_usingNUM);
-    assign length_left = temp_length + ((temp_length[6] == 0) ? 0 : NUM);
-    assign length_add  = (i_is_valid[1] ? (i_is_valid[0] ? 2 : 1) : 0 );
-    assign length = length_left + length_add;
-
 
     logic [ 4: 0] head; // 指针,指示FIFO的队头，即下一个要写入的位置
     logic [ 4: 0] tail; // 指针,指示FIFO的队尾，即下一个要写取的位置
@@ -85,6 +80,13 @@ module ID_REG (
     logic [ 4: 0] head_plus_2; // 第2个装填位置
     logic [ 4: 0] tail_plus_1; // 第1个取用位置 
     logic [ 4: 0] tail_plus_2; // 第2个取用位置    
+
+    assign temp_length = head - (tail + i_usingNUM);
+    assign length_left = temp_length + ((temp_length[6] == 0) ? 0 : NUM);
+    assign length_add  = (i_is_valid[1] ? (i_is_valid[0] ? 2 : 1) : 0 );
+    assign length = length_left + length_add;
+
+
     assign next_head   = (head + length_add) - (((head + length_add) >= NUM ? NUM : 0));
     assign head_plus_1 = (head + 1) - ((head + 1 >= NUM ? NUM : 0));
     assign head_plus_2 = (head + 2) - ((head + 2 >= NUM ? NUM : 0));

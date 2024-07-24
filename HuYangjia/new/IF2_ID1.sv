@@ -106,9 +106,14 @@ module IF2_ID1(
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin
-            // 数组清空
+            // Reset condition
             head <= 5'd0;
             tail <= 5'd0;
+            o_PC1 <= 32'h0000_0000;
+            o_IR1 <= 32'h0000_0000;
+            o_PC2 <= 32'h0000_0000;
+            o_IR2 <= 32'h0000_0000;
+            // 数组清空
             PC_Buffer[ 0] <= 32'h0000_0000;
             PC_Buffer[ 1] <= 32'h0000_0000;
             PC_Buffer[ 2] <= 32'h0000_0000;

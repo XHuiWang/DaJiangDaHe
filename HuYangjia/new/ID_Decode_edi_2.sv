@@ -75,6 +75,8 @@ module ID_Decode_edi_2(
     assign PC_set.wb_sel = wb_sel;
     assign PC_set.mux_sel = mux_sel;
     assign PC_set.sign_bit = sign_bit;
+    assign PC_set.rf_rdata1 = 32'd0;
+    assign PC_set.rf_rdata2 = 32'd0;
 
 
 
@@ -262,7 +264,7 @@ module ID_Decode_edi_2(
                         bgeu_inst | jirl_inst | b_inst | bl_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | sth_inst | st_inst | ldbu_inst | 
                         ldhu_inst) ? 1'b1 : 1'b0;  
 
-    assign imm =        (beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | jirl_inst) ? ({(IF_IR[25] == 1'b1 ? 14'hffff: 14'd0), IF_IR[25:10], 2'h0}):
+    assign imm =        (beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | jirl_inst) ? ({(IF_IR[25] == 1'b1 ? 14'h3fff: 14'd0), IF_IR[25:10], 2'h0}):
                         (b_inst | bl_inst) ? ({(IF_IR[9] == 1'b1 ? 4'hf : 4'd0), IF_IR[ 9: 0], IF_IR[25:10], 2'h0}) : 
                         (ld_inst | ldb_inst | ldh_inst | stb_inst | sth_inst | st_inst | ldbu_inst | ldhu_inst) ? ({(IF_IR[21] == 1'b1 ? 20'hfffff: 20'd0), IF_IR[21:10]}):
                         // (lu12i_inst ) ? ({(IF_IR[24] == 1'b1 ? 12'hfff: 12'd0),IF_IR[24: 5]}) :
