@@ -63,9 +63,6 @@ module IF2_ID1(
     logic [ 1: 0] is_valid;
     assign is_valid = i_is_valid & {2{~stall_ICache}};
 
-    logic [ 0: 0] signal_length_eq_1; // 信号长度是否等于1
-    assign signal_length_eq_1 = (length == 1);
-    assign ID_status = (|o_is_valid);
 
 
     parameter NUM = 16;
@@ -90,6 +87,7 @@ module IF2_ID1(
     assign tail_plus_2 = (tail + 2) - ((tail + 2 >= NUM ? NUM : 0));
 
 
+
     // 使用数组循环队列实现
     logic [31: 0] PC_Buffer[0:NUM-1];
     logic [31: 0] IR_Buffer[0:NUM-1];
@@ -103,6 +101,10 @@ module IF2_ID1(
     assign length_left = temp_length + ((temp_length[6] == 0) ? 0 : NUM);
     assign length_add  = (is_valid[1] ? (is_valid[0] ? 2 : 1) : 0 );
     assign length = length_left + length_add;
+
+    logic [ 0: 0] signal_length_eq_1; // 信号长度是否等于1
+    assign signal_length_eq_1 = (length == 1);
+    assign ID_status = (|o_is_valid);
 
     always @(posedge clk, negedge rstn) begin
         if( !rstn ) begin

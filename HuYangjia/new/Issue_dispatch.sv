@@ -58,6 +58,7 @@ module Issue_dispatch(
     assign o_set1.instruction   = i_set1.instruction  ;
     assign o_set1.PC            = i_set1.PC           ;
     // assign o_set1.        = i_set1.o_valid      ;
+    assign o_set1.o_inst_lawful = i_set1.o_inst_lawful;
     assign o_set1.inst_type     = i_set1.inst_type    ;
     assign o_set1.br_type       = i_set1.br_type      ;
     assign o_set1.imm           = i_set1.imm          ;
@@ -80,6 +81,7 @@ module Issue_dispatch(
     assign o_set2.instruction   = i_set2.instruction  ;
     assign o_set2.PC            = i_set2.PC           ;
     // assign o_set2.o_valid       = i_set2.o_valid      ;
+    assign o_set2.o_inst_lawful = i_set2.o_inst_lawful;
     assign o_set2.inst_type     = i_set2.inst_type    ;
     assign o_set2.br_type       = i_set2.br_type      ;
     assign o_set2.imm           = i_set2.imm          ;
