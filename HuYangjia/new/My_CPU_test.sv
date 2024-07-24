@@ -499,9 +499,12 @@ module My_CPU_test(
         .EX_mem_we_a(EX_mem_we_a),
         .EX_mem_we_b(EX_mem_we_b),
         .EX_mem_type_a(EX_mem_type_a),
-        .EX_mem_type_b(EX_mem_type_b)
+        .EX_mem_type_b(EX_mem_type_b),
+        .EX_sign_bit(EX_sign_bit),
+        .EX_div_en(EX_div_en)
     );
 
+    
 
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
