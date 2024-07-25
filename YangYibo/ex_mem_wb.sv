@@ -27,6 +27,8 @@ module ex_mem_wb(
     input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
+    input           [31: 0]     EX_pc_pd_a,         //A指令的分支预测的跳转结果PC
+    input           [31: 0]     EX_pc_pd_b,         //B指令的分支预测的跳转结果PC
     //发给分支预测的信号
     output          [31: 0]     EX_pc_of_br,        //分支指令的PC
     input           [ 1: 0]     EX_pd_type_a,       //A指令的分支类型（与分支预测交互）
@@ -207,6 +209,8 @@ FU_BR  FU_BR_inst (
     .EX_br_type_b(EX_br_type_b),
     .EX_br_pd_a(EX_br_pd_a),
     .EX_br_pd_b(EX_br_pd_b),
+    .EX_pc_pd_a(EX_pc_pd_a),
+    .EX_pc_pd_b(EX_pc_pd_b),
     // .stall_dcache(stall_dcache),
     .stall_dcache_buf(stall_dcache_buf),
     .stall_div_buf(stall_div_buf),
