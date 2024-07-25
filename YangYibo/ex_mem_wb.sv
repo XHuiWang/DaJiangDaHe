@@ -26,7 +26,14 @@ module ex_mem_wb(
     input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
     input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
-    input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转    
+    input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
+    //发给分支预测的信号
+    output          [31: 0]     EX_pc_of_br,        //分支指令的PC
+    input           [ 1: 0]     EX_pd_type_a,       //A指令的分支类型（与分支预测交互）
+    input           [ 1: 0]     EX_pd_type_b,       //B指令的分支类型（与分支预测交互）
+    output          [ 1: 0]     EX_pd_type,         //分支指令的分支类型（与分支预测交互）
+    output          [31: 0]     EX_br_target,       //分支指令原本的目标地址
+    output                      EX_br_jump,         //分支指令原本是否跳转     
     
     input                       EX_rf_we_a,         //A指令寄存器写使能
     input                       EX_rf_we_b,         //B指令寄存器写使能
@@ -205,7 +212,13 @@ FU_BR  FU_BR_inst (
     .stall_div_buf(stall_div_buf),
     .EX_br_a(EX_br_a),
     .EX_br(EX_br),
-    .EX_pc_br(EX_pc_br)
+    .EX_pc_br(EX_pc_br),
+    .EX_pc_of_br(EX_pc_of_br),
+    .EX_pd_type_a(EX_pd_type_a),
+    .EX_pd_type_b(EX_pd_type_b),
+    .EX_pd_type(EX_pd_type),
+    .EX_br_target(EX_br_target),
+    .EX_br_jump(EX_br_jump)
   );
 Mul  Mul_inst (
     .EX_mul_x(EX_rf_rdata_b1_f),
