@@ -107,6 +107,16 @@ module My_CPU_test(
     logic         i_arready;
     logic [ 7: 0] i_arlen;
 
+    // BR_Pre 分支预测
+    logic [29: 0] pred0_br_target;
+    logic [ 1: 0] pred0_br_type;
+    logic [29: 0] pred1_br_target;
+    logic [ 1: 0] pred1_br_type;
+    logic [31: 0] branch_pc;
+    logic [ 1: 0] branch_br_type;
+    logic [31: 0] branch_br_target;
+    logic [ 0: 0] branch_jump;
+
 
 
     // IF1_IF2
@@ -330,20 +340,54 @@ module My_CPU_test(
   
     assign pc_predict = pc_IF1 + ((~is_valid) ? 0 : ((pc_IF1[ 3: 2] == 2'b11) ? 4: 8));
 
+
+
+
     IF1  IF1_inst (
         .clk(clk),
         .rstn(rstn),
         .pc_predict(pc_predict),
         .pc_BR(EX_pc_br),
         .EX_BR(EX_br),
-        .BR_predecoder(BR_predecoder), // TODO: 2
+        .BR_predecoder(BR_predecoder),
         .PC_predecoder(PC_predecoder),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
         .pc_IF1(pc_IF1),
         .is_valid(is_valid)
     );
- 
+
+    br_pre_top  br_pre_top_inst (
+        .clk(clk),
+        .rstn(rstn),
+        .pc(pc_IF1[31: 2]),
+        .pred0_br_target(pred0_br_target),
+        .pred0_br_type(pred0_br_type),
+        .pred1_br_target(pred1_br_target),
+        .pred1_br_type(pred1_br_type),
+        .branch_pc(branch_pc[31: 2]),
+        .branch_br_type(branch_br_type),
+        .branch_br_target(branch_br_target[31: 2]),
+        .branch_jump(branch_jump)
+    ); 
+
+    IF1_IF2  IF1_IF2_inst (
+        .clk(clk),
+        .rstn(rstn),
+        .i_PC1(pc_IF1),
+        .i_PC2(pc_IF1+4),
+        .i_brtype_pcpre_1({pred0_br_type, pred0_br_target, 2'b00}),
+        .i_brtype_pcpre_2({pred1_br_target, pred1_br_type, 2'b00}), 
+        .flush_BR(flush_BR),
+        .i_is_valid(is_valid),
+        .stall_ICache(stall_ICache),
+        .o_PC1(i_PC1),
+        .o_PC2(i_PC2),
+        .o_brtype_pcpre_1(IF2_brtype_pcpre_1),
+        .o_brtype_pcpre_2(IF2_brtype_pcpre_2),
+        .o_is_valid(IF1_IF2_valid)
+    );
+
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
@@ -378,23 +422,6 @@ module My_CPU_test(
         .type_pcpre_2(type_pcpre_2)
     );
     
-
-    IF1_IF2  IF1_IF2_inst (
-        .clk(clk),
-        .rstn(rstn),
-        .i_PC1(pc_IF1),
-        .i_PC2(pc_IF1+4),
-        .i_brtype_pcpre_1(0),
-        .i_brtype_pcpre_2(0), // TODO:
-        .flush_BR(flush_BR),
-        .i_is_valid(is_valid),
-        .stall_ICache(stall_ICache),
-        .o_PC1(i_PC1),
-        .o_PC2(i_PC2),
-        .o_brtype_pcpre_1(IF2_brtype_pcpre_1),
-        .o_brtype_pcpre_2(IF2_brtype_pcpre_2),
-        .o_is_valid(IF1_IF2_valid)
-    );
 
     assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{stall_iCache}};
     assign fact_valid = i_is_valid & predecoder_valid;
@@ -549,8 +576,6 @@ module My_CPU_test(
         .EX_div_en(EX_div_en)
     );
 
-    
-
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
         .rstn(rstn),
@@ -576,6 +601,12 @@ module My_CPU_test(
         .EX_br_type_b(EX_br_type_b),
         .EX_br_pd_a(EX_br_pd_a),
         .EX_br_pd_b(EX_br_pd_b),
+        .EX_pc_of_br(branch_pc), // TODO:
+        .EX_pd_type_a(type_predict_a),
+        .EX_pd_type_b(type_predict_b),
+        .EX_pd_type(branch_br_type),
+        .EX_br_target(branch_br_target),
+        .EX_br_jump(branch_jump),// FIXME:
         .EX_rf_we_a(EX_rf_we_a),
         .EX_rf_we_b(EX_rf_we_b),
         .EX_rf_waddr_a(EX_rf_waddr_a),
@@ -604,6 +635,7 @@ module My_CPU_test(
         .MEM_mem_rdata(MEM_mem_rdata),
         .EX_div_en(EX_div_en),
         .stall_div(stall_div),
+        .EX_UnCache(EX_UnCache), // TODO:
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
         .debug0_wb_rf_wnum(debug0_wb_rf_wnum),
