@@ -37,9 +37,11 @@ module IF2_ID1(
 
     input [31: 0] i_PC1,
     input [31: 0] i_IR1,
+    input [33: 0] i_brtype_pcpre_1,
 
     input [31: 0] i_PC2,
     input [31: 0] i_IR2,
+    input [33: 0] i_brtype_pcpre_2,
 
     input [ 1: 0] i_is_valid,
 
@@ -50,9 +52,11 @@ module IF2_ID1(
 
     output logic [31: 0] o_PC1,
     output logic [31: 0] o_IR1,
+    output logic [33: 0] o_brtype_pcpre_1,
 
     output logic [31: 0] o_PC2,
     output logic [31: 0] o_IR2,
+    output logic [33: 0] o_brtype_pcpre_2,
 
     output logic [ 1: 0] o_is_valid,
     output logic [ 0: 0] o_is_full,
@@ -91,6 +95,7 @@ module IF2_ID1(
     // 使用数组循环队列实现
     logic [31: 0] PC_Buffer[0:NUM-1];
     logic [31: 0] IR_Buffer[0:NUM-1];
+    logic [33: 0] brtype_pcpre_Buffer[0:NUM-1];
     
 
     assign next_head   = (head + length_add) - (((head + length_add) >= NUM ? NUM : 0));
@@ -117,6 +122,8 @@ module IF2_ID1(
             o_IR1 <= 32'h0000_0000;
             o_PC2 <= 32'h0000_0000;
             o_IR2 <= 32'h0000_0000;
+            o_brtype_pcpre_1 <= 34'h0_0000_0000;
+            o_brtype_pcpre_2 <= 34'h0_0000_0000;
             // 数组清空
             PC_Buffer[ 0] <= 32'h0000_0000;
             PC_Buffer[ 1] <= 32'h0000_0000;
@@ -150,6 +157,22 @@ module IF2_ID1(
             IR_Buffer[13] <= 32'h0000_0000;
             IR_Buffer[14] <= 32'h0000_0000;
             IR_Buffer[15] <= 32'h0000_0000;
+            brtype_pcpre_Buffer[ 0] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 1] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 2] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 3] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 4] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 5] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 6] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 7] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 8] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[ 9] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[10] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[11] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[12] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[13] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[14] <= 34'h0_0000_0000;
+            brtype_pcpre_Buffer[15] <= 34'h0_0000_0000;
         end
         else if(flush) begin
             tail <= 5'd0;
@@ -166,13 +189,16 @@ module IF2_ID1(
                     // 1对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
+                    brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
                 end
                 2'd2: begin
                     // 2对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
+                    brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
                     PC_Buffer[head_plus_1] <= i_PC2;
                     IR_Buffer[head_plus_1] <= i_IR2;
+                    brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
                 end
                 default: begin
                     // 无效
@@ -195,10 +221,12 @@ module IF2_ID1(
                     if(!(|length_left)) begin
                         o_PC1 <= i_PC1;
                         o_IR1 <= i_IR1;
+                        o_brtype_pcpre_1 <= i_brtype_pcpre_1;
                     end
                     else begin
                         o_PC1 <= PC_Buffer[tail];
                         o_IR1 <= IR_Buffer[tail];
+                        o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
                     end
                 end
                 else begin
@@ -207,21 +235,27 @@ module IF2_ID1(
                         if(is_valid[0]) begin
                             o_PC1 <= i_PC1;
                             o_IR1 <= i_IR1;
+                            o_brtype_pcpre_1 <= i_brtype_pcpre_1;
                             o_PC2 <= i_PC2;
                             o_IR2 <= i_IR2;
+                            o_brtype_pcpre_2 <= i_brtype_pcpre_2;
                         end
                         else begin
                             o_PC1 <= PC_Buffer[tail];
                             o_IR1 <= IR_Buffer[tail];
+                            o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
                             o_PC2 <= i_PC1;
                             o_IR2 <= i_IR1;
+                            o_brtype_pcpre_2 <= i_brtype_pcpre_1;
                         end
                     end
                     else begin
                         o_PC1 <= PC_Buffer[tail];
                         o_IR1 <= IR_Buffer[tail];
+                        o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
                         o_PC2 <= PC_Buffer[tail_plus_1];
                         o_IR2 <= IR_Buffer[tail_plus_1];
+                        o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
                     end
                 end
             end
@@ -238,13 +272,16 @@ module IF2_ID1(
                     // 1对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
+                    brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
                 end
                 2'd2: begin
                     // 2对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
+                    brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
                     PC_Buffer[head_plus_1] <= i_PC2;
                     IR_Buffer[head_plus_1] <= i_IR2;
+                    brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
                 end
                 default: begin
                     // 无效
@@ -253,8 +290,10 @@ module IF2_ID1(
                 //写出抉择
                 o_PC1 <= PC_Buffer[tail];
                 o_IR1 <= IR_Buffer[tail];
+                o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
                 o_PC2 <= PC_Buffer[tail_plus_1];
                 o_IR2 <= IR_Buffer[tail_plus_1];
+                o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
             end
         end
     end

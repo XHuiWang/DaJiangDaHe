@@ -111,6 +111,19 @@ module My_CPU_test(
 
     // IF1_IF2
     logic [ 1: 0] IF1_IF2_valid;
+    logic [33: 0] IF2_brtype_pcpre_1;
+    logic [33: 0] IF2_brtype_pcpre_2;
+    logic [ 1: 0] fact_valid;
+
+    // 预译码
+    logic [33: 0] o_brtype_pcpre_1;
+    logic [33: 0] o_brtype_pcpre_2;
+    logic [ 1: 0] predecoder_valid;
+    logic [ 0: 0] BR_predecoder;
+    logic [31: 0] PC_predecoder;
+    logic [33: 0] type_pcpre_1;
+    logic [33: 0] type_pcpre_2;
+    
 
 
     // IF2_ID1
@@ -189,6 +202,8 @@ module My_CPU_test(
     logic [ 5: 0] EX_mux_select;
     logic [ 0: 0] EX_signed;
     logic [ 0: 0] EX_div_en;
+    logic [ 1: 0] type_predict_a;
+    logic [ 1: 0] type_predict_b;
 
 
     // AXI
@@ -321,26 +336,14 @@ module My_CPU_test(
         .pc_predict(pc_predict),
         .pc_BR(EX_pc_br),
         .EX_BR(EX_br),
+        .BR_predecoder(BR_predecoder), // TODO: 2
+        .PC_predecoder(PC_predecoder),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
         .pc_IF1(pc_IF1),
         .is_valid(is_valid)
     );
  
-
-    // temp IMeM (
-    //     .clka(clk),    // input logic clka
-    //     .wea(0),      // input logic [0 : 0] wea
-    //     .addra(pc_IF1[14: 2]),  // input logic [12 : 0] addra
-    //     .dina(0),    // input logic [31 : 0] dina
-    //     .douta(i_IR1),  // output logic [31 : 0] douta
-    //     .clkb(clk),    // input logic clkb
-    //     .web(0),      // input logic [0 : 0] web
-    //     .addrb(pc_IF1[14: 2]+1),  // input logic [12 : 0] addrb
-    //     .dinb(0),    // input logic [31 : 0] dinb
-    //     .doutb(i_IR2)  // output logic [31 : 0] doutb
-    // );
-
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
@@ -359,43 +362,72 @@ module My_CPU_test(
         .i_arready (i_axi_arready),
         .i_arlen (i_axi_arlen)
     );
+
+    IF2_predecoder_TOP  IF2_predecoder_TOP_inst (
+        .IR1(i_IR1),
+        .IR2(i_IR2),
+        .PC1(i_PC1),
+        .PC2(i_PC2),
+        .brtype_pcpre1(IF2_brtype_pcpre_1),
+        .brtype_pcpre2(IF2_brtype_pcpre_2),
+        .i_is_valid(i_is_valid),
+        .o_is_valid(predecoder_valid),
+        .PC_fact(PC_predecoder),
+        .predecoder_BR(BR_predecoder),
+        .type_pcpre_1(type_pcpre_1),
+        .type_pcpre_2(type_pcpre_2)
+    );
+    
+
     IF1_IF2  IF1_IF2_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(pc_IF1),
         .i_PC2(pc_IF1+4),
+        .i_brtype_pcpre_1(0),
+        .i_brtype_pcpre_2(0), // TODO:
         .flush_BR(flush_BR),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
         .o_PC1(i_PC1),
         .o_PC2(i_PC2),
+        .o_brtype_pcpre_1(IF2_brtype_pcpre_1),
+        .o_brtype_pcpre_2(IF2_brtype_pcpre_2),
         .o_is_valid(IF1_IF2_valid)
     );
+
     assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{stall_iCache}};
-    
+    assign fact_valid = i_is_valid & predecoder_valid;
+
     IF2_ID1  IF2_ID1_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(i_PC1),
         .i_IR1(i_IR1),
+        .i_brtype_pcpre_1(type_pcpre_1),
         .i_PC2(i_PC2),
         .i_IR2(i_IR2),
-        .i_is_valid(i_is_valid),
+        .i_brtype_pcpre_2(type_pcpre_2),
+        .i_is_valid(fact_valid),
         .flush_BR(flush_BR),
         .stall_ICache(stall_ICache),
         .stall_full_issue(stall_full_issue),
         .o_PC1(o_PC1),
         .o_IR1(o_IR1),
+        .o_brtype_pcpre_1(o_brtype_pcpre_1),
         .o_PC2(o_PC2),
         .o_IR2(o_IR2),
+        .o_brtype_pcpre_2(o_brtype_pcpre_2),
         .o_is_valid(o_is_valid),
         .o_is_full(o_is_full),
         .ID_status(ID_status)
     );
-    // logic [ 0: 0] ID_status;
+
+
     ID_Decode_edi_2  ID_Decode_edi_2_inst_1 (
         .IF_IR(o_IR1),
         .PC(o_PC1),
+        .brtype_pcpre(o_brtype_pcpre_1),
         .ID_status(ID_status),
         .data_valid(o_is_valid[1]),
         .PC_set(PC_set1_front)
@@ -403,6 +435,7 @@ module My_CPU_test(
     ID_Decode_edi_2  ID_Decode_edi_2_inst_2 (
         .IF_IR(o_IR2),
         .PC(o_PC2),
+        .brtype_pcpre(o_brtype_pcpre_2),
         .ID_status(ID_status),
         .data_valid(o_is_valid[0]),
         .PC_set(PC_set2_front)
@@ -464,6 +497,7 @@ module My_CPU_test(
     );
 
 
+    
     Issue_EXE  Issue_EXE_inst (
         .clk(clk),
         .rstn(rstn),
@@ -478,6 +512,8 @@ module My_CPU_test(
         .stall_div(stall_div),
         .EX_a_enable(EX_a_enable),
         .EX_b_enable(EX_b_enable),
+        .type_predict_a(type_predict_a),
+        .type_predict_b(type_predict_b),
         .EX_pc_a(EX_pc_a),
         .EX_pc_b(EX_pc_b),
         .EX_rf_raddr_a1(EX_rf_raddr_a1),
