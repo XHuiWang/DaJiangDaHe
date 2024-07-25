@@ -249,7 +249,7 @@ module dcache(
         3'b001: rdata = rdata_temp;//st.w
         3'b010: //ld.b
             case(address[1:0])
-            2'b00: rdata = {{24{rdata_temp[8]}},rdata_temp[7:0]};
+            2'b00: rdata = {{24{rdata_temp[7]}},rdata_temp[7:0]};
             2'b01: rdata = {{24{rdata_temp[15]}},rdata_temp[15:8]};
             2'b10: rdata = {{24{rdata_temp[23]}},rdata_temp[23:16]};
             2'b11: rdata = {{24{rdata_temp[31]}},rdata_temp[31:24]};
