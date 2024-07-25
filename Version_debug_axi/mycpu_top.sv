@@ -21,10 +21,10 @@
 
 `include "Public_Info.sv"
 import Public_Info::*;
-module My_CPU_test(
+module mycpu_top(
     input           clk,
     input           rstn,
-    input    [ 7:0] intrpt, 
+    input    [ 7:0] ext_int, 
     //AXI interface 
     //read reqest
     output logic   [ 3:0] arid,
