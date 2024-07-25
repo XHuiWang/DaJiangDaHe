@@ -141,7 +141,7 @@ module dcache(
             3'b111: begin
                 case(address[1:0])//st.h
                     2'b00: wdata_pipe_temp = {16'h0, wdata_pipe[15:0]};
-                    2'b10: wdata_pipe_temp = {wdata_pipe[7:0], 16'h0};
+                    2'b10: wdata_pipe_temp = {wdata_pipe[15:0], 16'h0};
                     default: wdata_pipe_temp = 4'b1111;
                 endcase
             end
@@ -249,7 +249,7 @@ module dcache(
         3'b001: rdata = rdata_temp;//st.w
         3'b010: //ld.b
             case(address[1:0])
-            2'b00: rdata = {{24{rdata_temp[8]}},rdata_temp[7:0]};
+            2'b00: rdata = {{24{rdata_temp[7]}},rdata_temp[7:0]};
             2'b01: rdata = {{24{rdata_temp[15]}},rdata_temp[15:8]};
             2'b10: rdata = {{24{rdata_temp[23]}},rdata_temp[23:16]};
             2'b11: rdata = {{24{rdata_temp[31]}},rdata_temp[31:24]};
