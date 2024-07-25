@@ -319,6 +319,7 @@ module My_CPU_test(
     logic [ 2: 0] EX_mem_type;
     logic [31: 0] EX_mem_wdata;
     logic [31: 0] MEM_mem_rdata;
+    logic [ 0: 0] EX_UnCache;
     
     // stall && flush
     logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
@@ -635,7 +636,7 @@ module My_CPU_test(
         .MEM_mem_rdata(MEM_mem_rdata),
         .EX_div_en(EX_div_en),
         .stall_div(stall_div),
-        .EX_UnCache(EX_UnCache), // TODO:
+        .EX_UnCache(EX_UnCache),
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
         .debug0_wb_rf_wnum(debug0_wb_rf_wnum),
@@ -652,6 +653,7 @@ module My_CPU_test(
         .rstn(rstn),
         .rvalid(EX_mem_rvalid),
         .wvalid(EX_mem_wvalid),
+        .uncache(EX_UnCache),
         .wdata(EX_mem_wdata),
         .addr(EX_mem_addr),
         .mem_type(EX_mem_type),
