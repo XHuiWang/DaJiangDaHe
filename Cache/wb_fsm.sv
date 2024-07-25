@@ -29,6 +29,7 @@ module wb_fsm(
     input               d_bvalid,
     input               d_awready,
     input               dirty,
+    input               uncache_pipe,
     output   reg        write_finish,
     output   reg        d_awvalid,
     output   reg        d_wvalid,
@@ -59,7 +60,7 @@ module wb_fsm(
     always @(*) begin
         case(current_state)
             IDLE:begin
-                if(wfsm_en&&dirty)next_state = WRITE_A;
+                if(wfsm_en&&(dirty||uncache_pipe)) next_state = WRITE_A;
                 else next_state = IDLE;
                 write_finish = 1'b1;
                 d_wvalid = 1'b0;
@@ -82,19 +83,37 @@ module wb_fsm(
                 write_finish = 1'b0;
                 d_wvalid = 1'b1;
                 d_awvalid = 1'b0;
-                if(q == 6'd3)begin
-                    //q == 3 发送最后一个数据
-                    d_wlast = 1'b1;
-                    d_bready = 1'b0;
-                end
-                else if (q == 6'd4)begin
-                    //q == 4 拉高d_bready 
-                    d_wlast = 1'b0;
-                    d_bready = 1'b1;
+                if(uncache_pipe) begin
+                    if(q == 6'd0)begin
+                        //q == 0 发送最后一个数据
+                        d_wlast = 1'b1;
+                        d_bready = 1'b0;
+                    end
+                    else if (q == 6'd1)begin
+                        //q == 1 拉高d_bready 
+                        d_wlast = 1'b0;
+                        d_bready = 1'b1;
+                    end
+                    else begin
+                        d_wlast = 1'b0;
+                        d_bready = 1'b0;
+                    end
                 end
                 else begin
-                    d_wlast = 1'b0;
-                    d_bready = 1'b0;
+                    if(q == 6'd3)begin
+                        //q == 3 发送最后一个数据
+                        d_wlast = 1'b1;
+                        d_bready = 1'b0;
+                    end
+                    else if (q == 6'd4)begin
+                        //q == 4 拉高d_bready 
+                        d_wlast = 1'b0;
+                        d_bready = 1'b1;
+                    end
+                    else begin
+                        d_wlast = 1'b0;
+                        d_bready = 1'b0;
+                    end
                 end
             end
             FINISH:begin

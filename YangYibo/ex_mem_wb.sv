@@ -65,6 +65,9 @@ module ex_mem_wb(
     input                       EX_div_en,          //除法器使能，stall使其在33个EX有效
     output  wire                stall_div,          //除法器暂停信号
 
+    //UnCache
+    output  wire                EX_UnCache,         //是否在访问外设
+    //Debug
     output  wire      [31: 0]   debug0_wb_pc,       //写回段 A指令的pc
     output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 A指令的寄存器写使能
     output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 A指令的寄存器写地址
@@ -279,6 +282,17 @@ assign EX_mem_rvalid = EX_wb_mux_select_b[1];
 assign EX_mem_wvalid = EX_mem_we;
 assign MEM_mem_ready = MEM_mem_rready | MEM_mem_wready;
 assign stall_dcache  = ~MEM_mem_ready;
+assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 |
+                        EX_mem_addr==32'hbfaf_8020 | EX_mem_addr==32'hbfaf_8030 |
+                        EX_mem_addr==32'hbfaf_8040 | EX_mem_addr==32'hbfaf_8050 |
+                        EX_mem_addr==32'hbfaf_8060 | EX_mem_addr==32'hbfaf_8070 |
+                        EX_mem_addr==32'hbfaf_f020 | EX_mem_addr==32'hbfaf_f030 |
+                        EX_mem_addr==32'hbfaf_f040 | EX_mem_addr==32'hbfaf_f050 |
+                        EX_mem_addr==32'hbfaf_f060 | EX_mem_addr==32'hbfaf_f070 |
+                        EX_mem_addr==32'hbfaf_f080 | EX_mem_addr==32'hbfaf_f090 |
+                        EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
+                        EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
+                        EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
 always @(posedge clk, negedge rstn) begin
   if(!rstn)begin
     stall_dcache_buf <= 1'b0;
@@ -291,12 +305,12 @@ always @(posedge clk, negedge rstn) begin
 end
 
 //debug interface
-assign debug0_wb_pc = WB_pc_a;
-assign debug0_wb_rf_we = {4{WB_rf_we_a}};
-assign debug0_wb_rf_wnum = WB_rf_waddr_a;
-assign debug0_wb_rf_wdata = WB_rf_wdata_a;
-assign debug1_wb_pc = WB_pc_b;
-assign debug1_wb_rf_we = {4{WB_rf_we_b}};
-assign debug1_wb_rf_wnum = WB_rf_waddr_b;
-assign debug1_wb_rf_wdata = WB_rf_wdata_b;
+assign debug0_wb_pc = WB_pc_b;
+assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_div_buf)}};
+assign debug0_wb_rf_wnum = WB_rf_waddr_b;
+assign debug0_wb_rf_wdata = WB_rf_wdata_b;
+assign debug1_wb_pc = WB_pc_a;
+assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_div_buf)}};
+assign debug1_wb_rf_wnum = WB_rf_waddr_a;
+assign debug1_wb_rf_wdata = WB_rf_wdata_a;
 endmodule

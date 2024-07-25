@@ -21,10 +21,10 @@
 
 `include "Public_Info.sv"
 import Public_Info::*;
-module My_CPU_test(
-    input           aclk,
-    input           aresetn,
-    input    [ 7:0] intrpt, 
+module mycpu_top(
+    input           clk,
+    input           rstn,
+    input    [ 7:0] ext_int, 
     //AXI interface 
     //read reqest
     output logic   [ 3:0] arid,
@@ -129,7 +129,6 @@ module My_CPU_test(
 
 
     // RegFile中的信号
-    logic [ 0: 0] clk;
     logic [ 4: 0] raddr_a1;
     logic [ 4: 0] raddr_a2;
     logic [ 4: 0] raddr_b1;
@@ -138,7 +137,7 @@ module My_CPU_test(
     logic [31: 0] rdata_a2;
     logic [31: 0] rdata_b1;
     logic [31: 0] rdata_b2;
-    logic [ 4: 0] addr;
+    logic [ 4: 0] addr = 0;
     logic [31: 0] dout_rf;
     logic [ 4: 0] waddr_a;
     logic [ 4: 0] waddr_b;
@@ -295,6 +294,7 @@ module My_CPU_test(
     logic [ 2: 0] EX_mem_type;
     logic [31: 0] EX_mem_wdata;
     logic [31: 0] MEM_mem_rdata;
+    logic [ 0: 0] EX_UnCache;
     
     // stall && flush
     logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
@@ -510,7 +510,7 @@ module My_CPU_test(
         .EX_mem_we_b(EX_mem_we_b),
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b),
-        .EX_sign_bit(EX_sign_bit),
+        .EX_sign_bit(EX_signed),
         .EX_div_en(EX_div_en)
     );
 
@@ -569,6 +569,7 @@ module My_CPU_test(
         .MEM_mem_rdata(MEM_mem_rdata),
         .EX_div_en(EX_div_en),
         .stall_div(stall_div),
+        .EX_UnCache(EX_UnCache),
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
         .debug0_wb_rf_wnum(debug0_wb_rf_wnum),
@@ -585,6 +586,7 @@ module My_CPU_test(
         .rstn(rstn),
         .rvalid(EX_mem_rvalid),
         .wvalid(EX_mem_wvalid),
+        .uncache(EX_UnCache),
         .wdata(EX_mem_wdata),
         .addr(EX_mem_addr),
         .mem_type(EX_mem_type),
