@@ -27,6 +27,7 @@ module Return_buffer_dcache(
     input              d_rvalid,
     input              d_rlast,
     input     [31:0]   d_rdata,
+    input              uncache_pipe,
     output  reg  [127:0]  w_data,
     output  reg  [31:0]   data_from_retbuf
     );
@@ -38,12 +39,17 @@ module Return_buffer_dcache(
     end
 
     always @(*) begin
-        case(offset)
-            2'b00: data_from_retbuf = w_data[31:0];
-            2'b01: data_from_retbuf = w_data[63:32];
-            2'b10: data_from_retbuf = w_data[95:64];
-            2'b11: data_from_retbuf = w_data[127:96];
-        endcase
+        if(uncache_pipe)begin
+            data_from_retbuf = w_data[127:96];
+        end
+        else begin
+            case(offset)
+                2'b00: data_from_retbuf = w_data[31:0];
+                2'b01: data_from_retbuf = w_data[63:32];
+                2'b10: data_from_retbuf = w_data[95:64];
+                2'b11: data_from_retbuf = w_data[127:96];
+            endcase
+        end
     end
 
 

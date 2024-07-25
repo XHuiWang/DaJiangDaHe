@@ -35,6 +35,7 @@ module FSM_dcache(
     input         [1:0]      hit,
     input         [31:0]     address,
     input         [2:0]      mem_type_pipe,
+    input                    uncache_pipe,
     output   reg  [31:0]     mem_we,
     output   reg  [1:0]      TagDV_we,
     output   reg             d_arvalid,
@@ -91,7 +92,47 @@ module FSM_dcache(
                 d_rready  = 1'b0;
             end
             LOOKUP:begin
-                if((hit != 2'h0)&&(wvalid||rvalid))begin
+                if(uncache_pipe) begin
+                    if(rvalid_pipe) begin
+                        next_state = MISS_A;
+                        mem_we = 32'h0;
+                        TagDV_we = 2'h0;
+                        d_arvalid = 1'b0;
+                        rbuf_we = 1'b0;
+                        mbuf_we = 1'b0;
+                        wbuf_we = 1'b0;
+                        data_from_mem_sel = 1'b1;
+                        d_araddr = 32'h0;
+                        rready = 1'b0;
+                        wready = 1'b0;
+                        LRU_update = 1'b0;
+                        wfsm_en = 1'b0;
+                        wfsm_rset = 1'b0;
+                        miss_LRU_update = 1'b0;
+                        miss_lru_way = 1'b0;
+                        d_rready  = 1'b0;
+                    end
+                    else begin
+                        next_state = WAIT_WRITE;
+                        mem_we = 32'h0;
+                        TagDV_we = 2'h0;
+                        d_arvalid = 1'b0;
+                        rbuf_we = 1'b0;
+                        mbuf_we = 1'b0;
+                        wbuf_we = 1'b0;
+                        data_from_mem_sel = 1'b1;
+                        d_araddr = 32'h0;
+                        rready = 1'b0;
+                        wready = 1'b0;
+                        LRU_update = 1'b0;
+                        wfsm_en = 1'b1;
+                        wfsm_rset = 1'b0;
+                        miss_LRU_update = 1'b0;
+                        miss_lru_way = 1'b0;
+                        d_rready  = 1'b0;
+                    end
+                end
+                else if((hit != 2'h0)&&(wvalid||rvalid))begin
                     next_state = LOOKUP;
                     if(wvalid_pipe)begin
                         case(mem_type_pipe)
@@ -290,7 +331,8 @@ module FSM_dcache(
             end
             MISS:begin
                 if(d_rlast&&d_rvalid)begin
-                    next_state = REFILL;
+                    if(uncache_pipe) next_state = WAIT_WRITE;
+                    else next_state = REFILL;
                 end
                 else begin
                     next_state = MISS;

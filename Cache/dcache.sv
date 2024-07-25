@@ -10,6 +10,7 @@ module dcache(
     input      [31:0]      wdata,
     input      [31:0]      addr,
     input      [2:0]       mem_type,
+    input                  uncache,
     //来自cpu的flush信号,好像不需要？
     //input                  flush,
     /* mem_type */
@@ -48,7 +49,7 @@ module dcache(
     output wire  [2:0]     d_awsize,
     output wire  [7:0]     d_awlen,
     output reg   [3:0]     d_wstrb,
-    output reg   [31:0]    d_awaddr,
+    output wire  [31:0]    d_awaddr,
     output reg   [31:0]    d_wdata,
     output reg             d_wvalid,
     output reg             d_wlast,
@@ -95,13 +96,17 @@ module dcache(
     //valid信号流水
     wire          wvalid_pipe ;
     wire          rvalid_pipe ;
-
-
-    assign d_awlen = 8'd3;
+    wire          uncache_pipe ;
+    wire  [31:0]  d_awaddr_cache ;
+    wire  [31:0]  d_wdata_cache ;
+    reg   [31:0]  wdata_pipe_temp ;
+    assign d_awlen = uncache_pipe ? 8'd0 : 8'd3;
     assign d_awsize = 3'd4;
-    assign d_wstrb = 4'b1111;
-    assign d_arlen = 8'd3;
+    assign d_wstrb = uncache_pipe ? d_wstrb_temp : 4'b1111;
+    assign d_arlen = uncache_pipe ? 8'd0 : 8'd3;
     assign d_arsize = 3'd4;
+    assign d_awaddr = uncache_pipe ? address : d_awaddr_cache;
+    assign d_wdata = uncache_pipe ? wdata_pipe_temp : d_wdata_cache;
 
     assign r_index = addr[11:4];
     assign w_index = address[11:4];
@@ -116,13 +121,65 @@ module dcache(
     //产生dirty的逻辑
     assign dirty = way_sel == 1'b1 ? r_tagdv2[1] : r_tagdv1[1];
 
-    register# ( .WIDTH(69), .RST_VAL(0))
+    always @(*)begin
+        case(mem_type_pipe)
+            3'b000: wdata_pipe_temp = wdata_pipe;//others or ld.w 
+            3'b001: wdata_pipe_temp = wdata_pipe;//st.w
+            3'b010: wdata_pipe_temp = wdata_pipe;//ld.b
+            3'b011: wdata_pipe_temp = wdata_pipe;//lb.h
+            3'b100: wdata_pipe_temp = wdata_pipe;//ld.bu
+            3'b101: wdata_pipe_temp = wdata_pipe;//ld.hu
+            3'b110: begin
+                case(address[1:0])//st.b
+                    2'b00: wdata_pipe_temp = {24'h0, wdata_pipe[7:0]}
+                    2'b01: wdata_pipe_temp = {16'h0, wdata_pipe[7:0], 8'h0}
+                    2'b10: wdata_pipe_temp = {8'h0, wdata_pipe[7:0], 16'h0}
+                    2'b11: wdata_pipe_temp = {wdata_pipe[7:0], 24'h0}
+                endcase
+            end
+            3'b111: begin
+                case(address[1:0])//st.h
+                    2'b00: wdata_pipe_temp = {16'h0, wdata_pipe[15:0]};
+                    2'b10: wdata_pipe_temp = {wdata_pipe[7:0], 16'h0};
+                    default: wdata_pipe_temp = 4'b1111;
+                endcase
+            end
+        endcase
+    end
+
+    always @(*)begin
+        case(mem_type_pipe)
+            3'b000: d_wstrb_temp = 4'b1111;//others or ld.w 
+            3'b001: d_wstrb_temp = 4'b1111;//st.w
+            3'b010: d_wstrb_temp = 4'b1111;//ld.b
+            3'b011: d_wstrb_temp = 4'b1111;//lb.h
+            3'b100: d_wstrb_temp = 4'b1111;//ld.bu
+            3'b101: d_wstrb_temp = 4'b1111;//ld.hu
+            3'b110: begin
+                case(address[1:0])//st.b
+                    2'b00: d_wstrb_temp = 4'b0001
+                    2'b01: d_wstrb_temp = 4'b0010;
+                    2'b10: d_wstrb_temp = 4'b0100;
+                    2'b11: d_wstrb_temp = 4'b1000;
+                endcase
+            end
+            3'b111: begin
+                case(address[1:0])//st.h
+                    2'b00: d_wstrb_temp = 4'b0011;
+                    2'b10: d_wstrb_temp = 4'b1100;
+                    default: d_wstrb_temp = 4'b1111;
+                endcase
+            end
+        endcase
+    end
+
+    register# ( .WIDTH(70), .RST_VAL(0))
     request_buffer (              
         .clk    (clk),
         .rstn   (rstn),
         .en     (rbuf_we),
-        .d      ({addr,wdata,mem_type,wvalid,rvalid}),
-        .q      ({address,wdata_pipe,mem_type_pipe,wvalid_pipe,rvalid_pipe})
+        .d      ({addr,wdata,mem_type,wvalid,rvalid,uncache}),
+        .q      ({address,wdata_pipe,mem_type_pipe,wvalid_pipe,rvalid_pipe,uncache_pipe})
     );
 
     TagDV_mem TagDV_mem1(
@@ -237,6 +294,7 @@ module dcache(
     Return_buffer_dcache Return_buffer1_dcache(
         .clk (clk),
         .offset (offset),
+        .uncache_pipe (uncache_pipe),
         .d_rvalid (d_rvalid),
         .d_arvalid (d_arvalid),
         .d_rlast (d_rlast),
@@ -260,7 +318,7 @@ module dcache(
         .r_tagv1 (r_tagdv1[21:2]),
         .r_tagv2 (r_tagdv2[21:2]),
         .mbuf_we (mbuf_we),
-        .d_awaddr (d_awaddr)
+        .d_awaddr_cache (d_awaddr_cache)
     );
 
     Write_buffer Write_buffer1(
@@ -270,7 +328,7 @@ module dcache(
         .r_data2 (r_data2),
         .wbuf_we (wbuf_we),
         .d_wready (d_wready),
-        .d_wdata (d_wdata)
+        .d_wdata_cache (d_wdata_cache)
     );
 
     FSM_dcache FSM_dcache1(
@@ -288,6 +346,7 @@ module dcache(
         .hit (hit),
         .address (address),
         .mem_type_pipe (mem_type_pipe),
+        .uncache_pipe (uncache_pipe),
         .mem_we (mem_we),
         .TagDV_we (TagDV_we),
         .d_arvalid (d_arvalid),
@@ -311,6 +370,7 @@ module dcache(
         .rstn (rstn),
         .wfsm_en (wfsm_en),
         .wfsm_rset (wfsm_rset),
+        .uncache_pipe (uncache_pipe),
         .d_wready (d_wready),
         .d_wvalid (d_wvalid),
         .d_bvalid (d_bvalid),
