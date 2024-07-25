@@ -78,7 +78,7 @@ module FSM_icache(
                 miss_LRU_update = 1'b0;
             end
             LOOKUP:begin
-                if(hit && rvalid) begin
+                if((hit!=2'h0) && rvalid) begin
                     next_state = LOOKUP;
                     rready = 1'b1;
                     i_arvalid = 1'b0;
@@ -93,7 +93,7 @@ module FSM_icache(
                     miss_lru_way = 1'b0;
                     miss_LRU_update = 1'b0;
                 end
-                else if(hit && !rvalid) begin
+                else if((hit!=2'h0) && !rvalid) begin
                     next_state = IDLE;
                     rready = 1'b1;
                     i_arvalid = 1'b0;
