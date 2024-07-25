@@ -27,7 +27,7 @@ module Write_buffer(
     input          [127:0]       r_data2,
     input                        wbuf_we,
     input                        d_wready,
-    output  wire   [31:0]        d_wdata
+    output  wire   [31:0]        d_wdata_cache
     );
     wire [127:0]  d_wdata_4;
     assign d_wdata_4 = way_sel == 1'b1 ? r_data2 : r_data1;
@@ -35,11 +35,8 @@ module Write_buffer(
     reg  [127:0]  d_wdata_4_reg; 
     always @(posedge clk) begin
         if(wbuf_we) d_wdata_4_reg <= d_wdata_4;
+        else if(d_wready) d_wdata_4_reg <= {32'b0, d_wdata_4_reg[127:32]};
     end
 
-    always @(posedge clk) begin
-        if(d_wready) d_wdata_4_reg <= {32'b0, d_wdata_4_reg[127:32]};
-    end
-
-    assign d_wdata = d_wdata_4_reg[31:0];
+    assign d_wdata_cache = d_wdata_4_reg[31:0];
 endmodule

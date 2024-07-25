@@ -100,6 +100,7 @@ module dcache(
     wire  [31:0]  d_awaddr_cache ;
     wire  [31:0]  d_wdata_cache ;
     reg   [31:0]  wdata_pipe_temp ;
+    reg   [3:0]   d_wstrb_temp ;
     assign d_awlen = uncache_pipe ? 8'd0 : 8'd3;
     assign d_awsize = 3'd4;
     assign d_wstrb = uncache_pipe ? d_wstrb_temp : 4'b1111;
@@ -131,10 +132,10 @@ module dcache(
             3'b101: wdata_pipe_temp = wdata_pipe;//ld.hu
             3'b110: begin
                 case(address[1:0])//st.b
-                    2'b00: wdata_pipe_temp = {24'h0, wdata_pipe[7:0]}
-                    2'b01: wdata_pipe_temp = {16'h0, wdata_pipe[7:0], 8'h0}
-                    2'b10: wdata_pipe_temp = {8'h0, wdata_pipe[7:0], 16'h0}
-                    2'b11: wdata_pipe_temp = {wdata_pipe[7:0], 24'h0}
+                    2'b00: wdata_pipe_temp = {24'h0, wdata_pipe[7:0]};
+                    2'b01: wdata_pipe_temp = {16'h0, wdata_pipe[7:0], 8'h0};
+                    2'b10: wdata_pipe_temp = {8'h0, wdata_pipe[7:0], 16'h0};
+                    2'b11: wdata_pipe_temp = {wdata_pipe[7:0], 24'h0};
                 endcase
             end
             3'b111: begin
@@ -157,7 +158,7 @@ module dcache(
             3'b101: d_wstrb_temp = 4'b1111;//ld.hu
             3'b110: begin
                 case(address[1:0])//st.b
-                    2'b00: d_wstrb_temp = 4'b0001
+                    2'b00: d_wstrb_temp = 4'b0001;
                     2'b01: d_wstrb_temp = 4'b0010;
                     2'b10: d_wstrb_temp = 4'b0100;
                     2'b11: d_wstrb_temp = 4'b1000;
