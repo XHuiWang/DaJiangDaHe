@@ -141,7 +141,7 @@ module dcache(
             3'b111: begin
                 case(address[1:0])//st.h
                     2'b00: wdata_pipe_temp = {16'h0, wdata_pipe[15:0]};
-                    2'b10: wdata_pipe_temp = {wdata_pipe[7:0], 16'h0};
+                    2'b10: wdata_pipe_temp = {wdata_pipe[15:0], 16'h0};
                     default: wdata_pipe_temp = 4'b1111;
                 endcase
             end
