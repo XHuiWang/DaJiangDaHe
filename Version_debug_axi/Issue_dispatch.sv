@@ -180,7 +180,7 @@ module Issue_dispatch(
 
 
     always @(posedge clk) begin
-        last_ld <= ld_exist;
+        last_ld <= |ld_exist;
         rf_waddr <= (ld_exist[1]) ? i_set1.rf_rd : i_set2.rf_rd;
     end
 
