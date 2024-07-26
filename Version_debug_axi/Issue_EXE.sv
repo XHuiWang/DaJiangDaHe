@@ -47,6 +47,11 @@ module Issue_EXE(
     output logic [ 0: 0] EX_a_enable,        //A指令是否有效
     output logic [ 0: 0] EX_b_enable,        //B指令是否有效
 
+    output logic [ 1: 0] type_predict_a,     //A指令的类型预测
+    output logic [ 1: 0] type_predict_b,     //B指令的类型预测
+    output logic [31: 0] EX_PC_pre_a,        //A指令的预测PC
+    output logic [31: 0] EX_PC_pre_b,        //B指令的预测PC
+
     output logic [31: 0] EX_pc_a,            //A指令的PC值
     output logic [31: 0] EX_pc_b,            //B指令的PC值
     output logic [ 4: 0] EX_rf_raddr_a1,     //A指令的第一个寄存器地址
@@ -155,6 +160,10 @@ module Issue_EXE(
             EX_mem_we_b       <= 1'b0;
             EX_div_en         <= 1'b0;
             EX_sign_bit       <= 1'b0;
+            type_predict_a    <= 2'h0;
+            type_predict_b    <= 2'h0;
+            EX_PC_pre_a       <= 32'h0000_0000;
+            EX_PC_pre_b       <= 32'h0000_0000;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -190,6 +199,10 @@ module Issue_EXE(
             EX_mem_we_b       <= EX_mem_we_b;
             EX_div_en         <= EX_div_en;
             EX_sign_bit       <= EX_sign_bit;
+            type_predict_a    <= type_predict_a;
+            type_predict_b    <= type_predict_b;
+            EX_PC_pre_a       <= EX_PC_pre_a;
+            EX_PC_pre_b       <= EX_PC_pre_b;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -213,9 +226,8 @@ module Issue_EXE(
                 EX_alu_op_b       <= i_set1.alu_op;
                 EX_br_type_a      <= i_set2.br_type & {4{Issue_b_enable}};
                 EX_br_type_b      <= i_set1.br_type & {4{Issue_a_enable}};
-                EX_br_pd_a        <= 0;
-                EX_br_pd_b        <= 0;
-                // TODO: 预测跳转
+                EX_br_pd_a        <= ~(i_set2.PC_pre == i_set2.PC + 4);
+                EX_br_pd_b        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_rf_we_a        <= i_set2.rf_we & Issue_b_enable;
                 EX_rf_we_b        <= i_set1.rf_we & Issue_a_enable;
                 EX_mux_sel        <= i_set1.mux_sel & {6{Issue_a_enable}};
@@ -227,6 +239,10 @@ module Issue_EXE(
                 EX_mem_we_b       <= i_set1.mem_we & Issue_a_enable;
                 EX_sign_bit       <= i_set1.sign_bit;
                 EX_div_en         <= (i_set1.inst_type == 10'h008) & Issue_a_enable;
+                type_predict_a    <= i_set2.type_predict;
+                type_predict_b    <= i_set1.type_predict;
+                EX_PC_pre_a       <= i_set2.PC_pre;
+                EX_PC_pre_b       <= i_set1.PC_pre;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -249,8 +265,8 @@ module Issue_EXE(
                 EX_alu_op_b       <= i_set2.alu_op;
                 EX_br_type_a      <= i_set1.br_type & {4{Issue_a_enable}};
                 EX_br_type_b      <= i_set2.br_type & {4{Issue_b_enable}};
-                EX_br_pd_a        <= 0;
-                EX_br_pd_b        <= 0;
+                EX_br_pd_a        <= ~(i_set1.PC_pre == i_set1.PC + 4);
+                EX_br_pd_b        <= ~(i_set2.PC_pre == i_set2.PC + 4);
                 // TODO: 预测跳转
                 EX_rf_we_a        <= i_set1.rf_we & Issue_a_enable;
                 EX_rf_we_b        <= i_set2.rf_we & Issue_b_enable;
@@ -263,8 +279,11 @@ module Issue_EXE(
                 EX_mem_we_b       <= i_set2.mem_we & Issue_b_enable;
                 EX_sign_bit       <= i_set2.sign_bit;
                 EX_div_en         <= (i_set2.inst_type == 10'h008) & Issue_b_enable;
+                type_predict_a    <= i_set1.type_predict;
+                type_predict_b    <= i_set2.type_predict;
+                EX_PC_pre_a       <= i_set1.PC_pre;
+                EX_PC_pre_b       <= i_set2.PC_pre;
             end
-            
         end
     end
 endmodule
