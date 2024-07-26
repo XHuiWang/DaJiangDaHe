@@ -26,6 +26,7 @@ import Public_Info::*;
 module ID_Decode_edi_2(
     input [31: 0] IF_IR,
     input [31: 0] PC,
+    input [33: 0] brtype_pcpre,
     input [ 0: 0] ID_status,
     input [ 0: 0] data_valid,
     output PC_set PC_set
@@ -77,6 +78,8 @@ module ID_Decode_edi_2(
     assign PC_set.sign_bit = sign_bit;
     assign PC_set.rf_rdata1 = 32'd0;
     assign PC_set.rf_rdata2 = 32'd0;
+    assign PC_set.type_predict = brtype_pcpre[33:32];
+    assign PC_set.PC_pre = brtype_pcpre[31: 0];
 
 
 

@@ -44,5 +44,7 @@ package Public_Info;
         logic [31: 0] rf_rdata1    ;
         logic [31: 0] rf_rdata2    ;
         logic [ 0: 0] sign_bit     ; // 符号位,运用于乘除法 // 1为有符号数
+        logic [ 1: 0] type_predict ; // using for branch predict, to know the stardard, see the IF2_PreDecoder.sv
+        logic [31: 0] PC_pre       ; // 用于预测分支时得到的PC
     } PC_set;
 endpackage
