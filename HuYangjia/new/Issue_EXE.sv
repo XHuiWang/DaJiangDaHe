@@ -49,6 +49,8 @@ module Issue_EXE(
 
     output logic [ 1: 0] type_predict_a,     //A指令的类型预测
     output logic [ 1: 0] type_predict_b,     //B指令的类型预测
+    output logic [31: 0] EX_PC_pre_a,        //A指令的预测PC
+    output logic [31: 0] EX_PC_pre_b,        //B指令的预测PC
 
     output logic [31: 0] EX_pc_a,            //A指令的PC值
     output logic [31: 0] EX_pc_b,            //B指令的PC值
@@ -160,6 +162,8 @@ module Issue_EXE(
             EX_sign_bit       <= 1'b0;
             type_predict_a    <= 2'h0;
             type_predict_b    <= 2'h0;
+            EX_PC_pre_a       <= 32'h0000_0000;
+            EX_PC_pre_b       <= 32'h0000_0000;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -197,6 +201,8 @@ module Issue_EXE(
             EX_sign_bit       <= EX_sign_bit;
             type_predict_a    <= type_predict_a;
             type_predict_b    <= type_predict_b;
+            EX_PC_pre_a       <= EX_PC_pre_a;
+            EX_PC_pre_b       <= EX_PC_pre_b;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -235,6 +241,8 @@ module Issue_EXE(
                 EX_div_en         <= (i_set1.inst_type == 10'h008) & Issue_a_enable;
                 type_predict_a    <= i_set2.type_predict;
                 type_predict_b    <= i_set1.type_predict;
+                EX_PC_pre_a       <= i_set2.PC_pre;
+                EX_PC_pre_b       <= i_set1.PC_pre;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -273,8 +281,9 @@ module Issue_EXE(
                 EX_div_en         <= (i_set2.inst_type == 10'h008) & Issue_b_enable;
                 type_predict_a    <= i_set1.type_predict;
                 type_predict_b    <= i_set2.type_predict;
+                EX_PC_pre_a       <= i_set1.PC_pre;
+                EX_PC_pre_b       <= i_set2.PC_pre;
             end
-            
         end
     end
 endmodule

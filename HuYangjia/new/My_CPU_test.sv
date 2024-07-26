@@ -23,62 +23,8 @@
 import Public_Info::*;
 module My_CPU_test(
     input           clk,
-    input           rstn,
-    input    [ 7:0] intrpt, 
-    //AXI interface 
-    //read reqest
-    output logic   [ 3:0] arid,
-    output logic   [31:0] araddr,
-    output logic   [ 7:0] arlen,
-    output logic   [ 2:0] arsize,
-    output logic   [ 1:0] arburst,
-    output logic   [ 1:0] arlock,
-    output logic   [ 3:0] arcache,
-    output logic   [ 2:0] arprot,
-    output logic          arvalid,
-    input                 arready,
-    //read back
-    input    [ 3:0] rid,
-    input    [31:0] rdata,
-    input    [ 1:0] rresp,
-    input           rlast,
-    input           rvalid,
-    output logic    rready,
-    //write request
-    output logic   [ 3:0] awid,
-    output logic   [31:0] awaddr,
-    output logic   [ 7:0] awlen,
-    output logic   [ 2:0] awsize,
-    output logic   [ 1:0] awburst,
-    output logic   [ 1:0] awlock,
-    output logic   [ 3:0] awcache,
-    output logic   [ 2:0] awprot,
-    output logic          awvalid,
-    input                 awready,
-    //write data
-    output logic   [ 3:0] wid,
-    output logic   [31:0] wdata,
-    output logic   [ 3:0] wstrb,
-    output logic          wlast,
-    output logic          wvalid,
-    input                 wready,
-    //write back
-    input    [ 3:0] bid,
-    input    [ 1:0] bresp,
-    input           bvalid,
-    output logic    bready,
-
-
-    //debug interface
-    output logic [31: 0] debug0_wb_pc,
-    output logic [ 3: 0] debug0_wb_rf_we,
-    output logic [ 4: 0] debug0_wb_rf_wnum,
-    output logic [31: 0] debug0_wb_rf_wdata,
-
-    output logic [31: 0] debug1_wb_pc,
-    output logic [ 3: 0] debug1_wb_rf_we,
-    output logic [ 4: 0] debug1_wb_rf_wnum,
-    output logic [31: 0] debug1_wb_rf_wdata
+    input           rstn
+    
 );
     
     
@@ -106,6 +52,49 @@ module My_CPU_test(
     logic         i_arvalid;
     logic         i_arready;
     logic [ 7: 0] i_arlen;
+
+        //AXI interface
+    //read request
+    logic [ 3: 0] arid;
+    logic [31: 0] araddr;
+    logic [ 7: 0] arlen;
+    logic [ 2: 0] arsize;
+    logic [ 1: 0] arburst;
+    logic [ 1: 0] arlock;
+    logic [ 3: 0] arcache;
+    logic [ 2: 0] arprot;
+    logic         arvalid;
+    logic         arready;
+    //read back
+    logic [ 3: 0] rid;
+    logic [31: 0] rdata;
+    logic [ 1: 0] rresp;
+    logic         rlast;
+    logic         rvalid;
+    logic         rready;
+    //write request
+    logic [ 3: 0] awid;
+    logic [31: 0] awaddr;
+    logic [ 7: 0] awlen;
+    logic [ 2: 0] awsize;
+    logic [ 1: 0] awburst;
+    logic [ 1: 0] awlock;
+    logic [ 3: 0] awcache;
+    logic [ 2: 0] awprot;
+    logic         awvalid;
+    logic         awready;
+    //write data
+    logic [ 3: 0] wid;
+    logic [31: 0] wdata;
+    logic [ 3: 0] wstrb;
+    logic         wlast;
+    logic         wvalid;
+    logic         wready;
+    //write back
+    logic [ 3: 0] bid;
+    logic [ 1: 0] bresp;
+    logic         bvalid;
+    logic         bready;
 
     // BR_Pre 分支预测
     logic [29: 0] pred0_br_target;
@@ -214,6 +203,8 @@ module My_CPU_test(
     logic [ 0: 0] EX_div_en;
     logic [ 1: 0] type_predict_a;
     logic [ 1: 0] type_predict_b;
+    logic [31: 0] EX_PC_pre_a;
+    logic [31: 0] EX_PC_pre_b;
 
 
     // AXI
@@ -339,9 +330,8 @@ module My_CPU_test(
     assign stall_full_instr = o_is_full;
     
   
-    assign pc_predict = pc_IF1 + ((~is_valid) ? 0 : ((pc_IF1[ 3: 2] == 2'b11) ? 4: 8));
-
-
+    // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
+    assign pc_predict = (~(|pred0_br_type) && (pc_IF1[ 3: 2] != 2'b11)) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
 
 
     IF1  IF1_inst (
@@ -378,7 +368,7 @@ module My_CPU_test(
         .i_PC1(pc_IF1),
         .i_PC2(pc_IF1+4),
         .i_brtype_pcpre_1({pred0_br_type, pred0_br_target, 2'b00}),
-        .i_brtype_pcpre_2({pred1_br_target, pred1_br_type, 2'b00}), 
+        .i_brtype_pcpre_2({pred1_br_type, pred1_br_target, 2'b00}), 
         .flush_BR(flush_BR),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
@@ -542,6 +532,8 @@ module My_CPU_test(
         .EX_b_enable(EX_b_enable),
         .type_predict_a(type_predict_a),
         .type_predict_b(type_predict_b),
+        .EX_PC_pre_a(EX_PC_pre_a),
+        .EX_PC_pre_b(EX_PC_pre_b),
         .EX_pc_a(EX_pc_a),
         .EX_pc_b(EX_pc_b),
         .EX_rf_raddr_a1(EX_rf_raddr_a1),
@@ -602,6 +594,8 @@ module My_CPU_test(
         .EX_br_type_b(EX_br_type_b),
         .EX_br_pd_a(EX_br_pd_a),
         .EX_br_pd_b(EX_br_pd_b),
+        .EX_pc_pd_a(EX_PC_pre_a),
+        .EX_pc_pd_b(EX_PC_pre_b),
         .EX_pc_of_br(branch_pc), // TODO:
         .EX_pd_type_a(type_predict_a),
         .EX_pd_type_b(type_predict_b),
@@ -683,7 +677,44 @@ module My_CPU_test(
         .d_bready(d_axi_bready)
     );
 
-    // AXI
+    // AXI 
+
+    
+    main_mem_axi your_instance_name (
+        .rsta_busy(rsta_busy),          // output wire rsta_busy
+        .rstb_busy(rstb_busy),          // output wire rstb_busy
+        .s_aclk(clk),                // input wire s_aclk
+        .s_aresetn(rstn),          // input wire s_aresetn
+        .s_axi_awid(awid),        // input wire [3 : 0] s_axi_awid
+        .s_axi_awaddr(awaddr),    // input wire [31 : 0] s_axi_awaddr
+        .s_axi_awlen(awlen),      // input wire [7 : 0] s_axi_awlen
+        .s_axi_awsize(awsize),    // input wire [2 : 0] s_axi_awsize
+        .s_axi_awburst(awburst),  // input wire [1 : 0] s_axi_awburst
+        .s_axi_awvalid(awvalid),  // input wire s_axi_awvalid
+        .s_axi_awready(awready),  // output wire s_axi_awready
+        .s_axi_wdata(wdata),      // input wire [31 : 0] s_axi_wdata
+        .s_axi_wstrb(wstrb),      // input wire [3 : 0] s_axi_wstrb
+        .s_axi_wlast(wlast),      // input wire s_axi_wlast
+        .s_axi_wvalid(wvalid),    // input wire s_axi_wvalid
+        .s_axi_wready(wready),    // output wire s_axi_wready
+        .s_axi_bid(bid),          // output wire [3 : 0] s_axi_bid
+        .s_axi_bresp(bresp),      // output wire [1 : 0] s_axi_bresp
+        .s_axi_bvalid(bvalid),    // output wire s_axi_bvalid
+        .s_axi_bready(bready),    // input wire s_axi_bready
+        .s_axi_arid(arid),        // input
+        .s_axi_araddr(araddr),    // input wire [31 : 0] s_axi_araddr
+        .s_axi_arlen(arlen),      // input wire [7 : 0] s_axi_arlen
+        .s_axi_arsize(arsize),    // input wire [2 : 0] s_axi_arsize
+        .s_axi_arburst(arburst),  // input wire [1 : 0] s_axi_arburst
+        .s_axi_arvalid(arvalid),  // input wire s_axi_arvalid
+        .s_axi_arready(arready),  // output wire s_axi_arready
+        .s_axi_rid(rid),          // output wire [3 : 0] s_axi_rid
+        .s_axi_rdata(rdata),      // output wire [31 : 0] s_axi_rdata
+        .s_axi_rresp(rresp),      // output wire [1 : 0] s_axi_rresp
+        .s_axi_rlast(rlast),      // output wire s_axi_rlast
+        .s_axi_rvalid(rvalid),    // output wire s_axi_rvalid
+        .s_axi_rready(rready)    // input wire s_axi_rready
+      );
     axi_interconnect #(
         .S_COUNT(2),
         .M_COUNT(1),
