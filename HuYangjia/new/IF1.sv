@@ -41,7 +41,7 @@ module IF1(
 
     );
 
-    logic stop_for_remember; // 用于在预译码得到跳转型号，但是同时得到IB满信号，导致PC_pre被跳过。所以使用这个信号作为记录。
+    // logic stop_for_remember; // 用于在预译码得到跳转型号，但是同时得到IB满信号，导致PC_pre被跳过。所以使用这个信号作为记录。
 
     // logic [ 0: 0] flush;
     logic [ 0: 0] stall;
@@ -68,9 +68,9 @@ module IF1(
         else if(BR_predecoder) begin
             pc_IF1 <= PC_predecoder;
         end
-        else if(stop_for_remember) begin
-            pc_IF1 <= pc_IF1;
-        end
+        // else if(stop_for_remember) begin
+        //     pc_IF1 <= pc_IF1;
+        // end
         else if( stall ) begin
             pc_IF1 <= pc_IF1;
         end
@@ -80,20 +80,20 @@ module IF1(
     end
 
 
-    always @(posedge clk, negedge rstn) begin
-        if( !rstn ) begin
-            stop_for_remember <= 0;
-        end
-        else if( stall_full_instr ) begin
-            if ( BR_predecoder ) begin
-                stop_for_remember <= 1;
-            end
-            else begin
-                stop_for_remember <= stop_for_remember;
-            end
-        end
-        else begin
-            stop_for_remember <= 0;
-        end
-    end
+    // always @(posedge clk, negedge rstn) begin
+    //     if( !rstn ) begin
+    //         stop_for_remember <= 0;
+    //     end
+    //     else if( stall_full_instr ) begin
+    //         if ( BR_predecoder ) begin
+    //             stop_for_remember <= 1;
+    //         end
+    //         else begin
+    //             stop_for_remember <= stop_for_remember;
+    //         end
+    //     end
+    //     else begin
+    //         stop_for_remember <= 0;
+    //     end
+    // end
 endmodule
