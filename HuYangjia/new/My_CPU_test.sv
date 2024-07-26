@@ -331,7 +331,7 @@ module My_CPU_test(
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
-    assign pc_predict = (~(|pred0_br_type) && (pc_IF1[ 3: 2] != 2'b11)) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
+    assign pc_predict = ~(is_valid) ? pc_IF1 : (~(|pred0_br_type) && (pc_IF1[ 3: 2] != 2'b11)) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
 
 
     IF1  IF1_inst (
