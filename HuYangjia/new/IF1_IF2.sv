@@ -50,7 +50,7 @@ module IF1_IF2(
 
     logic [ 1: 0] o_is_valid_temp;
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             o_is_valid_temp <= 2'b00;
         end

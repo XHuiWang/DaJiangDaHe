@@ -113,7 +113,7 @@ module IF2_ID1(
     assign signal_length_eq_1 = (length == 1);
     assign ID_status = (|o_is_valid);
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             // Reset condition
             head <= 5'd0;
@@ -299,7 +299,7 @@ module IF2_ID1(
     end
 
     // o_is_valid 是否有效
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             o_is_valid <= 2'b00;
         end
@@ -324,7 +324,7 @@ module IF2_ID1(
     end
 
     // o_is_full 是否满
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end
@@ -338,37 +338,3 @@ module IF2_ID1(
     end
 
 endmodule
-
-        // else if( !stall) begin
-        //     // 要写入
-        //     if( length > 2 ) begin
-        //         // length > 2 
-        //         // length - length_add = head
-        //         // 0 -> length - 3 - length_add为取Buffer的
-        //         // length - 2 - length_add -> length - 3为取存入的
-        //         for( int i = 0; i <= head - 3; i++) begin
-        //             PC_Buffer[i] <= PC_Buffer_temp[i+2];
-        //             IR_Buffer[i] <= IR_Buffer_temp[i+2];
-        //         end
-        //         if(head == 1) begin
-        //             PC_Buffer[0] <= i_PC2;
-        //             IR_Buffer[0] <= i_IR2;
-        //             head <= 1;
-        //         end
-        //         else begin
-        //             if( length_add == 1) begin
-        //                 PC_Buffer[length - 3] <= i_PC1;
-        //                 IR_Buffer[length - 3] <= i_IR1;
-        //             end
-        //             else begin
-        //                 PC_Buffer[length - 4] <= i_PC1;
-        //                 IR_Buffer[length - 4] <= i_IR1;
-        //                 PC_Buffer[length - 3] <= i_PC2;
-        //                 IR_Buffer[length - 3] <= i_IR2;
-        //             end
-        //         end
-        //     end
-        //     else begin
-        //         head <= 0;
-        //     end
-        // end

@@ -32,8 +32,8 @@ package Public_Info;
         logic [31: 0] imm          ;
         logic [ 4: 0] rf_rd        ;
         logic [ 0: 0] rf_we        ;
-        logic [ 2: 0] alu_src1_sel ;
-        logic [ 2: 0] alu_src2_sel ;
+        logic [ 3: 0] alu_src1_sel ;
+        logic [ 3: 0] alu_src2_sel ;
         logic [11: 0] alu_op       ;
         logic [ 0: 0] mem_we       ;
         logic [ 3: 0] ldst_type    ;
@@ -46,5 +46,9 @@ package Public_Info;
         logic [ 0: 0] sign_bit     ; // 符号位,运用于乘除法 // 1为有符号数
         logic [ 1: 0] type_predict ; // using for branch predict, to know the stardard, see the IF2_PreDecoder.sv
         logic [31: 0] PC_pre       ; // 用于预测分支时得到的PC
+        logic [ 2: 0] csr_type     ; // 用于csr指令的类型
+        logic [13: 0] csr_raddr    ; // 用于csr指令的读csr地址
+        logic [ 6: 0] ecode_in     ; // 用于异常处理的输入
+        logic [ 0: 0] ecode_we     ; // 用于异常处理的写使能
     } PC_set;
 endpackage
