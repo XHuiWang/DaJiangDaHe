@@ -175,6 +175,21 @@ module FSM_icache(
                 miss_lru_way = way_sel == 1'b0 ? 1'b0 : 1'b1;
                 miss_LRU_update = 1'b1;
             end
+            default:begin
+                next_state = IDLE;
+                rready = 1'b0;
+                i_arvalid = 1'b0;
+                mem_we = 2'b00;
+                TagV_we = 2'b00;
+                rbuf_we = 1'b0;
+                data_from_mem_sel =  1'b1;
+                i_araddr = 32'd0;
+                i_rready = 1'b0;
+                LRU_update = 1'b0;
+                fbuf_clear = 1'b0;
+                miss_lru_way = 1'b0;
+                miss_LRU_update = 1'b0;
+            end
         endcase
     end
 endmodule

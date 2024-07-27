@@ -68,9 +68,9 @@ module IF1(
         else if(BR_predecoder) begin
             pc_IF1 <= PC_predecoder;
         end
-        else if(stop_for_remember) begin
-            pc_IF1 <= pc_IF1;
-        end
+        // else if(stop_for_remember) begin
+        //     pc_IF1 <= pc_IF1;
+        // end
         else if( stall ) begin
             pc_IF1 <= pc_IF1;
         end
