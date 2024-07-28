@@ -14,12 +14,14 @@ module FU_ALU(                                      //A指令固定在B指令之
     input           [31: 0]     EX_rf_rdata_b2,     //B指令的第二个寄存器的值
     input           [31: 0]     EX_imm_a,           //A指令的立即数
     input           [31: 0]     EX_imm_b,           //B指令的立即数
-    input           [ 2: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
-    input           [ 2: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
-    input           [ 2: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
-    input           [ 2: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
+    input           [ 3: 0]     EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
+    input           [ 3: 0]     EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
+    input           [ 3: 0]     EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
+    input           [ 3: 0]     EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
     input           [11: 0]     EX_alu_op_a,        //A指令的运算类型
     input           [11: 0]     EX_alu_op_b,        //B指令的运算类型
+
+    input           [31: 0]     EX_csr_rdata,       //B指令的CSR读数据
 
     output  reg     [31: 0]     EX_alu_result_a,    //A指令的运算结果
     output  reg     [31: 0]     EX_alu_result_b     //B指令的运算结果
@@ -33,6 +35,7 @@ Mux MUX_A1(
     .a(EX_pc_a),
     .b(EX_rf_rdata_a1),
     .c(32'h0000_0000),
+    .d(32'h0000_0000),//不使用
     .s(EX_alu_src_sel_a1),
     .y(EX_alu_src_a1)
 );
@@ -40,6 +43,7 @@ Mux MUX_A2(
     .a(EX_imm_a),
     .b(EX_rf_rdata_a2),
     .c(32'h0000_0004),
+    .d(32'h0000_0000),//不使用
     .s(EX_alu_src_sel_a2),
     .y(EX_alu_src_a2)
 );
@@ -47,6 +51,7 @@ Mux MUX_B1(
     .a(EX_pc_b),
     .b(EX_rf_rdata_b1),
     .c(32'h0000_0000),
+    .d(32'h0000_0000),//不使用
     .s(EX_alu_src_sel_b1),
     .y(EX_alu_src_b1)
 );
@@ -54,6 +59,7 @@ Mux MUX_B2(
     .a(EX_imm_b),
     .b(EX_rf_rdata_b2),
     .c(32'h0000_0004),
+    .d(EX_csr_rdata),
     .s(EX_alu_src_sel_b2),
     .y(EX_alu_src_b2)
 );
