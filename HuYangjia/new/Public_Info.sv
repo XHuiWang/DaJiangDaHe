@@ -49,6 +49,6 @@ package Public_Info;
         logic [ 2: 0] csr_type     ; // 用于csr指令的类型
         logic [13: 0] csr_raddr    ; // 用于csr指令的读csr地址
         logic [ 6: 0] ecode_in     ; // 用于异常处理的输入
-        logic [ 0: 0] ecode_we     ; // 用于异常处理的写使能
+        logic [ 0: 0] ecode_we     ; // 用于异常处理的写曾经，表示已经修改过ecode_in
     } PC_set;
 endpackage

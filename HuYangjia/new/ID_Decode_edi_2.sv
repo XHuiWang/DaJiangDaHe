@@ -27,6 +27,8 @@ module ID_Decode_edi_2(
     input [31: 0] IF_IR,
     input [31: 0] PC,
     input [33: 0] brtype_pcpre,
+    input [ 7: 0] ecode,
+
     input [ 0: 0] ID_status,
     input [ 0: 0] data_valid,
     output PC_set PC_set
@@ -42,8 +44,8 @@ module ID_Decode_edi_2(
     logic [ 4: 0] rf_rd;
     logic [ 0: 0] rf_we;
   
-    logic [ 2: 0] alu_src1_sel;
-    logic [ 2: 0] alu_src2_sel;
+    logic [ 3: 0] alu_src1_sel;
+    logic [ 3: 0] alu_src2_sel;
   
     logic [ 4: 0] rf_raddr1;
     logic [ 4: 0] rf_raddr2;
@@ -52,9 +54,17 @@ module ID_Decode_edi_2(
     
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
-    logic [ 0: 0] wb_sel;
+    logic [ 0: 0] wb_sel; // TODO: act as mux_sel 
     logic [ 5: 0] mux_sel; // B通道WB来源的选择信号
     logic [ 0: 0] sign_bit; // 符号位,运用于乘除法
+
+    logic [ 2: 0] csr_type; // 用于csr指令的类型
+    logic [13: 0] csr_raddr; // 用于csr指令的读csr地址
+    logic [ 6: 0] ecode_in; // 用于异常处理的输入
+    logic [ 0: 0] ecode_we; // 用于异常处理的写曾经，表示已经修改过ecode_in
+
+    assign ecode_in = ecode[ 6: 0];
+    assign ecode_we = ecode[ 7: 7];
 
 
     assign PC_set.instruction = IF_IR;
@@ -80,7 +90,8 @@ module ID_Decode_edi_2(
     assign PC_set.rf_rdata2 = 32'd0;
     assign PC_set.type_predict = brtype_pcpre[33:32];
     assign PC_set.PC_pre = brtype_pcpre[31: 0];
-
+    assign PC_set.csr_type = csr_type;
+    assign PC_set.csr_raddr = csr_raddr;
 
 
     // 对每一种指令的存在进行检测
@@ -137,6 +148,12 @@ module ID_Decode_edi_2(
     wire divu_inst;
     wire modu_inst;
 
+    wire csrrd_inst;
+    wire csrwr_inst;
+    wire csrxchg_inst;
+    wire ertn_inst;
+
+
     assign add_inst       = (IF_IR [31:15] == 17'h00020) ? 1'b1 : 1'b0;
     assign sub_inst       = (IF_IR [31:15] == 17'h00022) ? 1'b1 : 1'b0;
     assign addi_inst      = (IF_IR [31:22] == 10'h00a)   ? 1'b1 : 1'b0;
@@ -189,6 +206,12 @@ module ID_Decode_edi_2(
     assign mod_inst       = (IF_IR [31:15] == 17'h00041) ? 1'b1 : 1'b0;
     assign divu_inst      = (IF_IR [31:15] == 17'h00042) ? 1'b1 : 1'b0;
     assign modu_inst      = (IF_IR [31:15] == 17'h00043) ? 1'b1 : 1'b0;
+
+    assign csrrd_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h00) ? 1'b1 : 1'b0;
+    assign csrwr_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h01) ? 1'b1 : 1'b0;
+    assign csrxchg_inst   = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] != 5'h02) ? 1'b1 : 1'b0;
+    assign ertn_inst      = (IF_IR [31:10] == 22'h0a920e) ? 1'b1 : 1'b0;
+
 
     assign o_valid = data_valid & o_inst_lawful;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
@@ -278,27 +301,30 @@ module ID_Decode_edi_2(
                         (slli_inst | srli_inst | srai_inst) ? {27'd0 ,IF_IR[14:10]} : 0;
                         
     assign rf_raddr1 = IF_IR[ 9: 5];
-    assign rf_raddr2 = ( stb_inst | sth_inst | st_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
+    assign rf_raddr2 =  ( stb_inst | sth_inst | st_inst | beq_inst | bne_inst | 
+                        blt_inst | bge_inst | bltu_inst | bgeu_inst | csrrd_inst | 
+                        csrwr_inst | csrxchg_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
     assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~data_valid | rf_rd == 0)) ? 1'b0 : 1'b1;
     // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
-    assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 3'h1 ://pc
-                          (~(lu12i_inst)) ? 3'h2 :          //rf 
-                          3'h4;                             //0
-    assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 3'h1 : //imm
+    assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 4'h1 ://pc
+                          (~(lu12i_inst | csrxchg_inst | csrwr_inst | csrrd_inst)) ? 4'h2 :          //rf 
+                          4'h4;                             //0
+    assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 4'h1 : //imm
                           (add_inst | sub_inst | slt_inst | sltu_inst | nor_inst | and_inst | or_inst | xor_inst | sll_inst | srl_inst |
                            sra_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | mul_inst | mulh_inst | mulhu_inst |
-                           div_inst | divu_inst | mod_inst | modu_inst) ? 3'h2 :                           //rf  
-                           3'h4;                                                                                                            //4
+                           div_inst | divu_inst | mod_inst | modu_inst) ? 4'h2 :                           //rf  
+                          ~(csrrd_inst | csrwr_inst | csrxchg_inst) ? 4'h4 :  //4
+                          4'h8; // csr_rdata
     assign alu_op = (add_inst | addi_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | pcaddu12i_inst |
                      sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst | lu12i_inst) ? 12'h001 :
                     (sub_inst | beq_inst | bne_inst) ? 12'h002 :
                     (slt_inst | slti_inst | blt_inst | bge_inst) ? 12'h004 :
                     (sltu_inst | sltui_inst | bltu_inst | bgeu_inst) ? 12'h008 :
                     (and_inst | andi_inst) ? 12'h010 :
-                    (or_inst | ori_inst) ? 12'h020 :
+                    (or_inst | ori_inst | csrrd_inst | csrwr_inst | csrxchg_inst) ? 12'h020 :
                     (nor_inst) ? 12'h040 :
                     (xor_inst | xori_inst) ? 12'h080 :
                     (sll_inst | slli_inst) ? 12'h100 :
@@ -307,6 +333,12 @@ module ID_Decode_edi_2(
     assign mem_we = ((stb_inst | sth_inst | st_inst) & data_valid) ? 1'b1 : 1'b0;
     // assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
     assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
+
+    assign csr_type = (csrrd_inst)   ? 3'h1 :
+                      (csrwr_inst)   ? 3'h2 :
+                      (csrxchg_inst) ? 3'h4 : 3'h0;
+    assign csr_raddr = IF_IR[23:10];
+    
                     
                         
 
