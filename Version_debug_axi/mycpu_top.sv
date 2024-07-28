@@ -1,6 +1,4 @@
 `timescale 1ns / 1ps
-
-
 `include "Public_Info.sv"
 import Public_Info::*;
 module mycpu_top(
