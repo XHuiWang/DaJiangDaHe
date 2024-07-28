@@ -37,7 +37,7 @@ package Public_Info;
         logic [11: 0] alu_op       ;
         logic [ 0: 0] mem_we       ;
         logic [ 3: 0] ldst_type    ;
-        logic [ 0: 0] wb_sel       ;
+        // logic [ 0: 0] wb_sel       ;
         logic [ 5: 0] mux_sel      ; // B通道WB来源的选择信号
         logic [ 4: 0] rf_raddr1    ;
         logic [ 4: 0] rf_raddr2    ;

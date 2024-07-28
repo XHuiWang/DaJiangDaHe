@@ -54,7 +54,7 @@ module ID_Decode_edi_2(
     
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
-    logic [ 0: 0] wb_sel; // TODO: act as mux_sel 
+    // logic [ 0: 0] wb_sel; // TODO: act as mux_sel 
     logic [ 5: 0] mux_sel; // B通道WB来源的选择信号
     logic [ 0: 0] sign_bit; // 符号位,运用于乘除法
 
@@ -62,6 +62,8 @@ module ID_Decode_edi_2(
     logic [13: 0] csr_raddr; // 用于csr指令的读csr地址
     logic [ 6: 0] ecode_in; // 用于异常处理的输入
     logic [ 0: 0] ecode_we; // 用于异常处理的写曾经，表示已经修改过ecode_in
+    logic [ 6: 0] ecode_out; // 用于异常处理的输出
+    logic [ 0: 0] ecode_out_we; // 用于异常处理的输出写曾经，表示已经修改过ecode_out
 
     assign ecode_in = ecode[ 6: 0];
     assign ecode_we = ecode[ 7: 7];
@@ -83,7 +85,7 @@ module ID_Decode_edi_2(
     assign PC_set.alu_op = alu_op;
     assign PC_set.mem_we = mem_we;
     assign PC_set.ldst_type = ldst_type;
-    assign PC_set.wb_sel = wb_sel;
+    // assign PC_set.wb_sel = wb_sel;
     assign PC_set.mux_sel = mux_sel;
     assign PC_set.sign_bit = sign_bit;
     assign PC_set.rf_rdata1 = 32'd0;
@@ -92,6 +94,8 @@ module ID_Decode_edi_2(
     assign PC_set.PC_pre = brtype_pcpre[31: 0];
     assign PC_set.csr_type = csr_type;
     assign PC_set.csr_raddr = csr_raddr;
+    assign PC_set.ecode_in = ecode_out;
+    assign PC_set.ecode_we = ecode_out_we;
 
 
     // 对每一种指令的存在进行检测
@@ -153,6 +157,9 @@ module ID_Decode_edi_2(
     wire csrxchg_inst;
     wire ertn_inst;
 
+    wire break_inst;
+    wire syscall_inst;
+
 
     assign add_inst       = (IF_IR [31:15] == 17'h00020) ? 1'b1 : 1'b0;
     assign sub_inst       = (IF_IR [31:15] == 17'h00022) ? 1'b1 : 1'b0;
@@ -210,7 +217,10 @@ module ID_Decode_edi_2(
     assign csrrd_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h00) ? 1'b1 : 1'b0;
     assign csrwr_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h01) ? 1'b1 : 1'b0;
     assign csrxchg_inst   = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] != 5'h02) ? 1'b1 : 1'b0;
-    assign ertn_inst      = (IF_IR [31:10] == 22'h0a920e) ? 1'b1 : 1'b0;
+    assign ertn_inst      = (IF_IR [31: 0] == 32'h06483800) ? 1'b1 : 1'b0;
+
+    assign break_inst     = (IF_IR [31:15] == 17'h00054) ? 1'b1 : 1'b0;
+    assign syscall_inst   = (IF_IR [31:15] == 17'h00056) ? 1'b1 : 1'b0;
 
 
     assign o_valid = data_valid & o_inst_lawful;
@@ -221,7 +231,8 @@ module ID_Decode_edi_2(
                             stb_inst | ld_inst | ldh_inst | ldb_inst | ldhu_inst | ldbu_inst | 
                             beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | 
                             b_inst | bl_inst | jirl_inst | mul_inst | mulh_inst | mulhu_inst | 
-                            div_inst | mod_inst | divu_inst | modu_inst);
+                            div_inst | mod_inst | divu_inst | modu_inst | csrrd_inst | csrwr_inst |
+                            csrxchg_inst | ertn_inst | break_inst | syscall_inst) ? 1'b1 : 1'b0;
 
 
     
@@ -332,12 +343,42 @@ module ID_Decode_edi_2(
                     (sra_inst | srai_inst) ? 12'h400 : 12'h800;
     assign mem_we = ((stb_inst | sth_inst | st_inst) & data_valid) ? 1'b1 : 1'b0;
     // assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
-    assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
+    // assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
 
     assign csr_type = (csrrd_inst)   ? 3'h1 :
                       (csrwr_inst)   ? 3'h2 :
                       (csrxchg_inst) ? 3'h4 : 3'h0;
     assign csr_raddr = IF_IR[23:10];
+
+    always @(*) begin
+        if(ecode_we) begin
+            ecode_out = ecode_in;
+            ecode_out_we = 1'b1;
+        end
+        else begin
+            // 之前还没有例外
+            if(~o_inst_lawful) begin
+                // INE，非法指令
+                ecode_out = 7'h0D;
+                ecode_out_we = 1'b1;
+            end
+            else if(break_inst) begin
+                // BRK，断点
+                ecode_out = 7'h0C;
+                ecode_out_we = 1'b1;
+            end
+            else if(syscall_inst) begin
+                // SYS，系统调用
+                ecode_out = 7'h0B;
+                ecode_out_we = 1'b1;
+            end
+            else begin
+                // 其他情况
+                ecode_out = 7'h00;
+                ecode_out_we = 1'b0;
+            end
+        end
+    end
     
                     
                         

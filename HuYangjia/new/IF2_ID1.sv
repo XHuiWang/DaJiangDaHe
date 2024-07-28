@@ -113,74 +113,127 @@ module IF2_ID1(
     assign signal_length_eq_1 = (length == 1);
     assign ID_status = (|o_is_valid);
 
+
+    // head
     always @(posedge clk) begin
         if( !rstn ) begin
-            // Reset condition
             head <= 5'd0;
+        end
+        else if(flush) begin
+            head <= 5'd0;
+        end
+        else if(stall) begin
+            head <= next_head;
+        end
+        else begin
+            if( !(|length) || signal_length_eq_1 || length == 2) begin
+                head <= 5'd0;
+            end
+            else begin
+                head <= next_head;
+            end
+        end
+    end
+
+    // tail
+    always @(posedge clk) begin
+        if( !rstn ) begin
             tail <= 5'd0;
+        end
+        else if(flush) begin
+            tail <= 5'd0;
+        end
+        else if(stall) begin
+            tail <= tail;
+        end
+        else begin
+            if( !(|length) || signal_length_eq_1 || length == 2) begin
+                tail <= 5'd0;
+            end
+            else begin
+                tail <= tail_plus_2;
+            end
+        end
+    end
+
+    // output
+    always @(posedge clk) begin
+        if( !rstn ) begin
             o_PC1 <= 32'h0000_0000;
             o_IR1 <= 32'h0000_0000;
             o_PC2 <= 32'h0000_0000;
             o_IR2 <= 32'h0000_0000;
             o_brtype_pcpre_1 <= 34'h0_0000_0000;
             o_brtype_pcpre_2 <= 34'h0_0000_0000;
-            // 数组清空
-            PC_Buffer[ 0] <= 32'h0000_0000;
-            PC_Buffer[ 1] <= 32'h0000_0000;
-            PC_Buffer[ 2] <= 32'h0000_0000;
-            PC_Buffer[ 3] <= 32'h0000_0000;
-            PC_Buffer[ 4] <= 32'h0000_0000;
-            PC_Buffer[ 5] <= 32'h0000_0000;
-            PC_Buffer[ 6] <= 32'h0000_0000;
-            PC_Buffer[ 7] <= 32'h0000_0000;
-            PC_Buffer[ 8] <= 32'h0000_0000;
-            PC_Buffer[ 9] <= 32'h0000_0000;
-            PC_Buffer[10] <= 32'h0000_0000;
-            PC_Buffer[11] <= 32'h0000_0000;
-            PC_Buffer[12] <= 32'h0000_0000;
-            PC_Buffer[13] <= 32'h0000_0000;
-            PC_Buffer[14] <= 32'h0000_0000;
-            PC_Buffer[15] <= 32'h0000_0000;
-            IR_Buffer[ 0] <= 32'h0000_0000;
-            IR_Buffer[ 1] <= 32'h0000_0000;
-            IR_Buffer[ 2] <= 32'h0000_0000;
-            IR_Buffer[ 3] <= 32'h0000_0000;
-            IR_Buffer[ 4] <= 32'h0000_0000;
-            IR_Buffer[ 5] <= 32'h0000_0000;
-            IR_Buffer[ 6] <= 32'h0000_0000;
-            IR_Buffer[ 7] <= 32'h0000_0000;
-            IR_Buffer[ 8] <= 32'h0000_0000;
-            IR_Buffer[ 9] <= 32'h0000_0000;
-            IR_Buffer[10] <= 32'h0000_0000;
-            IR_Buffer[11] <= 32'h0000_0000;
-            IR_Buffer[12] <= 32'h0000_0000;
-            IR_Buffer[13] <= 32'h0000_0000;
-            IR_Buffer[14] <= 32'h0000_0000;
-            IR_Buffer[15] <= 32'h0000_0000;
-            brtype_pcpre_Buffer[ 0] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 1] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 2] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 3] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 4] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 5] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 6] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 7] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 8] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[ 9] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[10] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[11] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[12] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[13] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[14] <= 34'h0_0000_0000;
-            brtype_pcpre_Buffer[15] <= 34'h0_0000_0000;
+        end
+        else if(flush | stall | !(|length)) begin
+            o_PC1 <= o_PC1;
+            o_IR1 <= o_IR1;
+            o_PC2 <= o_PC2;
+            o_IR2 <= o_IR2;
+            o_brtype_pcpre_1 <= o_brtype_pcpre_1;
+            o_brtype_pcpre_2 <= o_brtype_pcpre_2;
+        end
+        else begin
+            if(signal_length_eq_1) begin
+                if(!(|length_left)) begin
+                    o_PC1 <= i_PC1;
+                    o_IR1 <= i_IR1;
+                    o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+                end
+                else begin
+                    o_PC1 <= PC_Buffer[tail];
+                    o_IR1 <= IR_Buffer[tail];
+                    o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                end
+            end
+            else begin
+                // 2对有效
+                if(is_valid[1]) begin
+                    if(is_valid[0]) begin
+                        o_PC1 <= i_PC1;
+                        o_IR1 <= i_IR1;
+                        o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+                        o_PC2 <= i_PC2;
+                        o_IR2 <= i_IR2;
+                        o_brtype_pcpre_2 <= i_brtype_pcpre_2;
+                    end
+                    else begin
+                        o_PC1 <= PC_Buffer[tail];
+                        o_IR1 <= IR_Buffer[tail];
+                        o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                        o_PC2 <= i_PC1;
+                        o_IR2 <= i_IR1;
+                        o_brtype_pcpre_2 <= i_brtype_pcpre_1;
+                    end
+                end
+                else begin
+                    o_PC1 <= PC_Buffer[tail];
+                    o_IR1 <= IR_Buffer[tail];
+                    o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                    o_PC2 <= PC_Buffer[tail_plus_1];
+                    o_IR2 <= IR_Buffer[tail_plus_1];
+                    o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
+                end
+            end
+        end
+    end
+
+    // Buffer
+    always @(posedge clk) begin
+        if( !rstn ) begin
+            // Reset condition
+            for(integer i = 0; i < NUM; i++) begin
+                PC_Buffer[i] <= 32'h0000_0000;
+                IR_Buffer[i] <= 32'h0000_0000;
+                brtype_pcpre_Buffer[i] <= 34'h0_0000_0000;
+            end
         end
         else if(flush) begin
-            tail <= 5'd0;
-            head <= 5'd0;
+            
         end
         else if(stall) begin
             // 写入，不写出
-            head <= next_head;
             case (length_add)
                 2'd0: begin
                     // 无效
@@ -207,63 +260,10 @@ module IF2_ID1(
             endcase
         end
         else begin
-            // 写入，根据总数写出
-            if(!(|length)) begin
-                // 无效
-                head <= 0;
-                tail <= 0;
-            end
-            else if(signal_length_eq_1 || length == 2 ) begin
-                head <= 0;
-                tail <= 0;
-                if(signal_length_eq_1) begin
-                    // 1对有效
-                    if(!(|length_left)) begin
-                        o_PC1 <= i_PC1;
-                        o_IR1 <= i_IR1;
-                        o_brtype_pcpre_1 <= i_brtype_pcpre_1;
-                    end
-                    else begin
-                        o_PC1 <= PC_Buffer[tail];
-                        o_IR1 <= IR_Buffer[tail];
-                        o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
-                    end
-                end
-                else begin
-                    // 2对有效
-                    if(is_valid[1]) begin
-                        if(is_valid[0]) begin
-                            o_PC1 <= i_PC1;
-                            o_IR1 <= i_IR1;
-                            o_brtype_pcpre_1 <= i_brtype_pcpre_1;
-                            o_PC2 <= i_PC2;
-                            o_IR2 <= i_IR2;
-                            o_brtype_pcpre_2 <= i_brtype_pcpre_2;
-                        end
-                        else begin
-                            o_PC1 <= PC_Buffer[tail];
-                            o_IR1 <= IR_Buffer[tail];
-                            o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
-                            o_PC2 <= i_PC1;
-                            o_IR2 <= i_IR1;
-                            o_brtype_pcpre_2 <= i_brtype_pcpre_1;
-                        end
-                    end
-                    else begin
-                        o_PC1 <= PC_Buffer[tail];
-                        o_IR1 <= IR_Buffer[tail];
-                        o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
-                        o_PC2 <= PC_Buffer[tail_plus_1];
-                        o_IR2 <= IR_Buffer[tail_plus_1];
-                        o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
-                    end
-                end
+            if(signal_length_eq_1 || length == 2 || !(|length)) begin
+                
             end
             else begin
-                // 有剩余
-                head <= next_head;
-                tail <= tail_plus_2;
-                // 写入抉择
                 case (length_add)
                 2'd0: begin
                     // 无效
@@ -287,16 +287,11 @@ module IF2_ID1(
                     // 无效
                 end
                 endcase
-                //写出抉择
-                o_PC1 <= PC_Buffer[tail];
-                o_IR1 <= IR_Buffer[tail];
-                o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
-                o_PC2 <= PC_Buffer[tail_plus_1];
-                o_IR2 <= IR_Buffer[tail_plus_1];
-                o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
             end
+        
         end
     end
+
 
     // o_is_valid 是否有效
     always @(posedge clk) begin
@@ -338,3 +333,144 @@ module IF2_ID1(
     end
 
 endmodule
+
+    // always @(posedge clk) begin
+    //     if( !rstn ) begin
+    //         // Reset condition
+    //         head <= 5'd0;
+    //         tail <= 5'd0;
+    //         o_PC1 <= 32'h0000_0000;
+    //         o_IR1 <= 32'h0000_0000;
+    //         o_PC2 <= 32'h0000_0000;
+    //         o_IR2 <= 32'h0000_0000;
+    //         o_brtype_pcpre_1 <= 34'h0_0000_0000;
+    //         o_brtype_pcpre_2 <= 34'h0_0000_0000;
+    //         for(integer i = 0; i < NUM; i++) begin
+    //             PC_Buffer[i] <= 32'h0000_0000;
+    //             IR_Buffer[i] <= 32'h0000_0000;
+    //             brtype_pcpre_Buffer[i] <= 34'h0_0000_0000;
+    //         end
+    //     end
+    //     else if(flush) begin
+    //         tail <= 5'd0;
+    //         head <= 5'd0;
+    //     end
+    //     else if(stall) begin
+    //         // 写入，不写出
+    //         head <= next_head;
+    //         case (length_add)
+    //             2'd0: begin
+    //                 // 无效
+    //             end
+    //             2'd1: begin
+    //                 // 1对有效
+    //                 PC_Buffer[head] <= i_PC1;
+    //                 IR_Buffer[head] <= i_IR1;
+    //                 brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+    //             end
+    //             2'd2: begin
+    //                 // 2对有效
+    //                 PC_Buffer[head] <= i_PC1;
+    //                 IR_Buffer[head] <= i_IR1;
+    //                 brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+    //                 PC_Buffer[head_plus_1] <= i_PC2;
+    //                 IR_Buffer[head_plus_1] <= i_IR2;
+    //                 brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
+    //             end
+    //             default: begin
+    //                 // 无效
+    //             end
+                
+    //         endcase
+    //     end
+    //     else begin
+    //         // 写入，根据总数写出
+    //         if(!(|length)) begin
+    //             // 无效
+    //             head <= 0;
+    //             tail <= 0;
+    //         end
+    //         else if(signal_length_eq_1 || length == 2 ) begin
+    //             head <= 0;
+    //             tail <= 0;
+    //             if(signal_length_eq_1) begin
+    //                 // 1对有效
+    //                 if(!(|length_left)) begin
+    //                     o_PC1 <= i_PC1;
+    //                     o_IR1 <= i_IR1;
+    //                     o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+    //                 end
+    //                 else begin
+    //                     o_PC1 <= PC_Buffer[tail];
+    //                     o_IR1 <= IR_Buffer[tail];
+    //                     o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+    //                 end
+    //             end
+    //             else begin
+    //                 // 2对有效
+    //                 if(is_valid[1]) begin
+    //                     if(is_valid[0]) begin
+    //                         o_PC1 <= i_PC1;
+    //                         o_IR1 <= i_IR1;
+    //                         o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+    //                         o_PC2 <= i_PC2;
+    //                         o_IR2 <= i_IR2;
+    //                         o_brtype_pcpre_2 <= i_brtype_pcpre_2;
+    //                     end
+    //                     else begin
+    //                         o_PC1 <= PC_Buffer[tail];
+    //                         o_IR1 <= IR_Buffer[tail];
+    //                         o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+    //                         o_PC2 <= i_PC1;
+    //                         o_IR2 <= i_IR1;
+    //                         o_brtype_pcpre_2 <= i_brtype_pcpre_1;
+    //                     end
+    //                 end
+    //                 else begin
+    //                     o_PC1 <= PC_Buffer[tail];
+    //                     o_IR1 <= IR_Buffer[tail];
+    //                     o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+    //                     o_PC2 <= PC_Buffer[tail_plus_1];
+    //                     o_IR2 <= IR_Buffer[tail_plus_1];
+    //                     o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
+    //                 end
+    //             end
+    //         end
+    //         else begin
+    //             // 有剩余
+    //             head <= next_head;
+    //             tail <= tail_plus_2;
+    //             // 写入抉择
+    //             case (length_add)
+    //             2'd0: begin
+    //                 // 无效
+    //             end
+    //             2'd1: begin
+    //                 // 1对有效
+    //                 PC_Buffer[head] <= i_PC1;
+    //                 IR_Buffer[head] <= i_IR1;
+    //                 brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+    //             end
+    //             2'd2: begin
+    //                 // 2对有效
+    //                 PC_Buffer[head] <= i_PC1;
+    //                 IR_Buffer[head] <= i_IR1;
+    //                 brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+    //                 PC_Buffer[head_plus_1] <= i_PC2;
+    //                 IR_Buffer[head_plus_1] <= i_IR2;
+    //                 brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
+    //             end
+    //             default: begin
+    //                 // 无效
+    //             end
+    //             endcase
+    //             //写出抉择
+    //             o_PC1 <= PC_Buffer[tail];
+    //             o_IR1 <= IR_Buffer[tail];
+    //             o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+    //             o_PC2 <= PC_Buffer[tail_plus_1];
+    //             o_IR2 <= IR_Buffer[tail_plus_1];
+    //             o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
+    //         end
+    //     end
+    // end
