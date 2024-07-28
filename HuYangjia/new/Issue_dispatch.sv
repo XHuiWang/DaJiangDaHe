@@ -69,7 +69,6 @@ module Issue_dispatch(
     assign o_set1.alu_op        = i_set1.alu_op       ;
     assign o_set1.mem_we        = i_set1.mem_we       ;
     assign o_set1.ldst_type     = i_set1.ldst_type    ;
-    assign o_set1.wb_sel        = i_set1.wb_sel       ;
     assign o_set1.mux_sel       = i_set1.mux_sel      ;
     assign o_set1.rf_raddr1     = i_set1.rf_raddr1    ;
     assign o_set1.rf_raddr2     = i_set1.rf_raddr2    ;
@@ -94,7 +93,6 @@ module Issue_dispatch(
     assign o_set2.alu_op        = i_set2.alu_op       ;
     assign o_set2.mem_we        = i_set2.mem_we       ;
     assign o_set2.ldst_type     = i_set2.ldst_type    ;
-    assign o_set2.wb_sel        = i_set2.wb_sel       ;
     assign o_set2.mux_sel       = i_set2.mux_sel      ;
     assign o_set2.rf_raddr1     = i_set2.rf_raddr1    ;
     assign o_set2.rf_raddr2     = i_set2.rf_raddr2    ;

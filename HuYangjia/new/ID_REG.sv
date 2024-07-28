@@ -108,7 +108,6 @@ module ID_REG (
     assign error_set.alu_op = 12'd0;
     assign error_set.mem_we = 1'b0;
     assign error_set.ldst_type = 4'd0;
-    assign error_set.wb_sel = 1'b0;
     assign error_set.mux_sel = 5'b0;
     assign error_set.rf_raddr1 = 5'd0;
     assign error_set.rf_raddr2 = 5'd0;
@@ -117,6 +116,10 @@ module ID_REG (
     assign error_set.sign_bit = 1'b0;
     assign error_set.type_predict = 2'd0;
     assign error_set.PC_pre = 32'd0;
+    assign error_set.csr_type = 3'd0;
+    assign error_set.csr_raddr = 14'd0;
+    assign error_set.ecode_in = 7'd0;
+    assign error_set.ecode_we = 1'b0;
 
 
 

@@ -126,6 +126,15 @@ module My_CPU_test(
 
 
     // IF2_ID1
+    logic [31: 0] ID1_PC1;
+    logic [31: 0] ID1_PC2;
+    logic [31: 0] ID1_IR1;
+    logic [31: 0] ID1_IR2;
+    logic [33: 0] ID1_brtype_pcpre_1;
+    logic [33: 0] ID1_brtype_pcpre_2;
+    logic [ 1: 0] ID1_is_valid;
+
+    // ID1_ID2
     logic [31: 0] i_PC1;
     logic [31: 0] i_IR1;
     logic [31: 0] i_PC2;
@@ -398,24 +407,11 @@ module My_CPU_test(
         .i_arlen (i_axi_arlen)
     );
 
-    IF2_predecoder_TOP  IF2_predecoder_TOP_inst (
-        .IR1(i_IR1),
-        .IR2(i_IR2),
-        .PC1(i_PC1),
-        .PC2(i_PC2),
-        .brtype_pcpre1(IF2_brtype_pcpre_1),
-        .brtype_pcpre2(IF2_brtype_pcpre_2),
-        .i_is_valid(i_is_valid),
-        .o_is_valid(predecoder_valid),
-        .PC_fact(PC_predecoder),
-        .predecoder_BR(BR_predecoder),
-        .type_pcpre_1(type_pcpre_1),
-        .type_pcpre_2(type_pcpre_2)
-    );
     
 
     assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{stall_iCache}};
-    assign fact_valid = i_is_valid & predecoder_valid;
+
+
 
     IF2_ID1  IF2_ID1_inst (
         .clk(clk),
@@ -426,9 +422,47 @@ module My_CPU_test(
         .i_PC2(i_PC2),
         .i_IR2(i_IR2),
         .i_brtype_pcpre_2(type_pcpre_2),
+        .i_is_valid(i_is_valid),
+        .flush_BR(flush_BR),
+        .stall_full_instr(stall_full_instr),
+        .o_PC1(ID1_PC1),
+        .o_IR1(ID1_IR1),
+        .o_brtype_pcpre_1(ID1_brtype_pcpre_1),
+        .o_PC2(ID1_PC2),
+        .o_IR2(ID1_IR2),
+        .o_brtype_pcpre_2(ID1_brtype_pcpre_2),
+        .o_is_valid(ID1_is_valid)
+    );
+
+    
+    IF2_predecoder_TOP  IF2_predecoder_TOP_inst (
+        .IR1(ID1_IR1),
+        .IR2(ID1_IR2),
+        .PC1(ID1_PC1),
+        .PC2(ID1_PC2),
+        .brtype_pcpre1(ID1_brtype_pcpre_1),
+        .brtype_pcpre2(ID1_brtype_pcpre_2),
+        .i_is_valid(ID1_is_valid),
+        .o_is_valid(predecoder_valid),
+        .PC_fact(PC_predecoder),
+        .predecoder_BR(BR_predecoder),
+        .type_pcpre_1(type_pcpre_1),
+        .type_pcpre_2(type_pcpre_2)
+    );
+
+    assign fact_valid = ID1_is_valid & predecoder_valid;   
+
+    ID1_ID2  ID1_ID2_inst (
+        .clk(clk),
+        .rstn(rstn),
+        .i_PC1(ID1_PC1),
+        .i_IR1(ID1_IR1),
+        .i_brtype_pcpre_1(type_pcpre_1),
+        .i_PC2(ID1_PC2),
+        .i_IR2(ID1_IR2),
+        .i_brtype_pcpre_2(type_pcpre_2),
         .i_is_valid(fact_valid),
         .flush_BR(flush_BR),
-        .stall_ICache(stall_ICache),
         .stall_full_issue(stall_full_issue),
         .o_PC1(o_PC1),
         .o_IR1(o_IR1),
