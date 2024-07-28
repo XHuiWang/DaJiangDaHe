@@ -15,7 +15,7 @@ module Branch                   //用于判断跳转指令是否本应跳转
 );
 always @(*) begin
 
-    pc_br=32'd0;//默认值 不跳转
+    pc_br=pc_orig+imm;//默认值 不跳转
     br=1'b0;
     case(br_type)
         4'b0000:br=1'b0;
@@ -32,13 +32,13 @@ always @(*) begin
             pc_br=pc_orig+imm;
         end
         4'b0110:begin             //BEQ
-            if(rf_rdata1==rf_rdata2)begin
+            if(~|(rf_rdata1^rf_rdata2))begin
                 br=1'b1;
                 pc_br=pc_orig+imm;
             end    
         end
         4'b0111:begin               //BNE
-            if(rf_rdata1!=rf_rdata2)begin
+            if(|(rf_rdata1^rf_rdata2))begin
                 br=1'b1;
                 pc_br=pc_orig+imm;
             end    
