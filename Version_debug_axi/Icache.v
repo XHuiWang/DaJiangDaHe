@@ -78,7 +78,7 @@ module Icache(
     assign hit = {hit2,hit1};
     assign offset = addr[3:2];
     assign w_tagv = {addr[31:12],1'b1};
-    assign rdata =(flu | flu_reg) ? 64'd0 : mux2_1_out;
+    assign rdata = flu_reg ? 64'd0 : mux2_1_out;
     assign flu = Is_flush;
     assign i_arlen = 8'd3;
     assign flag_valid = offset == 2'b11 ? 0 : 1;

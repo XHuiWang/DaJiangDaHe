@@ -33,18 +33,18 @@ module Forward(
     output  reg     [31: 0]     EX_rf_rdata_b1_f,   //B指令的第一个寄存器的值
     output  reg     [31: 0]     EX_rf_rdata_b2_f    //B指令的第二个寄存器的值
 );
-
+//rd==0时译码段会使we为0
 always @(*) begin
-    if      (EX_rf_raddr_a1==MEM_rf_waddr_b && MEM_rf_we_b && EX_rf_raddr_a1!=5'b0 /*&&TODO多选器要选择*/) begin
+    if      (EX_rf_raddr_a1==MEM_rf_waddr_b && MEM_rf_we_b/*&&TODO多选器要选择*/) begin
         EX_rf_rdata_a1_f=MEM_alu_result_b;
     end
-    else if (EX_rf_raddr_a1==MEM_rf_waddr_a && MEM_rf_we_a && EX_rf_raddr_a1!=5'b0 /*&&TODO多选器要选择*/ ) begin
+    else if (EX_rf_raddr_a1==MEM_rf_waddr_a && MEM_rf_we_a/*&&TODO多选器要选择*/ ) begin
         EX_rf_rdata_a1_f=MEM_alu_result_a;
     end
-    else if (EX_rf_raddr_a1== WB_rf_waddr_b &&  WB_rf_we_b && EX_rf_raddr_a1!=5'b0) begin
+    else if (EX_rf_raddr_a1== WB_rf_waddr_b &&  WB_rf_we_b) begin
         EX_rf_rdata_a1_f=WB_rf_wdata_b;
     end
-    else if (EX_rf_raddr_a1== WB_rf_waddr_a &&  WB_rf_we_a && EX_rf_raddr_a1!=5'b0) begin
+    else if (EX_rf_raddr_a1== WB_rf_waddr_a &&  WB_rf_we_a) begin
         EX_rf_rdata_a1_f=WB_rf_wdata_a;
     end
     else begin
@@ -53,16 +53,16 @@ always @(*) begin
 end
 
 always @(*)begin
-    if     (EX_rf_raddr_a2==MEM_rf_waddr_b && MEM_rf_we_b && EX_rf_raddr_a2!=5'b0 /*&&TODO多选器要选择*/) begin
+    if     (EX_rf_raddr_a2==MEM_rf_waddr_b && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
         EX_rf_rdata_a2_f=MEM_alu_result_b;
     end
-    else if (EX_rf_raddr_a2==MEM_rf_waddr_a && MEM_rf_we_a && EX_rf_raddr_a2!=5'b0 /*&&TODO多选器要选择*/ ) begin
+    else if (EX_rf_raddr_a2==MEM_rf_waddr_a && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
         EX_rf_rdata_a2_f=MEM_alu_result_a;
     end
-    else if (EX_rf_raddr_a2== WB_rf_waddr_b &&  WB_rf_we_b && EX_rf_raddr_a2!=5'b0) begin
+    else if (EX_rf_raddr_a2== WB_rf_waddr_b &&  WB_rf_we_b) begin
         EX_rf_rdata_a2_f=WB_rf_wdata_b;
     end
-    else if (EX_rf_raddr_a2== WB_rf_waddr_a &&  WB_rf_we_a && EX_rf_raddr_a2!=5'b0) begin
+    else if (EX_rf_raddr_a2== WB_rf_waddr_a &&  WB_rf_we_a) begin
         EX_rf_rdata_a2_f=WB_rf_wdata_a;
     end
     else begin
@@ -71,16 +71,16 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (EX_rf_raddr_b1==MEM_rf_waddr_b && MEM_rf_we_b && EX_rf_raddr_b1!=5'b0 /*&&TODO多选器要选择*/) begin
+    if      (EX_rf_raddr_b1==MEM_rf_waddr_b && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
         EX_rf_rdata_b1_f=MEM_alu_result_b;
     end
-    else if (EX_rf_raddr_b1==MEM_rf_waddr_a && MEM_rf_we_a && EX_rf_raddr_b1!=5'b0 /*&&TODO多选器要选择*/ ) begin
+    else if (EX_rf_raddr_b1==MEM_rf_waddr_a && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
         EX_rf_rdata_b1_f=MEM_alu_result_a;
     end
-    else if (EX_rf_raddr_b1== WB_rf_waddr_b &&  WB_rf_we_b && EX_rf_raddr_b1!=5'b0) begin
+    else if (EX_rf_raddr_b1== WB_rf_waddr_b &&  WB_rf_we_b) begin
         EX_rf_rdata_b1_f=WB_rf_wdata_b;
     end
-    else if (EX_rf_raddr_b1== WB_rf_waddr_a &&  WB_rf_we_a && EX_rf_raddr_b1!=5'b0) begin
+    else if (EX_rf_raddr_b1== WB_rf_waddr_a &&  WB_rf_we_a) begin
         EX_rf_rdata_b1_f=WB_rf_wdata_a;
     end
     else begin
@@ -89,16 +89,16 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (EX_rf_raddr_b2==MEM_rf_waddr_b && MEM_rf_we_b && EX_rf_raddr_b2!=5'b0 /*&&TODO多选器要选择*/) begin
+    if      (EX_rf_raddr_b2==MEM_rf_waddr_b && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
         EX_rf_rdata_b2_f=MEM_alu_result_b;
     end
-    else if (EX_rf_raddr_b2==MEM_rf_waddr_a && MEM_rf_we_a && EX_rf_raddr_b2!=5'b0 /*&&TODO多选器要选择*/ ) begin
+    else if (EX_rf_raddr_b2==MEM_rf_waddr_a && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
         EX_rf_rdata_b2_f=MEM_alu_result_a;
     end
-    else if (EX_rf_raddr_b2== WB_rf_waddr_b &&  WB_rf_we_b && EX_rf_raddr_b2!=5'b0) begin
+    else if (EX_rf_raddr_b2== WB_rf_waddr_b &&  WB_rf_we_b) begin
         EX_rf_rdata_b2_f=WB_rf_wdata_b;
     end
-    else if (EX_rf_raddr_b2== WB_rf_waddr_a &&  WB_rf_we_a && EX_rf_raddr_b2!=5'b0) begin
+    else if (EX_rf_raddr_b2== WB_rf_waddr_a &&  WB_rf_we_a) begin
         EX_rf_rdata_b2_f=WB_rf_wdata_a;
     end
     else begin
