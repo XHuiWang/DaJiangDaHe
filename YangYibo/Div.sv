@@ -2,6 +2,7 @@
 module Div(//除法器，共33个周期，1个EX初始准备，32个EX计算，然后流入MEM输出结果
     input                       clk_div,
     input                       rstn,
+    input                       WB_flush_csr,
     input                       div_en,                 //除法器使能，stall使其在33个EX有效
     input           [31:0]      div_x, div_y,           //dividend 被除数, divisor 除数
     input                       div_signed,             //是否有符号，stall使其在33个EX不变
@@ -33,8 +34,8 @@ always @(posedge clk_div)begin
     x_sign_buf <= div_x[31];            //留存一级div_x[31]，MEM段使用
     y_sign_buf <= div_y[31];            //留存一级div_y[31]，MEM段使用
 end
-always @(posedge clk_div, negedge rstn) begin
-    if (!rstn)begin
+always @(posedge clk_div) begin
+    if (!rstn | WB_flush_csr)begin
         loop_cnt <= 33'h1_0000_0000;
         dvd_rmd <= 64'b0;
     end

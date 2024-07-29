@@ -154,7 +154,8 @@ logic               stall_dcache;                   //~MEM_mem_ready
 logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
 logic               stall_div_buf;                  //除法器暂停信号
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = EX_br_a?1'b0:EX_mem_we_b;//若A指令需要修正预测结果，B指令不能写内存
+assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | WB_flush_csr) 
+        ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
 
@@ -301,6 +302,7 @@ Mul2  Mul2_inst (
 Div  Div_inst (
     .clk_div(clk),
     .rstn(rstn),
+    .WB_flush_csr(WB_flush_csr),
     .div_en(EX_div_en),
     .div_x(EX_rf_rdata_b1_f),
     .div_y(EX_rf_rdata_b2_f),
@@ -366,6 +368,8 @@ Pipeline_Register  Pipeline_Register_inst (
     .stall_dcache(stall_dcache),
     .stall_div(stall_div),
     .EX_br_a(EX_br_a),
+    .MEM_ecode_in_a(MEM_ecode_in_a),
+    .MEM_ecode_in_b(MEM_ecode_in_b),
     .WB_flush_csr(WB_flush_csr),
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
