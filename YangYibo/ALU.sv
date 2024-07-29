@@ -8,7 +8,7 @@ wire[31:0]   AND,OR,NOR,XOR;     //按位与，按位或，按位或非，按位
 wire[31:0]   SLL,SRL,SRA;        //左移，右移，算数右移
 
 assign ADD=a+b;
-assign SUB=a+~b+1;
+assign SUB=a-b;
 assign SLT = {{31{1'b0}},$signed(a)<$signed(b)};
 assign SLTU={{31{1'b0}},a<b};
 assign AND=a&b;

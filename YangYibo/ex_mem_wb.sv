@@ -224,9 +224,9 @@ assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
 assign MEM_rf_wdata_a_n = ~MEM_rf_wdata_a+1;
-assign MEM_rf_wdata_b = {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata | 
-                        {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] | 
-                        {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem; 
+assign MEM_rf_wdata_b = ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata ) | 
+                        ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) | 
+                        ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem ); 
 assign MEM_rf_wdata_b_n = ~MEM_rf_wdata_b+1;
 // MEM段B指令RF写回数据多选器独热码 
 // 6'b00_0001: ALU
