@@ -58,9 +58,9 @@ module IF1_IF2(
         if( !rstn ) begin
             o_is_valid_temp <= 2'b00;
         end
-        else if(flush) begin
-            o_is_valid_temp <= 2'b00;
-        end
+        // else if(flush) begin
+        //     o_is_valid_temp <= 2'b00;
+        // end
         else if(stall) begin
             o_is_valid_temp <= o_is_valid_temp;
         end

@@ -390,6 +390,7 @@ module My_CPU_test(
     logic [ 0: 0] stall_iCache; // 由于Icache缺失带来的真正的stall信号
     logic [ 0: 0] stall_div;// 由于除法器忙带来的stall信号
     logic [ 0: 0] flush_BR; // 由于分支预测错误带来的flush信号，作用于两个Buffer和IF1_IF2段间寄存器，作用于ICache(在Miss则停止操作)
+    logic [ 0: 0] flush_of_ALL; // 由于任何原因带来的flush信号，作用于所有段间寄存器
 
     // temp测试
     assign stall_ICache = ~stall_iCache;
@@ -397,6 +398,7 @@ module My_CPU_test(
     assign flush_BR = EX_br;
     assign stall_full_issue = o_is_full_2;
     assign stall_full_instr = o_is_full;
+    assign flush_of_ALL = EX_br | WB_era_en | WB_eentry_en;
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
@@ -412,6 +414,10 @@ module My_CPU_test(
         .plv(plv),
         .BR_predecoder(BR_predecoder),
         .PC_predecoder(PC_predecoder),
+        .PC_era(era_out),
+        .WB_era_en(WB_era_en),
+        .PC_eentry(eentry),
+        .WB_eentry_en(WB_eentry_en),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
         .pc_IF1(pc_IF1),
@@ -441,7 +447,7 @@ module My_CPU_test(
         .i_brtype_pcpre_1({pred0_br_type, pred0_br_target, 2'b00}),
         .i_brtype_pcpre_2({pred1_br_type, pred1_br_target, 2'b00}), 
         .i_ecode(IF1_ecode),
-        .flush_BR(flush_BR),
+        .flush_BR(flush_of_ALL),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
         .BR_predecoder(BR_predecoder),
@@ -459,7 +465,7 @@ module My_CPU_test(
         .rstn(rstn),
         .rvalid(is_valid & ~(IF1_ecode[7])),
         .raddr(pc_IF1),
-        .Is_flush(flush_BR | BR_predecoder), // TODO: 中断例外需要给flush
+        .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
         .flag_valid(ICache_valid),
@@ -488,7 +494,7 @@ module My_CPU_test(
         .i_brtype_pcpre_2(IF2_brtype_pcpre_2),
         .i_ecode_2(IF2_ecode_2),
         .i_is_valid(i_is_valid),
-        .flush_BR(flush_BR),
+        .flush_BR(flush_of_ALL),
         .stall_full_instr(stall_full_instr),
         .o_PC1(ID1_PC1),
         .o_IR1(ID1_IR1),
@@ -531,7 +537,7 @@ module My_CPU_test(
         .i_IR2(ID1_IR2),
         .i_brtype_pcpre_2(type_pcpre_2),
         .i_is_valid(fact_valid),
-        .flush_BR(flush_BR),
+        .flush_BR(flush_of_ALL),
         .stall_full_issue(stall_full_issue),
         .o_PC1(o_PC1),
         .o_IR1(o_IR1),
@@ -574,7 +580,7 @@ module My_CPU_test(
         .i_PC_set1(PC_set1_front),
         .i_PC_set2(PC_set2_front),
         .i_usingNUM(i_usingNUM),
-        .flush_BR(flush_BR),
+        .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
         .stall_div(stall_div),
         .o_PC_set1(PC_set1_back),
@@ -634,7 +640,7 @@ module My_CPU_test(
         .restore_state(WB_restore_state),
         .ecode_in(WB_ecode_in),
         .ecode_we(WB_ecode_we),
-        .era_out(era_out), // TODO:
+        .era_out(era_out), 
         .era_in(WB_era_in),
         .era_we(WB_era_we),
         .badv_in(WB_badv_in),
@@ -675,7 +681,7 @@ module My_CPU_test(
         .rdata_b2_n(rdata_b2_n),
         .csr_rdata_1(csr_rdata_1),
         .csr_rdata_2(csr_rdata_2),
-        .flush_BR(flush_BR),
+        .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
         .stall_div(stall_div),
         .EX_a_enable(EX_a_enable),

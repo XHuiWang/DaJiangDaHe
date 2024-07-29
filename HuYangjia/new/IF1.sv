@@ -33,6 +33,13 @@ module IF1(
     input [ 0: 0] BR_predecoder,
     input [31: 0] PC_predecoder,
 
+    // 来自特权和例外
+    input [31: 0] PC_era,
+    input [ 0: 0] WB_era_en,
+    input [31: 0] PC_eentry,
+    input [ 0: 0] WB_eentry_en,
+
+
     // stall信号
     input [ 0: 0] stall_ICache,
     input [ 0: 0] stall_full_instr,
@@ -43,10 +50,13 @@ module IF1(
 
     );
 
-
+    logic [ 0: 0] BR_era;
+    logic [ 0: 0] BR_eentry;
     logic [ 0: 0] stall;
     logic [ 0: 0] is_valid_temp;
     assign stall = stall_ICache | stall_full_instr;
+    assign BR_era = WB_era_en;
+    assign BR_eentry = WB_eentry_en;
 
 
     assign ecode = (pc_IF1[ 1: 0] == 2'b00) ? (plv == 2'b11 && pc_IF1[31] == 1'b1) ? 8'b1_000_1000 : 8'd0 : 8'b1_000_1001;
@@ -59,11 +69,17 @@ module IF1(
             is_valid_temp <= 1;
         end
     end
-    assign is_valid = ~stall & is_valid_temp & ~BR_predecoder;
+    assign is_valid = ~stall & is_valid_temp & ~BR_predecoder & ~EX_BR & ~BR_era & ~BR_eentry;
 
     always @(posedge clk) begin
         if( !rstn ) begin
             pc_IF1 <= 32'h1c00_0000;
+        end
+        else if(BR_era) begin
+            pc_IF1 <= PC_era;
+        end
+        else if(BR_eentry) begin
+            pc_IF1 <= PC_eentry;
         end
         else if(EX_BR) begin
             pc_IF1 <= pc_BR;
