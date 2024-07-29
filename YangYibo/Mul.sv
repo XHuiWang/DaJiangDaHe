@@ -1,27 +1,33 @@
 module Mul(
     input           [31: 0]     EX_mul_x,EX_mul_y,
+    input           [31: 0]     EX_mul_x_n, //预先取反加一的乘数
+    // input           [31: 0]     EX_mul_y_n,
     input                       EX_mul_signed,      //1：有符号数乘法；0：无符号数乘法
     output  wire    [63: 0]     EX_mul_tmp1, EX_mul_tmp2    //最后一级CSA的输出      
 );
 logic   [63: 0]     x;          //乘数x，扩展至64位
+logic   [63: 0]     x_n;          //   -x，扩展至64位
 logic   [32: 0]     y;          //乘数y，扩展至33位
 assign x = EX_mul_signed ? {{32{EX_mul_x[31]}},EX_mul_x} : {32'b0,EX_mul_x};
+assign x_n = EX_mul_signed? {{32{EX_mul_x_n[31]}},EX_mul_x_n} : 
+    ( |x ? {32'hFFFF_FFFF,EX_mul_x_n} : {32'h0, EX_mul_x_n}); //除非x为0，否则EX_mul_x取反加一不会产生进位
 assign y = EX_mul_signed ? {EX_mul_y[31],EX_mul_y} : {1'b0,EX_mul_y};
 
 //Booth编码
 logic   [63: 0]     booth_res [16:0];   //booth编码的结果
-Booth Booth_0(.y({y[1:0],1'b0}), .x(x), .booth_res(booth_res[0]));
+Booth Booth_0(.y({y[1:0],1'b0}), .x(x), .x_n(x_n), .booth_res(booth_res[0]));
 generate
     genvar i;
     for (i=2;i<32;i=i+2)begin:mul_booth
         Booth Booth_i(
             .y(y[i+1:i-1]),
             .x(x<<i),
+            .x_n(x_n<<i),
             .booth_res(booth_res[i>>1])
         );
     end
 endgenerate
-Booth Booth_32(.y({y[32],y[32:31]}), .x(x<<32), .booth_res(booth_res[16]));
+Booth Booth_32(.y({y[32],y[32:31]}), .x(x<<32), .x_n(x_n<<32), .booth_res(booth_res[16]));
 
 //CSA
 //first stage 17->12 
@@ -71,6 +77,7 @@ endmodule
 module Booth(
     input           [ 2: 0]     y,
     input           [63: 0]     x,
+    input           [63: 0]     x_n,
     output  wire    [63: 0]     booth_res   //Booth算法计算结果
 );
 logic               p1,p2,n1,n2;        //x -> x/2x/-x/-2x
@@ -78,7 +85,7 @@ assign p1 = y==3'b001 || y==3'b010;
 assign p2 = y==3'b011;
 assign n1 = y==3'b101 || y==3'b110;
 assign n2 = y==3'b100;
-assign booth_res = (({64{p1}}&x) | ({64{p2}}&(x<<1))) | ({64{n1}}&(~x+1) | {64{n2}}&(~(x<<1)+1));
+assign booth_res = (({64{p1}}&x) | ({64{p2}}&(x<<1))) | ({64{n1}}&x_n | {64{n2}}&{x_n<<1});
 endmodule  
 
 module CSA(
