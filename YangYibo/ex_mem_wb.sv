@@ -341,7 +341,7 @@ Mul  Mul_inst (
     .EX_mul_x(EX_rf_rdata_b1_f),
     .EX_mul_y(EX_rf_rdata_b2_f),
     .EX_mul_x_n(EX_rf_rdata_b1_nf),
-    .EX_mul_y_n(EX_rf_rdata_b2_nf),
+    // .EX_mul_y_n(EX_rf_rdata_b2_nf),
     .EX_mul_signed(EX_signed),
     .EX_mul_tmp1(EX_mul_tmp1),
     .EX_mul_tmp2(EX_mul_tmp2)
