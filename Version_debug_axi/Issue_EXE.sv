@@ -103,7 +103,7 @@ module Issue_EXE(
     assign Issue_a_enable = ~flush & i_set1.o_valid;
     assign Issue_b_enable = ~flush & i_set2.o_valid;
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             EX_a_enable <= 1'b0;
             EX_b_enable <= 1'b0;
@@ -125,7 +125,7 @@ module Issue_EXE(
     end
     
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             EX_pc_a           <= 32'h0000_0000;
             EX_pc_b           <= 32'h0000_0000;

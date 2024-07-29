@@ -42,7 +42,7 @@ module BTB0 #(    //参数化 btb_depth
     logic [btb_tag_wid-1:0]  btb_tag;
 
     //复位
-    always @(posedge clk or negedge rstn)
+    always @(posedge clk)
         if(~rstn)
             btb_valid <= 0;
         else if(update && update_pc[0] == 1'b0)

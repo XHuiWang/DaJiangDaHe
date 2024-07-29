@@ -64,7 +64,7 @@ module FSM_dcache(
     parameter REFILL = 3'h3;
     parameter WAIT_WRITE = 3'h4;
     //state change
-    always @(posedge clk,negedge rstn)begin
+    always @(posedge clk)begin
         if(!rstn) current_state <= IDLE;
         else current_state <= next_state;
     end

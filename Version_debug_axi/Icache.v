@@ -20,6 +20,7 @@ module Icache(
     output      [63:0]      rdata,
     //用于指示[63:32]是否有效
     output       wire       flag_valid,
+    output       wire       data_valid,
 
 
 
@@ -63,29 +64,26 @@ module Icache(
     wire          data_from_mem_sel ;
     wire          way_sel ;
     wire          LRU_update ;
-    wire          flu ;
-    reg           flu_reg ;
+    reg           valid_reg ;
     wire          fbuf_clear ;
-    wire  [63:0]  mux2_1_out ;
     wire          miss_LRU_update ;
     wire          miss_lru_way ;
 
     assign r_index = raddr[11:4];
     assign w_index = addr[11:4];
     assign Tag = addr[31:12];
-    assign hit1 = r_tagv1[0] & (Tag == r_tagv1[20:1]);
+    assign hit1 = r_tagv1[0] & (Tag == r_tagv1[20:1]); // TODO: && !(Tag ^ r_tagv1[20:1])
     assign hit2 = r_tagv2[0] & (Tag == r_tagv2[20:1]);
     assign hit = {hit2,hit1};
     assign offset = addr[3:2];
     assign w_tagv = {addr[31:12],1'b1};
-    assign rdata = flu_reg ? 64'd0 : mux2_1_out;
-    assign flu = Is_flush;
     assign i_arlen = 8'd3;
     assign flag_valid = offset == 2'b11 ? 0 : 1;
+    assign data_valid = valid_reg;
 
     always @(posedge clk) begin
-        if(flu) flu_reg <= flu;
-        else if(fbuf_clear) flu_reg <= 1'b0;
+        if(Is_flush) valid_reg <= 1'b0;
+        else if(rbuf_we) valid_reg <= rvalid;
     end
 
     register# ( .WIDTH(32), .RST_VAL(0))
@@ -146,7 +144,7 @@ module Icache(
         .din1 (inst_from_icache),
         .din2 (inst_from_retbuf),
         .sel  (data_from_mem_sel),
-        .dout (mux2_1_out)
+        .dout (rdata)
     );
 
     LRU LRU1(

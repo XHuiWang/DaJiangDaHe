@@ -120,7 +120,7 @@ module ID_REG (
 
 
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             PC_set_Buffer[ 0] <= error_set;
             PC_set_Buffer[ 1] <= error_set;
@@ -156,7 +156,7 @@ module ID_REG (
     end
 
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             head <= 5'b0;
             tail <= 5'b0;
@@ -176,7 +176,7 @@ module ID_REG (
     end
 
     // o_is_valid_temp 是否有效
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             o_is_valid_temp <= 2'b00;
         end
@@ -204,7 +204,7 @@ module ID_REG (
     assign o_is_valid = o_is_valid_temp;
 
     // o_is_full 是否满
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk ) begin
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end

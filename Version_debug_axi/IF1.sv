@@ -48,7 +48,7 @@ module IF1(
     logic [ 0: 0] is_valid_temp;
     assign stall = stall_ICache | stall_full_instr;
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             is_valid_temp <= 0;
         end
@@ -58,7 +58,7 @@ module IF1(
     end
     assign is_valid = ~stall & is_valid_temp & ~BR_predecoder;
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             pc_IF1 <= 32'h1c00_0000;
         end
@@ -80,7 +80,7 @@ module IF1(
     end
 
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
             stop_for_remember <= 0;
         end

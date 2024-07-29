@@ -48,7 +48,7 @@ module Pipeline_Register(
 );
 logic   [31: 0]     MEM_pc_a;
 logic   [31: 0]     MEM_pc_b;
-always@(posedge clk,negedge rstn)
+always@(posedge clk)
 begin
     if(!rstn)
     begin

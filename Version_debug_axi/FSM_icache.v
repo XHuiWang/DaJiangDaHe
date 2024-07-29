@@ -53,7 +53,7 @@ module FSM_icache(
     parameter REFILL = 3'h3;
     parameter MISS_A = 3'h4;//地址确认状态
     //state change
-    always @(posedge clk,negedge rstn)begin
+    always @(posedge clk)begin
         if(!rstn) current_state <= IDLE;
         else current_state <= next_state;
     end

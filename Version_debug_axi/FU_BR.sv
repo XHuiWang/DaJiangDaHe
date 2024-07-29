@@ -41,8 +41,8 @@ logic               EX_br_b;        //B指令是否需要修正预测的结果
 logic   [31: 0]     EX_pc_br_a;     //A指令修正时应跳转到的地址
 logic   [31: 0]     EX_pc_br_b;     //B指令修正时应跳转到的地址
 logic               EX_br_orig;     //尚未考虑Dcache的stall时，是否需要修正预测的结果
-assign EX_br_a      =(EX_br_type_a==4'b0000)?1'b0:EX_br_pd_a^br_orig_a || EX_pc_pd_a != pc_br_orig_a;//是否需要修正=预测结果与原本结果的异或
-assign EX_br_b      =(EX_br_type_b==4'b0000)?1'b0:EX_br_pd_b^br_orig_b || EX_pc_pd_b != pc_br_orig_b;//是否需要修正=预测结果与原本结果的异或
+assign EX_br_a      =(EX_br_type_a==4'b0000)?1'b0:EX_br_pd_a^br_orig_a || (|(EX_pc_pd_a^pc_br_orig_a));//是否需要修正=预测结果与原本结果的异或
+assign EX_br_b      =(EX_br_type_b==4'b0000)?1'b0:EX_br_pd_b^br_orig_b || (|(EX_pc_pd_b^pc_br_orig_b));//是否需要修正=预测结果与原本结果的异或
 assign EX_pc_br_a   =br_orig_a?pc_br_orig_a:(EX_pc_a+32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
 assign EX_pc_br_b   =br_orig_b?pc_br_orig_b:(EX_pc_b+32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
 

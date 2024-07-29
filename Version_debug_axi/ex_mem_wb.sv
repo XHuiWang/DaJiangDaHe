@@ -310,7 +310,7 @@ assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 
                         EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
                         EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
                         EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
-always @(posedge clk, negedge rstn) begin
+always @(posedge clk) begin
   if(!rstn)begin
     stall_dcache_buf <= 1'b0;
     stall_div_buf <= 1'b0;

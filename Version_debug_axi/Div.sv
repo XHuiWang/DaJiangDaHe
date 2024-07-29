@@ -33,7 +33,7 @@ always @(posedge clk_div)begin
     x_sign_buf <= div_x[31];            //留存一级div_x[31]，MEM段使用
     y_sign_buf <= div_y[31];            //留存一级div_y[31]，MEM段使用
 end
-always @(posedge clk_div, negedge rstn) begin
+always @(posedge clk_div) begin
     if (!rstn)begin
         loop_cnt <= 33'h1_0000_0000;
         dvd_rmd <= 64'b0;

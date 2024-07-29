@@ -34,6 +34,7 @@ module IF1_IF2(
     // flush&stall信号
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_ICache,
+    input [ 0: 0] BR_predecoder,
 
     output logic [31: 0] o_PC1,
     output logic [31: 0] o_PC2,
@@ -50,8 +51,11 @@ module IF1_IF2(
 
     logic [ 1: 0] o_is_valid_temp;
 
-    always @(posedge clk, negedge rstn) begin
+    always @(posedge clk) begin
         if( !rstn ) begin
+            o_is_valid_temp <= 2'b00;
+        end
+        else if(BR_predecoder) begin
             o_is_valid_temp <= 2'b00;
         end
         else if(stall) begin
