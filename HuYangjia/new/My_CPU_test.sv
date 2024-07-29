@@ -112,7 +112,7 @@ module My_CPU_test(
     logic [ 1: 0] IF1_IF2_valid;
     logic [33: 0] IF2_brtype_pcpre_1;
     logic [33: 0] IF2_brtype_pcpre_2;
-    logic [ 1: 0] fact_valid;
+    logic [ 1: 0] i_is_valid;
 
     // 预译码
     logic [33: 0] o_brtype_pcpre_1;
@@ -133,13 +133,13 @@ module My_CPU_test(
     logic [33: 0] ID1_brtype_pcpre_1;
     logic [33: 0] ID1_brtype_pcpre_2;
     logic [ 1: 0] ID1_is_valid;
+    logic [ 1: 0] fact_valid;
 
     // ID1_ID2
     logic [31: 0] i_PC1;
     logic [31: 0] i_IR1;
     logic [31: 0] i_PC2;
     logic [31: 0] i_IR2;
-    logic [ 1: 0] i_is_valid;
     logic [31: 0] o_PC1;
     logic [31: 0] o_IR1;
     logic [31: 0] o_PC2;
@@ -323,7 +323,6 @@ module My_CPU_test(
     
     // stall && flush
     logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
-    // logic [ 0: 0] stall_dcache; // 由于Dcache缺失带来的真正的stall信号
     logic [ 0: 0] stall_full_issue; // 由于issue Buffer满带来的stall信号，只作用于Instruction Buffer
     logic [ 0: 0] stall_full_instr; // 由于Instruction Buffer满带来的stall信号，作用于IF1
     logic [ 0: 0] stall_ICache; // 由于Icache缺失带来的逻辑的stall信号，作用于IF1的取值模块和IF1_IF2段间寄存器
@@ -393,7 +392,7 @@ module My_CPU_test(
         .rstn(rstn),
         .rvalid(is_valid),
         .raddr(pc_IF1),
-        .Is_flush(flush_BR), // TODO: 中断例外需要给flush
+        .Is_flush(flush_BR | BR_predecoder), // TODO: 中断例外需要给flush
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
         .flag_valid(ICache_valid),
@@ -406,7 +405,6 @@ module My_CPU_test(
         .i_arready (i_axi_arready),
         .i_arlen (i_axi_arlen)
     );
-
     
 
     assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{stall_iCache}};
@@ -418,10 +416,10 @@ module My_CPU_test(
         .rstn(rstn),
         .i_PC1(i_PC1),
         .i_IR1(i_IR1),
-        .i_brtype_pcpre_1(type_pcpre_1),
+        .i_brtype_pcpre_1(IF2_brtype_pcpre_1),
         .i_PC2(i_PC2),
         .i_IR2(i_IR2),
-        .i_brtype_pcpre_2(type_pcpre_2),
+        .i_brtype_pcpre_2(IF2_brtype_pcpre_2),
         .i_is_valid(i_is_valid),
         .flush_BR(flush_BR),
         .stall_full_instr(stall_full_instr),
