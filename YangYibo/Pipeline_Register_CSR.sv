@@ -135,7 +135,7 @@ begin
 
         //MEM->WB
         WB_csr_waddr<=MEM_csr_waddr;
-        WB_csr_we<=MEM_csr_we;
+        WB_csr_we<= |MEM_ecode_in ? 32'h0 : MEM_csr_we; //非中断例外，特别是特权等级错例外时不写入
         WB_csr_wdata<=MEM_csr_wdata;
         WB_ertn<=MEM_ertn;
         WB_ecode_in<=MEM_ecode_in;
