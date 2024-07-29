@@ -34,3 +34,9 @@
 1. alu_src_select的信号的定义不一样
 2. TODO: dispatch的问题
 3. wb_sel信号的指定
+
+## 马哥的建议
+1. head,tail分别放置，head,length附加变量时序处理，后期考虑独热码
+2. 交叠法伪双端口，每次发0/2个指令，不会发1个指令
+3. ICache出来加一级流水
+4. !=优化
