@@ -228,9 +228,9 @@ module ID1_ID2(
                 brtype_pcpre_Buffer[i] <= 34'h0_0000_0000;
             end
         end
-        else if(flush) begin
+        //else if(flush) begin
             
-        end
+        //end
         else if(stall) begin
             // 写入，不写出
             case (length_add)
