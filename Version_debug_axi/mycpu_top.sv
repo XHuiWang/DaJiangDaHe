@@ -99,6 +99,8 @@ module mycpu_top(
     logic [ 1: 0] branch_br_type;
     logic [31: 0] branch_br_target;
     logic [ 0: 0] branch_jump;
+    logic [29:0]  predict_br_target;
+    logic [1 :0]  predict_br_type;
 
 
 
@@ -332,7 +334,7 @@ module mycpu_top(
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
-    assign pc_predict = ~(is_valid) ? pc_IF1 : (~(|pred0_br_type) && (pc_IF1[ 3: 2] != 2'b11)) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
+    assign pc_predict = {predict_br_target, 2'b00};
     
     
     IF1  IF1_inst (
@@ -357,6 +359,8 @@ module mycpu_top(
         .pred0_br_type(pred0_br_type),
         .pred1_br_target(pred1_br_target),
         .pred1_br_type(pred1_br_type),
+        .predict_br_target(predict_br_target),
+
         .branch_pc(branch_pc[31: 2]),
         .branch_br_type(branch_br_type),
         .branch_br_target(branch_br_target[31: 2]),

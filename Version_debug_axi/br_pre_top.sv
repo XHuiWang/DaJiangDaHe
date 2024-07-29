@@ -35,6 +35,8 @@ module br_pre_top(
     output logic [29:0]  pred1_br_target,
     output logic [1 :0]  pred1_br_type,
 
+    output logic [29:0]  predict_br_target,
+
     //来自分支单元的信号
     input  [29:0] branch_pc,
     input  [1:0]  branch_br_type,
@@ -147,65 +149,56 @@ module br_pre_top(
         if(pc[0] == 0) begin
             btb0_pc = pc;
             btb1_pc = pc + 1;
-            pred0_br_type = btb0_br_type;
-            pred1_br_type = btb1_br_type;
         end
         else begin
             btb0_pc = pc + 1;
             btb1_pc = pc;
-            pred0_br_type = btb1_br_type;
-            pred1_br_type = btb0_br_type;
         end 
     end
 
 
-
-    //由pht给出的跳转信号和br_type给出的跳转信号进行选择
-    //pht_jump也要有两张表
-
     always @(*) begin
-        if(pc[0] == 0) begin
-            if(btb0_br_type == 2'b01 && btb0_pht_jump == 0) begin
-                pred0_br_target = btb0_pc + 1;
-            end
-            else begin
-                pred0_br_target = btb0_br_target;
-            end
+        if ((pc[0] == 0 && btb0_pht_jump == 1) || (pc[0] == 1 && btb1_pht_jump == 1)) begin
+            predict_br_target = (pc[0] == 0) ? btb0_br_target : btb1_br_target;
+            // pred_br_type = (pc[0] == 0) ? btb0_br_type : btb1_br_type;
 
-            if(btb1_br_type == 2'b01 && btb1_pht_jump == 0) begin
-                pred1_br_target = btb1_pc + 1;
-            end
-            else begin
-                pred1_br_target = btb1_br_target;
-            end
         end
-            
         else begin
-            if(btb0_br_type == 2'b01 && btb0_pht_jump == 0) begin
-                pred1_br_target = btb0_pc + 1;
-            end
-            else begin
-                pred1_br_target = btb0_br_target;
-            end
-
-            if(btb1_br_type == 2'b01 && btb1_pht_jump == 0) begin
-                pred0_br_target = btb1_pc + 1;
-            end
-            else begin
-                pred0_br_target = btb1_br_target;
-            end
+            predict_br_target = {(pc + 2)[29:1], 1'b0};
+            // pred_br_type = 2'b00;
         end
     end
 
-    // //以下为RAS的部分        
-    // //10识别为call 11识别为ret
-    // logic call;
-    // logic ret;
-
-    
-
-
-
+    always @(*) begin
+        //最后一位为0，同时pht0给出跳转，目标给到pred0，pred1置00
+        if(pc[0] == 0 && btb0_pht_jump == 1) begin
+            pred0_br_target = btb0_br_target;
+            pred0_br_type = btb0_br_type;
+            pred1_br_target = 30'b0;
+            pred1_br_type = 2'b00;
+        end
+        //最后一位为0，同时pht0不给出跳转，pht1给出跳转，目标给到pred1，pred0置00
+        else if(pc[0] == 0 && btb0_pht_jump == 0 && btb1_pht_jump == 1) begin
+            pred1_br_target = btb1_br_target;
+            pred1_br_type = btb1_br_type;
+            pred0_br_target = 30'b0;
+            pred0_br_type = 2'b00;
+        end
+        //最后一位为1，同时pht1给出跳转，目标给到pred1，pred0置00
+        else if(pc[0] == 1 && btb1_pht_jump == 1) begin
+            pred1_br_target = btb1_br_target;
+            pred1_br_type = btb1_br_type;
+            pred0_br_target = 30'b0;
+            pred0_br_type = 2'b00;
+        end
+        //其余情况，pred0和pred1都置00
+        else begin
+            pred0_br_target = {(pc + 2)[29:1], 1'b0};
+            pred0_br_type = 2'b00;
+            pred1_br_target = 30'b0;
+            pred1_br_type = 2'b00;
+        end
+    end
 
 
 endmodule
