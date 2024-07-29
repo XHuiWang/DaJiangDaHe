@@ -36,10 +36,12 @@ module My_CPU_test(
     PC_set set_final_2 ;
 
 
+    // IF1相关信号
     logic [31: 0] pc_predict;
     logic [31: 0] pc_BR;
     logic [31: 0] pc_IF1;
     logic [ 0: 0] is_valid;
+    logic [ 7: 0] IF1_ecode;
   
     // ICache
     logic [ 0: 0] ICache_valid;
@@ -53,7 +55,7 @@ module My_CPU_test(
     logic         i_arready;
     logic [ 7: 0] i_arlen;
 
-        //AXI interface
+    //AXI interface
     //read request
     logic [ 3: 0] arid;
     logic [31: 0] araddr;
@@ -113,6 +115,8 @@ module My_CPU_test(
     logic [33: 0] IF2_brtype_pcpre_1;
     logic [33: 0] IF2_brtype_pcpre_2;
     logic [ 1: 0] i_is_valid;
+    logic [ 7: 0] IF2_ecode_1;
+    logic [ 7: 0] IF2_ecode_2;
 
     // 预译码
     logic [33: 0] o_brtype_pcpre_1;
@@ -134,6 +138,8 @@ module My_CPU_test(
     logic [33: 0] ID1_brtype_pcpre_2;
     logic [ 1: 0] ID1_is_valid;
     logic [ 1: 0] fact_valid;
+    logic [ 7: 0] ID1_ecode_1;
+    logic [ 7: 0] ID1_ecode_2;
 
     // ID1_ID2
     logic [31: 0] i_PC1;
@@ -147,6 +153,8 @@ module My_CPU_test(
     logic [ 1: 0] o_is_valid;
     logic [ 0: 0] o_is_full;
     logic [ 0: 0] ID_status;
+    logic [ 7: 0] ID2_ecode_1;
+    logic [ 7: 0] ID2_ecode_2;
 
 
     // RegFile中的信号
@@ -168,6 +176,25 @@ module My_CPU_test(
     logic [31: 0] wdata_b;
     logic we_a;
     logic we_b;
+
+    // CSR中的信号
+    logic [ 1: 0] plv;
+    logic [ 5: 0] ecode;
+    logic [13: 0] csr_raddr_1;
+    logic [13: 0] csr_raddr_2;
+    logic [31: 0] csr_rdata_1;
+    logic [31: 0] csr_rdata_2;
+    logic [31: 0] era_out;
+    logic [31: 0] eentry;
+    logic [ 0: 0] has_interrupt_cpu;
+    logic [ 0: 0] has_interrupt_idle;
+    logic [ 1: 0] translate_mode;
+    logic [ 1: 0] direct_i_mat;
+    logic [ 1: 0] direct_d_mat;
+    logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
+    assign hardware_int = 8'b0;
+
+
 
 
     logic [ 1: 0] i_usingNUM;
@@ -382,11 +409,13 @@ module My_CPU_test(
         .pc_predict(pc_predict),
         .pc_BR(EX_pc_br),
         .EX_BR(EX_br),
+        .plv(plv),
         .BR_predecoder(BR_predecoder),
         .PC_predecoder(PC_predecoder),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
         .pc_IF1(pc_IF1),
+        .ecode(IF1_ecode),
         .is_valid(is_valid)
     );
 
@@ -411,6 +440,7 @@ module My_CPU_test(
         .i_PC2(pc_IF1+4),
         .i_brtype_pcpre_1({pred0_br_type, pred0_br_target, 2'b00}),
         .i_brtype_pcpre_2({pred1_br_type, pred1_br_target, 2'b00}), 
+        .i_ecode(IF1_ecode),
         .flush_BR(flush_BR),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
@@ -419,13 +449,15 @@ module My_CPU_test(
         .o_PC2(i_PC2),
         .o_brtype_pcpre_1(IF2_brtype_pcpre_1),
         .o_brtype_pcpre_2(IF2_brtype_pcpre_2),
+        .o_ecode_1(IF2_ecode_1),
+        .o_ecode_2(IF2_ecode_2),
         .o_is_valid(IF1_IF2_valid)
     );
 
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
-        .rvalid(is_valid),
+        .rvalid(is_valid & ~(IF1_ecode[7])),
         .raddr(pc_IF1),
         .Is_flush(flush_BR | BR_predecoder), // TODO: 中断例外需要给flush
         .rready(stall_iCache), // 1-> normal, 0-> stall
@@ -444,26 +476,28 @@ module My_CPU_test(
 
     assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid};
 
-
-
     IF2_ID1  IF2_ID1_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(i_PC1),
         .i_IR1(i_IR1),
         .i_brtype_pcpre_1(IF2_brtype_pcpre_1),
+        .i_ecode_1(IF2_ecode_1),
         .i_PC2(i_PC2),
         .i_IR2(i_IR2),
         .i_brtype_pcpre_2(IF2_brtype_pcpre_2),
+        .i_ecode_2(IF2_ecode_2),
         .i_is_valid(i_is_valid),
         .flush_BR(flush_BR),
         .stall_full_instr(stall_full_instr),
         .o_PC1(ID1_PC1),
         .o_IR1(ID1_IR1),
         .o_brtype_pcpre_1(ID1_brtype_pcpre_1),
+        .o_ecode_1(ID1_ecode_1),
         .o_PC2(ID1_PC2),
         .o_IR2(ID1_IR2),
         .o_brtype_pcpre_2(ID1_brtype_pcpre_2),
+        .o_ecode_2(ID1_ecode_2),
         .o_is_valid(ID1_is_valid)
     );
 
@@ -491,6 +525,8 @@ module My_CPU_test(
         .i_PC1(ID1_PC1),
         .i_IR1(ID1_IR1),
         .i_brtype_pcpre_1(type_pcpre_1),
+        .i_ecode_1(ID1_ecode_1),
+        .i_ecode_2(ID1_ecode_2),
         .i_PC2(ID1_PC2),
         .i_IR2(ID1_IR2),
         .i_brtype_pcpre_2(type_pcpre_2),
@@ -500,9 +536,11 @@ module My_CPU_test(
         .o_PC1(o_PC1),
         .o_IR1(o_IR1),
         .o_brtype_pcpre_1(o_brtype_pcpre_1),
+        .o_ecode_1(ID2_ecode_1),
         .o_PC2(o_PC2),
         .o_IR2(o_IR2),
         .o_brtype_pcpre_2(o_brtype_pcpre_2),
+        .o_ecode_2(ID2_ecode_2),
         .o_is_valid(o_is_valid),
         .o_is_full(o_is_full),
         .ID_status(ID_status)
@@ -513,6 +551,8 @@ module My_CPU_test(
         .IF_IR(o_IR1),
         .PC(o_PC1),
         .brtype_pcpre(o_brtype_pcpre_1),
+        .ecode(ID2_ecode_1),
+        .plv(plv),
         .ID_status(ID_status),
         .data_valid(o_is_valid[1]),
         .PC_set(PC_set1_front)
@@ -521,6 +561,8 @@ module My_CPU_test(
         .IF_IR(o_IR2),
         .PC(o_PC2),
         .brtype_pcpre(o_brtype_pcpre_2),
+        .ecode(ID2_ecode_2),
+        .plv(plv),
         .ID_status(ID_status),
         .data_valid(o_is_valid[0]),
         .PC_set(PC_set2_front)
@@ -541,10 +583,12 @@ module My_CPU_test(
         .a_rf_raddr2(raddr_a2),
         .b_rf_raddr1(raddr_b1),
         .b_rf_raddr2(raddr_b2),
+        .csr_raddr_1(csr_raddr_1),
+        .csr_raddr_2(csr_raddr_2),
         .o_is_valid(o_is_valid_2),
         .o_is_full(o_is_full_2)
     );
-    
+
     
     RF # (
         .ADDR_WIDTH(5 ),
@@ -571,6 +615,39 @@ module My_CPU_test(
         .we_a(WB_rf_we_a),
         .we_b(WB_rf_we_b)
     );
+
+    CSR  CSR_inst (
+        .clk(clk),
+        .stable_clk(stable_clk),
+        .rstn(rstn),
+        .software_we((plv == 2'b00)),
+        .raddr_a(csr_raddr_1),
+        .raddr_b(csr_raddr_2),
+        .rdata_a(csr_rdata_1),
+        .rdata_b(csr_rdata_2),
+        .waddr(WB_csr_waddr),
+        .we(WB_csr_we),
+        .wdata(WB_csr_wdata),
+        .plv(plv),
+        .ecode(ecode), // TODO:
+        .store_state(WB_store_state),
+        .restore_state(WB_restore_state),
+        .ecode_in(WB_ecode_in),
+        .ecode_we(WB_ecode_we),
+        .era_out(era_out), // TODO:
+        .era_in(WB_era_in),
+        .era_we(WB_era_we),
+        .badv_in(WB_badv_in),
+        .badv_we(WB_badv_we),
+        .eentry(eentry), // TODO: pc for what?
+        .has_interrupt_cpu(has_interrupt_cpu), // TODO:
+        .has_interrupt_idle(has_interrupt_idle),// TODO:
+        .hardware_int(hardware_int), 
+        .translate_mode(translate_mode), // 
+        .direct_i_mat(direct_i_mat), //
+        .direct_d_mat(direct_d_mat) //
+    );
+
     Issue_dispatch  Issue_dispatch_inst (
         .clk(clk),
         .i_set1(PC_set1_back),
@@ -596,6 +673,8 @@ module My_CPU_test(
         .rdata_a2_n(rdata_a2_n),
         .rdata_b1_n(rdata_b1_n),
         .rdata_b2_n(rdata_b2_n),
+        .csr_rdata_1(csr_rdata_1),
+        .csr_rdata_2(csr_rdata_2),
         .flush_BR(flush_BR),
         .stall_DCache(stall_DCache),
         .stall_div(stall_div),
@@ -641,8 +720,17 @@ module My_CPU_test(
         .EX_mem_type_a(EX_mem_type_a),
         .EX_mem_type_b(EX_mem_type_b),
         .EX_sign_bit(EX_signed),
-        .EX_div_en(EX_div_en)
+        .EX_div_en(EX_div_en),
+        .csr_type(EX_csr_type),
+        .csr_raddr(EX_csr_waddr),
+        .csr_rdata(EX_csr_rdata),
+        .ecode_in_a(EX_ecode_in_a),
+        .ecode_we_a(EX_ecode_we_a),
+        .ecode_in_b(EX_ecode_in_b),
+        .ecode_we_b(EX_ecode_we_b),
+        .ertn_check(EX_ertn)
     );
+
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
         .rstn(rstn),
@@ -694,17 +782,17 @@ module My_CPU_test(
         .EX_mem_type(EX_mem_type),
         .EX_mem_wdata(EX_mem_wdata),
         .MEM_mem_rdata(MEM_mem_rdata),
-        .EX_csr_type(0), // begin
-        .EX_csr_rdata(0),
-        .EX_csr_waddr(0),
+        .EX_csr_type(EX_csr_type), // begin
+        .EX_csr_rdata(EX_csr_rdata),
+        .EX_csr_waddr(EX_csr_waddr),
         .WB_csr_waddr(WB_csr_waddr),
         .WB_csr_we(WB_csr_we),
         .WB_csr_wdata(WB_csr_wdata),
-        .EX_ertn(0),
-        .EX_ecode_in_a(0),
-        .EX_ecode_in_b(0),
-        .EX_ecode_we_a(0),
-        .EX_ecode_we_b(0),
+        .EX_ertn(EX_ertn),
+        .EX_ecode_in_a(EX_ecode_in_a),
+        .EX_ecode_in_b(EX_ecode_in_b),
+        .EX_ecode_we_a(EX_ecode_we_a),
+        .EX_ecode_we_b(EX_ecode_we_b),
         .WB_ecode_in(WB_ecode_in),
         .WB_ecode_we(WB_ecode_we),
         .WB_badv_in(WB_badv_in),

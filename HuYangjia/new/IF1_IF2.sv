@@ -28,6 +28,7 @@ module IF1_IF2(
     input [31: 0] i_PC2,
     input [33: 0] i_brtype_pcpre_1,
     input [33: 0] i_brtype_pcpre_2,
+    input [ 7: 0] i_ecode,
 
     input [ 0: 0] i_is_valid,
 
@@ -40,6 +41,8 @@ module IF1_IF2(
     output logic [31: 0] o_PC2,
     output logic [33: 0] o_brtype_pcpre_1,
     output logic [33: 0] o_brtype_pcpre_2,
+    output logic [ 7: 0] o_ecode_1,
+    output logic [ 7: 0] o_ecode_2,
 
     output logic [ 1: 0] o_is_valid
     );
@@ -72,12 +75,16 @@ module IF1_IF2(
             o_PC2 <= o_PC2;
             o_brtype_pcpre_1 <= o_brtype_pcpre_1;
             o_brtype_pcpre_2 <= o_brtype_pcpre_2;
+            o_ecode_1 <= o_ecode_1;
+            o_ecode_2 <= o_ecode_2;
         end
         else begin
             o_PC1 <= i_PC1;
             o_PC2 <= i_PC2;
             o_brtype_pcpre_1 <= i_brtype_pcpre_1;
             o_brtype_pcpre_2 <= i_brtype_pcpre_2;
+            o_ecode_1 <= i_ecode;
+            o_ecode_2 <= i_ecode;
         end
     end
 endmodule

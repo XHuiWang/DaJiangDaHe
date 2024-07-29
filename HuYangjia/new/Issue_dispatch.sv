@@ -41,7 +41,7 @@ module Issue_dispatch(
 
     logic [ 0: 0] double_BR;
     logic [ 0: 0] double_LDSW;
-    logic [ 0: 0] LDSW_Mul_Div_plus_any;
+    logic [ 0: 0] LDSW_Mul_Div_csr_plus_any;
     // logic [ 0: 0] any_plus_LDSW;
     logic [ 0: 0] RAW_exist;
     logic [ 1: 0] ld_exist;
@@ -151,7 +151,7 @@ module Issue_dispatch(
                     end
                     else begin
                         // 都没有互锁现象
-                        if(LDSW_Mul_Div_plus_any) begin
+                        if(LDSW_Mul_Div_csr_plus_any) begin
                             // 第一个指令只能发射在B位置
                             o_set1.o_valid = 1'b1;
                             o_set2.o_valid = 1'b0;
@@ -179,7 +179,7 @@ module Issue_dispatch(
 
 
     assign double_BR     = (is_valid == 2'b11) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
-    assign LDSW_Mul_Div_plus_any = (is_valid == 2'b11) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，后任意
+    assign LDSW_Mul_Div_csr_plus_any = (is_valid == 2'b11) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，3csr, ertn后任意
     
 
     assign double_LDSW   = (is_valid == 2'b11) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0

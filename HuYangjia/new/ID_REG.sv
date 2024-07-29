@@ -48,6 +48,8 @@ module ID_REG (
     output logic [ 4: 0] a_rf_raddr2,
     output logic [ 4: 0] b_rf_raddr1,
     output logic [ 4: 0] b_rf_raddr2,
+    output logic [13: 0] csr_raddr_1,
+    output logic [13: 0] csr_raddr_2,
 
     output logic [ 1: 0] o_is_valid,
     output logic [ 0: 0] o_is_full
@@ -227,6 +229,8 @@ module ID_REG (
     assign a_rf_raddr2 = PC_set_Buffer[tail].rf_raddr2;
     assign b_rf_raddr1 = PC_set_Buffer[tail_plus_1].rf_raddr1;
     assign b_rf_raddr2 = PC_set_Buffer[tail_plus_1].rf_raddr2;
+    assign csr_raddr_1 = PC_set_Buffer[tail].csr_raddr;
+    assign csr_raddr_2 = PC_set_Buffer[tail_plus_1].csr_raddr;
 
 
 endmodule

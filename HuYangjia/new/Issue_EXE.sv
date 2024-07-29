@@ -43,6 +43,9 @@ module Issue_EXE(
     input [31: 0] rdata_b1_n,
     input [31: 0] rdata_b2_n,
 
+    input [31: 0] csr_rdata_1,
+    input [31: 0] csr_rdata_2,
+
     // stall&flush
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_DCache,
@@ -97,7 +100,17 @@ module Issue_EXE(
     output logic [ 2: 0]  EX_mem_type_b,      //B指令内存访问类型
     
     output logic [ 0: 0] EX_sign_bit,        //符号位,运用于乘除法 // 1为有符号数
-    output logic [ 0: 0] EX_div_en           //除法使能
+    output logic [ 0: 0] EX_div_en,          //除法使能
+
+    // CSR
+    output logic [ 2: 0] csr_type,           //csr指令的类型
+    output logic [13: 0] csr_raddr,          //csr指令的读csr地址
+    output logic [31: 0] csr_rdata,          //csr指令的读csr数据
+    output logic [ 6: 0] ecode_in_a,         //异常处理的输入
+    output logic [ 0: 0] ecode_we_a,         //异常处理的写曾经，表示已经修改过ecode_in
+    output logic [ 6: 0] ecode_in_b,         //异常处理的输入
+    output logic [ 0: 0] ecode_we_b,         //异常处理的写曾经，表示已经修改过ecode_in
+    output logic [ 0: 0] ertn_check          //ertn检查
 
     );
 
@@ -176,6 +189,14 @@ module Issue_EXE(
             type_predict_b    <= 2'h0;
             EX_PC_pre_a       <= 32'h0000_0000;
             EX_PC_pre_b       <= 32'h0000_0000;
+            csr_type          <= 3'h0;
+            csr_raddr         <= 14'h0000;
+            csr_rdata         <= 32'h0000_0000;
+            ertn_check        <= 1'b0;
+            ecode_in_1        <= 7'h00;
+            ecode_we_1        <= 1'b0;
+            ecode_in_2        <= 7'h00;
+            ecode_we_2        <= 1'b0;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -219,6 +240,14 @@ module Issue_EXE(
             type_predict_b    <= type_predict_b;
             EX_PC_pre_a       <= EX_PC_pre_a;
             EX_PC_pre_b       <= EX_PC_pre_b;
+            csr_type          <= csr_type;
+            csr_raddr         <= csr_raddr;
+            csr_rdata         <= csr_rdata;
+            ertn_check        <= ertn_check;
+            ecode_in_1        <= ecode_in_1;
+            ecode_we_1        <= ecode_we_1;
+            ecode_in_2        <= ecode_in_2;
+            ecode_we_2        <= ecode_we_2;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -263,6 +292,14 @@ module Issue_EXE(
                 type_predict_b    <= i_set1.type_predict;
                 EX_PC_pre_a       <= i_set2.PC_pre;
                 EX_PC_pre_b       <= i_set1.PC_pre;
+                csr_type          <= i_set2.csr_type & {3{Issue_b_enable}};
+                csr_raddr         <= i_set2.csr_raddr;
+                csr_rdata         <= csr_rdata_2;
+                ertn_check        <= (i_set2.inst_type == 10'h020) & Issue_b_enable;
+                ecode_in_1        <= i_set2.ecode_in & {7{Issue_b_enable}};
+                ecode_we_1        <= i_set2.ecode_we & Issue_b_enable;
+                ecode_in_2        <= i_set1.ecode_in & {7{Issue_a_enable}};
+                ecode_we_2        <= i_set1.ecode_we & Issue_a_enable;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -307,6 +344,14 @@ module Issue_EXE(
                 type_predict_b    <= i_set2.type_predict;
                 EX_PC_pre_a       <= i_set1.PC_pre;
                 EX_PC_pre_b       <= i_set2.PC_pre;
+                csr_type          <= i_set1.csr_type & {3{Issue_a_enable}};
+                csr_raddr         <= i_set1.csr_raddr;
+                csr_rdata         <= csr_rdata_1;
+                ertn_check        <= (i_set1.inst_type == 10'h020) & Issue_a_enable;
+                ecode_in_1        <= i_set1.ecode_in & {7{Issue_a_enable}};
+                ecode_we_1        <= i_set1.ecode_we & Issue_a_enable;
+                ecode_in_2        <= i_set2.ecode_in & {7{Issue_b_enable}};
+                ecode_we_2        <= i_set2.ecode_we & Issue_b_enable;
             end
         end
     end

@@ -28,6 +28,7 @@ module ID_Decode_edi_2(
     input [31: 0] PC,
     input [33: 0] brtype_pcpre,
     input [ 7: 0] ecode,
+    input [ 1: 0] plv,
 
     input [ 0: 0] ID_status,
     input [ 0: 0] data_valid,
@@ -262,9 +263,13 @@ module ID_Decode_edi_2(
     // 10'h002: 5 ld and 3 st
     // 10'h004: 3 mul 
     // 10'h008: 4 div
+    // 10'h010: 3 csr
+    // 10'h020: 1 ertn
     assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'h002 :
                        (mul_inst | mulh_inst | mulhu_inst) ? 10'h004 :
                        (div_inst | mod_inst | divu_inst | modu_inst) ? 10'h008 : 
+                       ((csrrd_inst | csrwr_inst | csrxchg_inst) & ~(|plv)) ? 10'h010 :
+                       (ertn_inst & ~(|plv)) ? 10'h020 :
                        10'h001;
 
 
@@ -316,7 +321,9 @@ module ID_Decode_edi_2(
                         blt_inst | bge_inst | bltu_inst | bgeu_inst | csrrd_inst | 
                         csrwr_inst | csrxchg_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
-    assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~data_valid | rf_rd == 0)) ? 1'b0 : 1'b1;
+    assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | 
+                    ~data_valid | rf_rd == 0 | (plv == 2'b11 && (csrwr_inst | csrxchg_inst | ertn_inst)) | 
+                    csrrd_inst)) ? 1'b0 : 1'b1;
     // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
@@ -345,9 +352,10 @@ module ID_Decode_edi_2(
     // assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
     // assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
 
-    assign csr_type = (csrrd_inst)   ? 3'h1 :
-                      (csrwr_inst)   ? 3'h2 :
-                      (csrxchg_inst) ? 3'h4 : 3'h0;
+    assign csr_type = {3{~(|plv)}} &
+                      (csrrd_inst  )   ? 3'h1 :
+                      (csrwr_inst  )   ? 3'h2 :
+                      (csrxchg_inst)   ? 3'h4 : 3'h0;
     assign csr_raddr = IF_IR[23:10];
 
     always @(*) begin
@@ -370,6 +378,11 @@ module ID_Decode_edi_2(
             else if(syscall_inst) begin
                 // SYS，系统调用
                 ecode_out = 7'h0B;
+                ecode_out_we = 1'b1;
+            end
+            else if(plv == 2'b11 && (csrrd_inst | csrwr_inst | csrxchg_inst | ertn_inst)) begin
+                // 指令特权等级错误
+                ecode_out = 7'h0E;
                 ecode_out_we = 1'b1;
             end
             else begin

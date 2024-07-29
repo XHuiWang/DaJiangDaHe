@@ -38,10 +38,12 @@ module ID1_ID2(
     input [31: 0] i_PC1,
     input [31: 0] i_IR1,
     input [33: 0] i_brtype_pcpre_1,
+    input [ 7: 0] i_ecode_1,
 
     input [31: 0] i_PC2,
     input [31: 0] i_IR2,
     input [33: 0] i_brtype_pcpre_2,
+    input [ 7: 0] i_ecode_2,
 
     input [ 1: 0] i_is_valid,
 
@@ -52,10 +54,12 @@ module ID1_ID2(
     output logic [31: 0] o_PC1,
     output logic [31: 0] o_IR1,
     output logic [33: 0] o_brtype_pcpre_1,
+    output logic [ 7: 0] o_ecode_1,
 
     output logic [31: 0] o_PC2,
     output logic [31: 0] o_IR2,
     output logic [33: 0] o_brtype_pcpre_2,
+    output logic [ 7: 0] o_ecode_2,
 
     output logic [ 1: 0] o_is_valid,
     output logic [ 0: 0] o_is_full,
@@ -95,6 +99,7 @@ module ID1_ID2(
     logic [31: 0] PC_Buffer[0:NUM-1];
     logic [31: 0] IR_Buffer[0:NUM-1];
     logic [33: 0] brtype_pcpre_Buffer[0:NUM-1];
+    logic [ 7: 0] ecode_Buffer[0:NUM-1];
     
 
     assign next_head   = (head + length_add) - (((head + length_add) >= NUM ? NUM : 0));
@@ -164,14 +169,18 @@ module ID1_ID2(
             o_IR2 <= 32'h0000_0000;
             o_brtype_pcpre_1 <= 34'h0_0000_0000;
             o_brtype_pcpre_2 <= 34'h0_0000_0000;
+            o_ecode_1 <= 8'h00;
+            o_ecode_2 <= 8'h00;
         end
-        else if(flush | stall | !(|length)) begin
+        else if(stall | !(|length)) begin
             o_PC1 <= o_PC1;
             o_IR1 <= o_IR1;
             o_PC2 <= o_PC2;
             o_IR2 <= o_IR2;
             o_brtype_pcpre_1 <= o_brtype_pcpre_1;
             o_brtype_pcpre_2 <= o_brtype_pcpre_2;
+            o_ecode_1 <= o_ecode_1;
+            o_ecode_2 <= o_ecode_2;
         end
         else begin
             if(signal_length_eq_1) begin
@@ -179,11 +188,13 @@ module ID1_ID2(
                     o_PC1 <= i_PC1;
                     o_IR1 <= i_IR1;
                     o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+                    o_ecode_1 <= i_ecode_1;
                 end
                 else begin
                     o_PC1 <= PC_Buffer[tail];
                     o_IR1 <= IR_Buffer[tail];
                     o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                    o_ecode_1 <= ecode_Buffer[tail];
                 end
             end
             else begin
@@ -193,26 +204,32 @@ module ID1_ID2(
                         o_PC1 <= i_PC1;
                         o_IR1 <= i_IR1;
                         o_brtype_pcpre_1 <= i_brtype_pcpre_1;
+                        o_ecode_1 <= i_ecode_1;
                         o_PC2 <= i_PC2;
                         o_IR2 <= i_IR2;
                         o_brtype_pcpre_2 <= i_brtype_pcpre_2;
+                        o_ecode_2 <= i_ecode_2;
                     end
                     else begin
                         o_PC1 <= PC_Buffer[tail];
                         o_IR1 <= IR_Buffer[tail];
                         o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                        o_ecode_1 <= ecode_Buffer[tail];
                         o_PC2 <= i_PC1;
                         o_IR2 <= i_IR1;
                         o_brtype_pcpre_2 <= i_brtype_pcpre_1;
+                        o_ecode_2 <= i_ecode_1;
                     end
                 end
                 else begin
                     o_PC1 <= PC_Buffer[tail];
                     o_IR1 <= IR_Buffer[tail];
                     o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                    o_ecode_1 <= ecode_Buffer[tail];
                     o_PC2 <= PC_Buffer[tail_plus_1];
                     o_IR2 <= IR_Buffer[tail_plus_1];
                     o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
+                    o_ecode_2 <= ecode_Buffer[tail_plus_1];
                 end
             end
         end
@@ -226,6 +243,7 @@ module ID1_ID2(
                 PC_Buffer[i] <= 32'h0000_0000;
                 IR_Buffer[i] <= 32'h0000_0000;
                 brtype_pcpre_Buffer[i] <= 34'h0_0000_0000;
+                ecode_Buffer[i] <= 8'h00;
             end
         end
         else if(stall) begin
@@ -239,15 +257,18 @@ module ID1_ID2(
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
                     brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+                    ecode_Buffer[head] <= i_ecode_1;
                 end
                 2'd2: begin
                     // 2对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
                     brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+                    ecode_Buffer[head] <= i_ecode_1;
                     PC_Buffer[head_plus_1] <= i_PC2;
                     IR_Buffer[head_plus_1] <= i_IR2;
                     brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
+                    ecode_Buffer[head_plus_1] <= i_ecode_2;
                 end
                 default: begin
                     // 无效
@@ -269,15 +290,18 @@ module ID1_ID2(
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
                     brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+                    ecode_Buffer[head] <= i_ecode_1;
                 end
                 2'd2: begin
                     // 2对有效
                     PC_Buffer[head] <= i_PC1;
                     IR_Buffer[head] <= i_IR1;
                     brtype_pcpre_Buffer[head] <= i_brtype_pcpre_1;
+                    ecode_Buffer[head] <= i_ecode_1;
                     PC_Buffer[head_plus_1] <= i_PC2;
                     IR_Buffer[head_plus_1] <= i_IR2;
                     brtype_pcpre_Buffer[head_plus_1] <= i_brtype_pcpre_2;
+                    ecode_Buffer[head_plus_1] <= i_ecode_2;
                 end
                 default: begin
                     // 无效

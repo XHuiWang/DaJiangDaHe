@@ -27,6 +27,7 @@ module IF1(
     input [31: 0] pc_predict,
     input [31: 0] pc_BR,
     input [ 0: 0] EX_BR,
+    input [ 1: 0] plv,
 
     // 来自预译码的信号
     input [ 0: 0] BR_predecoder,
@@ -37,16 +38,18 @@ module IF1(
     input [ 0: 0] stall_full_instr,
 
     output logic [31: 0] pc_IF1,
+    output logic [ 7: 0] ecode, // 7位Ecode编码+1位we位
     output logic [ 0: 0] is_valid
 
     );
 
-    // logic stop_for_remember; // 用于在预译码得到跳转型号，但是同时得到IB满信号，导致PC_pre被跳过。所以使用这个信号作为记录。
 
-    // logic [ 0: 0] flush;
     logic [ 0: 0] stall;
     logic [ 0: 0] is_valid_temp;
     assign stall = stall_ICache | stall_full_instr;
+
+
+    assign ecode = (pc_IF1[ 1: 0] == 2'b00) ? (plv == 2'b11 && pc_IF1[31] == 1'b1) ? 8'b1_000_1000 : 8'd0 : 8'b1_000_1001;
 
     always @(posedge clk) begin
         if( !rstn ) begin
