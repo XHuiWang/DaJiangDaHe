@@ -4,8 +4,8 @@ module Pipeline_Register(
     input                       stall_dcache,
     input                       stall_div,
     input                       EX_br_a,  //A指令是否需要修正预测的结果，在EX段发生跳转
-    input                       MEM_ecode_in_a, //A指令的异常码
-    input                       MEM_ecode_in_b, //B指令的异常码
+    input           [ 6: 0]     MEM_ecode_in_a, //A指令的异常码
+    input           [ 6: 0]     MEM_ecode_in_b, //B指令的异常码
     input                       WB_flush_csr,
     
     input           [31: 0]     EX_pc_a,            //A指令的PC
@@ -103,8 +103,8 @@ begin
         //MEM->WB
         // WB_alu_result_a<=MEM_alu_result_a;
         // WB_alu_result_b<=MEM_alu_result_b;
-        WB_rf_we_a<=MEM_ecode_in_a ? 1'b0 : MEM_rf_we_a;    //A指令有无非中断例外
-        WB_rf_we_b<=(MEM_ecode_in_a || MEM_ecode_in_b) ? 1'b0 : MEM_rf_we_b; //AB指令有无非中断例外
+        WB_rf_we_a<=|MEM_ecode_in_a ? 1'b0 : MEM_rf_we_a;    //A指令有无非中断例外
+        WB_rf_we_b<=((|MEM_ecode_in_a) | (|MEM_ecode_in_b)) ? 1'b0 : MEM_rf_we_b; //AB指令有无非中断例外
         WB_rf_waddr_a<=MEM_rf_waddr_a;
         WB_rf_waddr_b<=MEM_rf_waddr_b;
         WB_rf_wdata_a<=MEM_rf_wdata_a;
