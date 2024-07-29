@@ -13,8 +13,8 @@ module FU_CSR(
     input           [ 6: 0]     EX_ecode_in_b,      //B指令的异常码
     input                       EX_ecode_we_a,      //A指令是否产生例外
     input                       EX_ecode_we_b,      //B指令是否产生例外
-    input                       EX_mem_rvalid,      //B指令为LOAD指令
-    input                       EX_mem_wvalid,      //B指令为STORE指令
+    input           [ 5: 0]     EX_wb_mux_select_b, //[1] B指令为LOAD指令
+    input                       EX_mem_we_b,        //B指令为STORE指令
     input           [31: 0]     EX_mem_addr,        //B指令访存地址
     input           [ 2: 0]     EX_mem_type,        //B指令访存类型
 
@@ -33,9 +33,9 @@ assign EX_csr_we = {32{EX_csr_type[1]}} | ({32{EX_csr_type[2]}}&EX_rf_rdata_b1_f
 assign EX_csr_wdata = EX_rf_rdata_b2_f; 
 //CSR控制
 logic               ale, ale_h, ale_w;    //B指令 访存地址非对齐例外 half word
-assign ale_h = (EX_mem_rvalid | EX_mem_wvalid) & 
+assign ale_h = (EX_wb_mux_select_b[1] | EX_mem_we_b) & 
     ( EX_mem_type[2] |  EX_mem_type[1]) & EX_mem_type[0] & EX_mem_addr[0];
-assign ale_w = (EX_mem_rvalid | EX_mem_wvalid) & 
+assign ale_w = (EX_wb_mux_select_b[1] | EX_mem_we_b) & 
     (~EX_mem_type[2] & ~EX_mem_type[1]) & (EX_mem_addr[1:0]!=2'b00);
 assign ale   = ale_h | ale_w;
 
