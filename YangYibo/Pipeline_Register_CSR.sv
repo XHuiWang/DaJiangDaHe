@@ -107,7 +107,7 @@ begin
             MEM_csr_waddr<=EX_csr_waddr;
             MEM_csr_we<=EX_csr_we;
             MEM_csr_wdata<=EX_csr_wdata;
-            MEM_ertn<=EX_ertn;
+            MEM_ertn<= ( (|EX_ecode_in_aa) | (|EX_ecode_in_bb) ) ? 1'b0 : EX_ertn;  //保险，若译码段已考虑特权等级，此处可简化
             MEM_ecode_in_a<=EX_ecode_in_aa;
             MEM_ecode_in_b<=EX_ecode_in_bb;
             MEM_ecode_we_a<=EX_ecode_we_aa;

@@ -153,27 +153,7 @@ logic               MEM_mem_ready;
 logic               stall_dcache;                   //~MEM_mem_ready
 logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
 logic               stall_div_buf;                  //除法器暂停信号
-assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | WB_flush_csr) 
-        ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
-assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
-assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
 
-assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
-
-
-//MEM Mux of rf_wdata
-assign MEM_rf_wdata_a = MEM_alu_result_a;
-assign MEM_rf_wdata_b = {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata | 
-                        {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] | 
-                        {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem; 
-// MEM段B指令RF写回数据多选器独热码 
-// 6'b00_0001: ALU
-// 6'b00_0010: LD类型指令
-// 6'b00_0100: MUL  取低32位
-// 6'b00_1000: MULH 取高32位
-// 6'b01_0000: DIV 取商
-// 6'b10_0000: MOD 取余
 
 //CSR读写
 logic   [31: 0]   EX_csr_we;
@@ -213,6 +193,28 @@ logic             MEM_flush_csr;
 logic   [31: 0]   MEM_flush_csr_pc;
 
 logic             WB_ertn;
+
+
+//寄存器写相关
+assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
+assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | WB_flush_csr) 
+        ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
+assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
+assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
+
+assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
+//MEM Mux of rf_wdata
+assign MEM_rf_wdata_a = MEM_alu_result_a;
+assign MEM_rf_wdata_b = {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata | 
+                        {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] | 
+                        {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem; 
+// MEM段B指令RF写回数据多选器独热码 
+// 6'b00_0001: ALU
+// 6'b00_0010: LD类型指令
+// 6'b00_0100: MUL  取低32位
+// 6'b00_1000: MULH 取高32位
+// 6'b01_0000: DIV 取商
+// 6'b10_0000: MOD 取余
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
     .EX_rf_rdata_a2(EX_rf_rdata_a2),
