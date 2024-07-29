@@ -105,6 +105,7 @@ begin
         // WB_alu_result_b<=MEM_alu_result_b;
         WB_rf_we_a<=|MEM_ecode_in_a ? 1'b0 : MEM_rf_we_a;    //A指令有无非中断例外
         WB_rf_we_b<=((|MEM_ecode_in_a) | (|MEM_ecode_in_b)) ? 1'b0 : MEM_rf_we_b; //AB指令有无非中断例外
+
         WB_rf_waddr_a<=MEM_rf_waddr_a;
         WB_rf_waddr_b<=MEM_rf_waddr_b;
         WB_rf_wdata_a<=MEM_rf_wdata_a;
