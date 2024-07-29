@@ -38,6 +38,10 @@ module Issue_EXE(
     input [31: 0] rdata_a2,
     input [31: 0] rdata_b1,
     input [31: 0] rdata_b2,
+    input [31: 0] rdata_a1_n,
+    input [31: 0] rdata_a2_n,
+    input [31: 0] rdata_b1_n,
+    input [31: 0] rdata_b2_n,
 
     // stall&flush
     input [ 0: 0] flush_BR,
@@ -62,6 +66,10 @@ module Issue_EXE(
     output logic [31: 0] EX_rf_rdata_a2,     //A指令的第二个寄存器的值
     output logic [31: 0] EX_rf_rdata_b1,     //B指令的第一个寄存器的值
     output logic [31: 0] EX_rf_rdata_b2,     //B指令的第二个寄存器的值
+    output logic [31: 0] EX_rf_rdata_a1_n,   //A指令的第一个寄存器的值取反
+    output logic [31: 0] EX_rf_rdata_a2_n,   //A指令的第二个寄存器的值取反
+    output logic [31: 0] EX_rf_rdata_b1_n,   //B指令的第一个寄存器的值取反
+    output logic [31: 0] EX_rf_rdata_b2_n,   //B指令的第二个寄存器的值取反
     output logic [31: 0] EX_imm_a,           //A指令的立即数
     output logic [31: 0] EX_imm_b,           //B指令的立即数
 
@@ -137,6 +145,10 @@ module Issue_EXE(
             EX_rf_rdata_a2    <= 32'h0000_0000;
             EX_rf_rdata_b1    <= 32'h0000_0000;
             EX_rf_rdata_b2    <= 32'h0000_0000;
+            EX_rf_rdata_a1_n  <= 32'h0000_0000;
+            EX_rf_rdata_a2_n  <= 32'h0000_0000;
+            EX_rf_rdata_b1_n  <= 32'h0000_0000;
+            EX_rf_rdata_b2_n  <= 32'h0000_0000;
             EX_imm_a          <= 32'h0000_0000;
             EX_imm_b          <= 32'h0000_0000;
             EX_alu_src_sel_a1 <= 3'h0;
@@ -176,6 +188,10 @@ module Issue_EXE(
             EX_rf_rdata_a2    <= EX_rf_rdata_a2;
             EX_rf_rdata_b1    <= EX_rf_rdata_b1;
             EX_rf_rdata_b2    <= EX_rf_rdata_b2;
+            EX_rf_rdata_a1_n  <= EX_rf_rdata_a1_n;
+            EX_rf_rdata_a2_n  <= EX_rf_rdata_a2_n;
+            EX_rf_rdata_b1_n  <= EX_rf_rdata_b1_n;
+            EX_rf_rdata_b2_n  <= EX_rf_rdata_b2_n;
             EX_imm_a          <= EX_imm_a;
             EX_imm_b          <= EX_imm_b;
             EX_alu_src_sel_a1 <= EX_alu_src_sel_a1;
@@ -216,6 +232,10 @@ module Issue_EXE(
                 EX_rf_rdata_a2    <= rdata_b2;
                 EX_rf_rdata_b1    <= rdata_a1;
                 EX_rf_rdata_b2    <= rdata_a2;
+                EX_rf_rdata_a1_n  <= rdata_b1_n;
+                EX_rf_rdata_a2_n  <= rdata_b2_n;
+                EX_rf_rdata_b1_n  <= rdata_a1_n;
+                EX_rf_rdata_b2_n  <= rdata_a2_n;
                 EX_imm_a          <= i_set2.imm;
                 EX_imm_b          <= i_set1.imm;
                 EX_alu_src_sel_a1 <= i_set2.alu_src1_sel;
@@ -255,6 +275,10 @@ module Issue_EXE(
                 EX_rf_rdata_a2    <= rdata_a2;
                 EX_rf_rdata_b1    <= rdata_b1;
                 EX_rf_rdata_b2    <= rdata_b2;
+                EX_rf_rdata_a1_n  <= rdata_a1_n;
+                EX_rf_rdata_a2_n  <= rdata_a2_n;
+                EX_rf_rdata_b1_n  <= rdata_b1_n;
+                EX_rf_rdata_b2_n  <= rdata_b2_n;
                 EX_imm_a          <= i_set1.imm;
                 EX_imm_b          <= i_set2.imm;
                 EX_alu_src_sel_a1 <= i_set1.alu_src1_sel;

@@ -158,8 +158,10 @@ module My_CPU_test(
     logic [31: 0] rdata_a2;
     logic [31: 0] rdata_b1;
     logic [31: 0] rdata_b2;
-    logic [ 4: 0] addr = 0;
-    logic [31: 0] dout_rf;
+    logic [31: 0] rdata_a1_n;
+    logic [31: 0] rdata_a2_n;
+    logic [31: 0] rdata_b1_n;
+    logic [31: 0] rdata_b2_n;
     logic [ 4: 0] waddr_a;
     logic [ 4: 0] waddr_b;
     logic [31: 0] wdata_a;
@@ -187,6 +189,10 @@ module My_CPU_test(
     logic [31: 0] EX_rf_rdata_a2;
     logic [31: 0] EX_rf_rdata_b1;
     logic [31: 0] EX_rf_rdata_b2;
+    logic [31: 0] EX_rf_rdata_a1_n;
+    logic [31: 0] EX_rf_rdata_a2_n;
+    logic [31: 0] EX_rf_rdata_b1_n;
+    logic [31: 0] EX_rf_rdata_b2_n;
     logic [31: 0] EX_imm_a;
     logic [31: 0] EX_imm_b;
     logic [ 2: 0] EX_alu_src_sel_a1;
@@ -214,6 +220,16 @@ module My_CPU_test(
     logic [ 1: 0] type_predict_b;
     logic [31: 0] EX_PC_pre_a;
     logic [31: 0] EX_PC_pre_b;
+    // add for csr
+    logic [ 2: 0] EX_csr_type;
+    logic [31: 0] EX_csr_rdata;
+    logic [13: 0] EX_csr_waddr;
+    logic [ 0: 0] EX_ertn;    
+    logic [ 6: 0] EX_ecode_in_a;
+    logic [ 6: 0] EX_ecode_in_b;
+    logic [ 0: 0] EX_ecode_we_a;
+    logic [ 0: 0] EX_ecode_we_b;
+
 
 
     // AXI
@@ -320,6 +336,24 @@ module My_CPU_test(
     logic [31: 0] EX_mem_wdata;
     logic [31: 0] MEM_mem_rdata;
     logic [ 0: 0] EX_UnCache;
+    // add for csr
+    logic [13: 0]     WB_csr_waddr;       //CSR写地址 MEM段生效
+    logic [31: 0]     WB_csr_we;          //CSR写使能 MEM段生效 按位
+    logic [31: 0]     WB_csr_wdata;       //CSR写数据 MEM段生效
+    logic [ 6: 0]     WB_ecode_in;        //例外码 WB段写入
+    logic [ 0: 0]     WB_ecode_we;        //例外码写使能/是否产生例外
+    logic [31: 0]     WB_badv_in;         //取指地址错记录PC，地址非对齐记录地址
+    logic [ 0: 0]     WB_badv_we;         //出错虚地址写使能
+    logic [31: 0]     WB_era_in;          //产生例外的指令PC
+    logic [ 0: 0]     WB_era_we;          //产生例外的指令PC写使能
+    logic [ 0: 0]     WB_era_en;          //发给PC更新器，下个边沿跳转到CSR.era
+    logic [ 0: 0]     WB_eentry_en;       //发给PC更新器，下个边沿跳转到CSR.eentry
+    logic [ 0: 0]     WB_store_state;     //触发例外，pplv=plv；pie=ie
+    logic [ 0: 0]     WB_restore_state;   //从例外恢复，plv=pplv；ie=pie
+    logic [ 0: 0]     WB_flush_csr;       //因任何原因写CSR时，清空流水线
+    logic [31: 0]     WB_flush_csr_pc;    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
+   
+
     
     // stall && flush
     logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
@@ -380,6 +414,7 @@ module My_CPU_test(
         .flush_BR(flush_BR),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
+        .BR_predecoder(BR_predecoder),
         .o_PC1(i_PC1),
         .o_PC2(i_PC2),
         .o_brtype_pcpre_1(IF2_brtype_pcpre_1),
@@ -407,7 +442,7 @@ module My_CPU_test(
     );
     
 
-    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{stall_iCache}};
+    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid};
 
 
 
@@ -511,12 +546,11 @@ module My_CPU_test(
     );
     
     
-
     RF # (
-        .ADDR_WIDTH(5),
+        .ADDR_WIDTH(5 ),
         .DATA_WIDTH(32)
-    )
-    RF_inst (
+      )
+      RF_inst (
         .clk(clk),
         .raddr_a1(raddr_a1),
         .raddr_a2(raddr_a2),
@@ -526,8 +560,10 @@ module My_CPU_test(
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
         .rdata_b2(rdata_b2),
-        .addr(addr),
-        .dout_rf(dout_rf),
+        .rdata_a1_n(rdata_a1_n),
+        .rdata_a2_n(rdata_a2_n),
+        .rdata_b1_n(rdata_b1_n),
+        .rdata_b2_n(rdata_b2_n),
         .waddr_a(WB_rf_waddr_a),
         .waddr_b(WB_rf_waddr_b),
         .wdata_a(WB_rf_wdata_a),
@@ -535,7 +571,6 @@ module My_CPU_test(
         .we_a(WB_rf_we_a),
         .we_b(WB_rf_we_b)
     );
-
     Issue_dispatch  Issue_dispatch_inst (
         .clk(clk),
         .i_set1(PC_set1_back),
@@ -557,6 +592,10 @@ module My_CPU_test(
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
         .rdata_b2(rdata_b2),
+        .rdata_a1_n(rdata_a1_n),
+        .rdata_a2_n(rdata_a2_n),
+        .rdata_b1_n(rdata_b1_n),
+        .rdata_b2_n(rdata_b2_n),
         .flush_BR(flush_BR),
         .stall_DCache(stall_DCache),
         .stall_div(stall_div),
@@ -576,6 +615,10 @@ module My_CPU_test(
         .EX_rf_rdata_a2(EX_rf_rdata_a2),
         .EX_rf_rdata_b1(EX_rf_rdata_b1),
         .EX_rf_rdata_b2(EX_rf_rdata_b2),
+        .EX_rf_rdata_a1_n(EX_rf_rdata_a1_n),
+        .EX_rf_rdata_a2_n(EX_rf_rdata_a2_n),
+        .EX_rf_rdata_b1_n(EX_rf_rdata_b1_n),
+        .EX_rf_rdata_b2_n(EX_rf_rdata_b2_n),
         .EX_imm_a(EX_imm_a),
         .EX_imm_b(EX_imm_b),
         .EX_alu_src_sel_a1(EX_alu_src_sel_a1),
@@ -600,7 +643,6 @@ module My_CPU_test(
         .EX_sign_bit(EX_signed),
         .EX_div_en(EX_div_en)
     );
-
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
         .rstn(rstn),
@@ -622,27 +664,17 @@ module My_CPU_test(
         .EX_alu_src_sel_b2(EX_alu_src_sel_b2),
         .EX_alu_op_a(EX_alu_op_a),
         .EX_alu_op_b(EX_alu_op_b),
-        .EX_br_type_a(EX_br_type_a),
-        .EX_br_type_b(EX_br_type_b),
-        .EX_br_pd_a(EX_br_pd_a),
-        .EX_br_pd_b(EX_br_pd_b),
-        .EX_pc_pd_a(EX_PC_pre_a),
-        .EX_pc_pd_b(EX_PC_pre_b),
-        .EX_pc_of_br(branch_pc), // TODO:
-        .EX_pd_type_a(type_predict_a),
-        .EX_pd_type_b(type_predict_b),
-        .EX_pd_type(branch_br_type),
-        .EX_br_target(branch_br_target),
-        .EX_br_jump(branch_jump),// FIXME:
+        .EX_rf_rdata_a1_n(EX_rf_rdata_a1_n),
+        .EX_rf_rdata_a2_n(EX_rf_rdata_a2_n),
+        .EX_rf_rdata_b1_n(EX_rf_rdata_b1_n),
+        .EX_rf_rdata_b2_n(EX_rf_rdata_b2_n),
+        .EX_signed(EX_signed),
+        .EX_div_en(EX_div_en),
+        .stall_div(stall_div),
         .EX_rf_we_a(EX_rf_we_a),
         .EX_rf_we_b(EX_rf_we_b),
         .EX_rf_waddr_a(EX_rf_waddr_a),
         .EX_rf_waddr_b(EX_rf_waddr_b),
-        .EX_mem_we_a(EX_mem_we_a),
-        .EX_mem_we_b(EX_mem_we_b),
-        .EX_mem_type_a(EX_mem_type_a),
-        .EX_mem_type_b(EX_mem_type_b),
-        .EX_signed(EX_signed),
         .EX_wb_mux_select_b(EX_mux_select),
         .WB_rf_we_a(WB_rf_we_a),
         .WB_rf_we_b(WB_rf_we_b),
@@ -650,8 +682,10 @@ module My_CPU_test(
         .WB_rf_waddr_b(WB_rf_waddr_b),
         .WB_rf_wdata_a(WB_rf_wdata_a),
         .WB_rf_wdata_b(WB_rf_wdata_b),
-        .EX_br(EX_br),
-        .EX_pc_br(EX_pc_br),
+        .EX_mem_we_a(EX_mem_we_a),
+        .EX_mem_we_b(EX_mem_we_b),
+        .EX_mem_type_a(EX_mem_type_a),
+        .EX_mem_type_b(EX_mem_type_b),
         .EX_mem_rvalid(EX_mem_rvalid),
         .EX_mem_wvalid(EX_mem_wvalid),
         .MEM_mem_rready(MEM_mem_rready),
@@ -660,8 +694,43 @@ module My_CPU_test(
         .EX_mem_type(EX_mem_type),
         .EX_mem_wdata(EX_mem_wdata),
         .MEM_mem_rdata(MEM_mem_rdata),
-        .EX_div_en(EX_div_en),
-        .stall_div(stall_div),
+        .EX_csr_type(0), // begin
+        .EX_csr_rdata(0),
+        .EX_csr_waddr(0),
+        .WB_csr_waddr(WB_csr_waddr),
+        .WB_csr_we(WB_csr_we),
+        .WB_csr_wdata(WB_csr_wdata),
+        .EX_ertn(0),
+        .EX_ecode_in_a(0),
+        .EX_ecode_in_b(0),
+        .EX_ecode_we_a(0),
+        .EX_ecode_we_b(0),
+        .WB_ecode_in(WB_ecode_in),
+        .WB_ecode_we(WB_ecode_we),
+        .WB_badv_in(WB_badv_in),
+        .WB_badv_we(WB_badv_we),
+        .WB_era_in(WB_era_in),
+        .WB_era_we(WB_era_we),
+        .WB_era_en(WB_era_en),
+        .WB_eentry_en(WB_eentry_en),
+        .WB_store_state(WB_store_state),
+        .WB_restore_state(WB_restore_state),
+        .WB_flush_csr(WB_flush_csr),
+        .WB_flush_csr_pc(WB_flush_csr_pc), // end
+        .EX_br_type_a(EX_br_type_a),
+        .EX_br_type_b(EX_br_type_b),
+        .EX_br_pd_a(EX_br_pd_a),
+        .EX_br_pd_b(EX_br_pd_b),
+        .EX_pc_pd_a(EX_PC_pre_a),
+        .EX_pc_pd_b(EX_PC_pre_b),
+        .EX_br(EX_br),
+        .EX_pc_br(EX_pc_br),
+        .EX_pc_of_br(branch_pc),
+        .EX_pd_type_a(type_predict_a),
+        .EX_pd_type_b(type_predict_b),
+        .EX_pd_type(branch_br_type),
+        .EX_br_target(branch_br_target),
+        .EX_br_jump(branch_jump),
         .EX_UnCache(EX_UnCache),
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
@@ -672,7 +741,6 @@ module My_CPU_test(
         .debug1_wb_rf_wnum(debug1_wb_rf_wnum),
         .debug1_wb_rf_wdata(debug1_wb_rf_wdata)
     );
-    
 
     dcache  dcache_inst (
         .clk(clk),

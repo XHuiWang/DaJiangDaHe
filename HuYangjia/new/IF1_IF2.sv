@@ -34,6 +34,7 @@ module IF1_IF2(
     // flush&stall信号
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_ICache,
+    input [ 0: 0] BR_predecoder,
 
     output logic [31: 0] o_PC1,
     output logic [31: 0] o_PC2,
@@ -45,7 +46,7 @@ module IF1_IF2(
 
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
-    assign flush = flush_BR;
+    assign flush = flush_BR | BR_predecoder;
     assign stall = stall_ICache;
 
     logic [ 1: 0] o_is_valid_temp;

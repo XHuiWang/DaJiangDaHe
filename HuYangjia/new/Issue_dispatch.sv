@@ -75,8 +75,12 @@ module Issue_dispatch(
     assign o_set1.rf_rdata1     = i_set1.rf_rdata1    ;
     assign o_set1.rf_rdata2     = i_set1.rf_rdata2    ;
     assign o_set1.sign_bit      = i_set1.sign_bit     ;
-    assign o_set1.type_predict  = i_set1.type_predict;
+    assign o_set1.type_predict  = i_set1.type_predict ;
     assign o_set1.PC_pre        = i_set1.PC_pre       ;
+    assign o_set1.csr_type      = i_set1.csr_type     ;
+    assign o_set1.csr_raddr     = i_set1.csr_raddr    ;
+    assign o_set1.ecode_in      = i_set1.ecode_in     ;
+    assign o_set1.ecode_we      = i_set1.ecode_we     ;
 
 
     assign o_set2.instruction   = i_set2.instruction  ;
@@ -99,8 +103,12 @@ module Issue_dispatch(
     assign o_set2.rf_rdata1     = i_set2.rf_rdata1    ;
     assign o_set2.rf_rdata2     = i_set2.rf_rdata2    ;
     assign o_set2.sign_bit      = i_set2.sign_bit     ;
-    assign o_set2.type_predict  = i_set2.type_predict;
+    assign o_set2.type_predict  = i_set2.type_predict ;
     assign o_set2.PC_pre        = i_set2.PC_pre       ;
+    assign o_set2.csr_type      = i_set2.csr_type     ;
+    assign o_set2.csr_raddr     = i_set2.csr_raddr    ;
+    assign o_set2.ecode_in      = i_set2.ecode_in     ;
+    assign o_set2.ecode_we      = i_set2.ecode_we     ;
 
     // 对于处在前面A位置，但是在B位置发射的指令，dispatch位置不变，在Issue_EXE根据选择信号抉择
     always @(*) begin
