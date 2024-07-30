@@ -41,5 +41,5 @@ assign MEM_store_state = MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_restore_state = MEM_ertn;
 
 assign MEM_flush_csr = MEM_ecode_we | (|MEM_csr_we) | MEM_ertn; //触发例外/写CSR/例外返回
-assign MEM_flush_csr_pc = MEM_pc_b; //CSRWR/CSRXCHG，清空流水线时pc跳转的位置，单发B指令
+assign MEM_flush_csr_pc = MEM_pc_b+32'h4; //CSRWR/CSRXCHG，清空流水线时pc跳转的位置，单发B指令
 endmodule
