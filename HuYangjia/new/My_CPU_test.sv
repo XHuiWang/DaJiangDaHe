@@ -191,6 +191,7 @@ module My_CPU_test(
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     assign hardware_int = 8'b0;
     assign stable_clk = clk;
+    assign has_interrupt_cpu = MEM_interrupt;
 
 
 
@@ -787,6 +788,7 @@ module My_CPU_test(
         .EX_ecode_in_b(EX_ecode_in_b),
         .EX_ecode_we_a(EX_ecode_we_a),
         .EX_ecode_we_b(EX_ecode_we_b),
+        .MEM_interrupt(MEM_interrupt),
         .WB_ecode_in(WB_ecode_in),
         .WB_ecode_we(WB_ecode_we),
         .WB_badv_in(WB_badv_in),
