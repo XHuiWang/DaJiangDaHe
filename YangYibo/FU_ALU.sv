@@ -24,16 +24,12 @@ module FU_ALU(                                      //A指令固定在B指令之
     input           [31: 0]     EX_csr_rdata,       //B指令的CSR读数据
 
     output  reg     [31: 0]     EX_alu_result_a,    //A指令的运算结果
-    output  reg     [31: 0]     EX_alu_result_b,    //B指令的运算结果
-    output  reg     [31: 0]     EX_alu_result_a_n,  //A指令的运算结果 取反加一
-    output  reg     [31: 0]     EX_alu_result_b_n   //B指令的运算结果 取反加一
+    output  reg     [31: 0]     EX_alu_result_b     //B指令的运算结果
 );
 logic   [31: 0]      EX_alu_src_a1;
 logic   [31: 0]      EX_alu_src_a2;
 logic   [31: 0]      EX_alu_src_b1;
 logic   [31: 0]      EX_alu_src_b2;
-assign EX_alu_result_a_n = ~EX_alu_result_a + 1;
-assign EX_alu_result_b_n = ~EX_alu_result_b + 1;
 Mux MUX_A1(
     .a(EX_pc_a),
     .b(EX_rf_rdata_a1),

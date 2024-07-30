@@ -22,13 +22,10 @@ module ex_mem_wb(
     input           [11: 0]     EX_alu_op_a,        //A指令的运算类型
     input           [11: 0]     EX_alu_op_b,        //B指令的运算类型
     //乘除法相关
-    input           [31: 0]     EX_rf_rdata_a1_n,   //A指令的第一个寄存器的值 取反加一
-    input           [31: 0]     EX_rf_rdata_a2_n,   //A指令的第二个寄存器的值 取反加一
-    input           [31: 0]     EX_rf_rdata_b1_n,   //B指令的第一个寄存器的值 取反加一
-    input           [31: 0]     EX_rf_rdata_b2_n,   //B指令的第二个寄存器的值 取反加一
     input                       EX_signed,          //乘除法符号指示，1为有符号数乘除法
+    input                       EX_mul_en,          //乘法器使能，stall使其在2个EX有效
     input                       EX_div_en,          //除法器使能，stall使其在33个EX有效
-    output  wire                stall_div,          //除法器暂停信号
+    output  wire                stall_ex,           //EX段产生的乘法器除法器暂停信号
 
     //RF写回
     input                       EX_rf_we_a,         //A指令寄存器写使能
@@ -125,22 +122,11 @@ logic   [31: 0]     EX_rf_rdata_a1_f;               //A指令的第一个寄存�
 logic   [31: 0]     EX_rf_rdata_a2_f;               //A指令的第二个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_b1_f;               //B指令的第一个寄存器的值，经前递修正后
 logic   [31: 0]     EX_rf_rdata_b2_f;               //B指令的第二个寄存器的值，经前递修正后
-logic   [31: 0]     EX_rf_rdata_a1_nf;              //A指令的第一个寄存器的值，取反加一，经前递修正后
-logic   [31: 0]     EX_rf_rdata_a2_nf;              //A指令的第二个寄存器的值，取反加一，经前递修正后
-logic   [31: 0]     EX_rf_rdata_b1_nf;              //B指令的第一个寄存器的值，取反加一，经前递修正后
-logic   [31: 0]     EX_rf_rdata_b2_nf;              //B指令的第二个寄存器的值，取反加一，经前递修正后
 
 logic   [31: 0]     EX_alu_result_a;                //A指令的运算结果
 logic   [31: 0]     EX_alu_result_b;                //B指令的运算结果
-logic   [31: 0]     EX_alu_result_a_n;              //A指令的运算结果 取反加一
-logic   [31: 0]     EX_alu_result_b_n;              //B指令的运算结果 取反加一
 logic   [31: 0]     MEM_alu_result_a;               //A指令的运算结果
 logic   [31: 0]     MEM_alu_result_b;               //B指令的运算结果
-logic   [31: 0]     MEM_alu_result_a_n;             //A指令的运算结果 取反加一
-logic   [31: 0]     MEM_alu_result_b_n;             //B指令的运算结果 取反加一
-// logic   [31: 0]     WB_alu_result_a;                //A指令的运算结果
-// logic   [31: 0]     WB_alu_result_b;                //B指令的运算结果
-
 
 logic               MEM_rf_we_a;                    //A指令寄存器写使能
 logic               MEM_rf_we_b;                    //B指令寄存器写使能
@@ -163,15 +149,13 @@ logic               EX_mem_we_bb;                   //考虑A为BR时修正后�
 // logic   [31: 0]     MEM_mem_rdata_orig;             //内存读数据，尚未考虑LOAD指令的W/B/H/BU/HU分类
 logic   [31: 0]     MEM_rf_wdata_a;                 //A指令寄存器写数据
 logic   [31: 0]     MEM_rf_wdata_b;                 //B指令寄存器写数据
-logic   [31: 0]     MEM_rf_wdata_a_n;               //A指令寄存器写数据 取反加一
-logic   [31: 0]     MEM_rf_wdata_b_n;               //B指令寄存器写数据 取反加一
-logic   [31: 0]     WB_rf_wdata_a_n;
-logic   [31: 0]     WB_rf_wdata_b_n;
+
 logic               MEM_mem_ready;
 logic               stall_dcache;                   //~MEM_mem_ready
 logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
-logic               stall_div_buf;                  //除法器暂停信号
-
+logic               stall_mul;                      //乘法器暂停信号
+logic               stall_div;                      //除法器暂停信号
+logic               stall_ex_buf;                   //乘除法暂停信号保留一级
 
 //CSR读写
 logic   [31: 0]   EX_csr_we;
@@ -221,13 +205,13 @@ assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
 
 assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
+//乘除法暂停信号
+assign  stall_ex = stall_mul | stall_div;
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
-assign MEM_rf_wdata_a_n = ~MEM_rf_wdata_a+1;
 assign MEM_rf_wdata_b = ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata ) | 
                         ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) | 
                         ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem ); 
-assign MEM_rf_wdata_b_n = ~MEM_rf_wdata_b+1;
 // MEM段B指令RF写回数据多选器独热码 
 // 6'b00_0001: ALU
 // 6'b00_0010: LD类型指令
@@ -261,32 +245,6 @@ Forward  Forward_inst (
     .EX_rf_rdata_b1_f(EX_rf_rdata_b1_f),
     .EX_rf_rdata_b2_f(EX_rf_rdata_b2_f)
   );
-Forward  Forward_inst_n (
-    .EX_rf_rdata_a1(EX_rf_rdata_a1_n),
-    .EX_rf_rdata_a2(EX_rf_rdata_a2_n),
-    .EX_rf_rdata_b1(EX_rf_rdata_b1_n),
-    .EX_rf_rdata_b2(EX_rf_rdata_b2_n),
-    .MEM_rf_waddr_a(MEM_rf_waddr_a),
-    .MEM_rf_waddr_b(MEM_rf_waddr_b),
-    .MEM_rf_we_a(MEM_rf_we_a),
-    .MEM_rf_we_b(MEM_rf_we_b),
-    .MEM_alu_result_a(MEM_alu_result_a_n),
-    .MEM_alu_result_b(MEM_alu_result_b_n),
-    .WB_rf_waddr_a(WB_rf_waddr_a),
-    .WB_rf_waddr_b(WB_rf_waddr_b),
-    .WB_rf_we_a(WB_rf_we_a),
-    .WB_rf_we_b(WB_rf_we_b),
-    .WB_rf_wdata_a(WB_rf_wdata_a_n),
-    .WB_rf_wdata_b(WB_rf_wdata_b_n),
-    .EX_rf_raddr_a1(EX_rf_raddr_a1),
-    .EX_rf_raddr_a2(EX_rf_raddr_a2),
-    .EX_rf_raddr_b1(EX_rf_raddr_b1),
-    .EX_rf_raddr_b2(EX_rf_raddr_b2),
-    .EX_rf_rdata_a1_f(EX_rf_rdata_a1_nf),
-    .EX_rf_rdata_a2_f(EX_rf_rdata_a2_nf),
-    .EX_rf_rdata_b1_f(EX_rf_rdata_b1_nf),
-    .EX_rf_rdata_b2_f(EX_rf_rdata_b2_nf)
-  );
 
 FU_ALU  FU_ALU_inst (
     .EX_pc_a(EX_pc_a),
@@ -305,9 +263,7 @@ FU_ALU  FU_ALU_inst (
     .EX_alu_op_b(EX_alu_op_b),
     .EX_csr_rdata(EX_csr_rdata),
     .EX_alu_result_a(EX_alu_result_a),
-    .EX_alu_result_b(EX_alu_result_b),
-    .EX_alu_result_a_n(EX_alu_result_a_n),
-    .EX_alu_result_b_n(EX_alu_result_b_n)
+    .EX_alu_result_b(EX_alu_result_b)
 );
 FU_BR  FU_BR_inst (
     .EX_pc_a(EX_pc_a),
@@ -326,7 +282,7 @@ FU_BR  FU_BR_inst (
     .EX_pc_pd_b(EX_pc_pd_b),
     // .stall_dcache(stall_dcache),
     .stall_dcache_buf(stall_dcache_buf),
-    .stall_div_buf(stall_div_buf),
+    .stall_ex_buf(stall_ex_buf),
     .EX_br_a(EX_br_a),
     .EX_br(EX_br),
     .EX_pc_br(EX_pc_br),
@@ -338,11 +294,14 @@ FU_BR  FU_BR_inst (
     .EX_br_jump(EX_br_jump)
   );
 Mul  Mul_inst (
+    .clk(clk),
+    .rstn(rstn),
+    .WB_flush_csr(WB_flush_csr),
+    .mul_en(EX_mul_en),
     .EX_mul_x(EX_rf_rdata_b1_f),
     .EX_mul_y(EX_rf_rdata_b2_f),
-    .EX_mul_x_n(EX_rf_rdata_b1_nf),
-    // .EX_mul_y_n(EX_rf_rdata_b2_nf),
     .EX_mul_signed(EX_signed),
+    .stall_mul(stall_mul),
     .EX_mul_tmp1(EX_mul_tmp1),
     .EX_mul_tmp2(EX_mul_tmp2)
   );
@@ -418,7 +377,7 @@ Pipeline_Register  Pipeline_Register_inst (
     .clk(clk),
     .rstn(rstn),
     .stall_dcache(stall_dcache),
-    .stall_div(stall_div),
+    .stall_ex(stall_ex),
     .EX_br_a(EX_br_a),
     .MEM_ecode_in_a(MEM_ecode_in_a),
     .MEM_ecode_in_b(MEM_ecode_in_b),
@@ -431,12 +390,8 @@ Pipeline_Register  Pipeline_Register_inst (
     .WB_pc_b(WB_pc_b),
     .EX_alu_result_a(EX_alu_result_a),
     .EX_alu_result_b(EX_alu_result_b),
-    .EX_alu_result_a_n(EX_alu_result_a_n),
-    .EX_alu_result_b_n(EX_alu_result_b_n),
     .MEM_alu_result_a(MEM_alu_result_a),
     .MEM_alu_result_b(MEM_alu_result_b),
-    .MEM_alu_result_a_n(MEM_alu_result_a_n),
-    .MEM_alu_result_b_n(MEM_alu_result_b_n),
     // .WB_alu_result_a(WB_alu_result_a),
     // .WB_alu_result_b(WB_alu_result_b),
     .EX_mul_tmp1(EX_mul_tmp1),
@@ -455,22 +410,18 @@ Pipeline_Register  Pipeline_Register_inst (
     .MEM_rf_waddr_b(MEM_rf_waddr_b),
     .MEM_rf_wdata_a(MEM_rf_wdata_a),
     .MEM_rf_wdata_b(MEM_rf_wdata_b),
-    .MEM_rf_wdata_a_n(MEM_rf_wdata_a_n),
-    .MEM_rf_wdata_b_n(MEM_rf_wdata_b_n),
     .WB_rf_we_a(WB_rf_we_a),
     .WB_rf_we_b(WB_rf_we_b),
     .WB_rf_waddr_a(WB_rf_waddr_a),
     .WB_rf_waddr_b(WB_rf_waddr_b),
     .WB_rf_wdata_a(WB_rf_wdata_a),
-    .WB_rf_wdata_b(WB_rf_wdata_b),
-    .WB_rf_wdata_a_n(WB_rf_wdata_a_n),
-    .WB_rf_wdata_b_n(WB_rf_wdata_b_n)
+    .WB_rf_wdata_b(WB_rf_wdata_b)
   );
 Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .clk(clk),
     .rstn(rstn),
     .stall_dcache(stall_dcache),
-    .stall_div(stall_div),
+    .stall_ex(stall_ex),
     .EX_br_a(EX_br_a),
     .EX_csr_waddr(EX_csr_waddr),
     .EX_csr_we(EX_csr_we),
@@ -543,21 +494,21 @@ assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 
 always @(posedge clk) begin
   if(!rstn | WB_flush_csr)begin
     stall_dcache_buf <= 1'b0;
-    stall_div_buf <= 1'b0;
+    stall_ex_buf <= 1'b0;
   end
   else begin
     stall_dcache_buf <= stall_dcache;
-    stall_div_buf <= stall_div;
+    stall_ex_buf <= stall_div;
   end
 end
 
 //debug interface
 assign debug0_wb_pc = WB_pc_b;
-assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_div_buf)}};
+assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_ex_buf)}};
 assign debug0_wb_rf_wnum = WB_rf_waddr_b;
 assign debug0_wb_rf_wdata = WB_rf_wdata_b;
 assign debug1_wb_pc = WB_pc_a;
-assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_div_buf)}};
+assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_ex_buf)}};
 assign debug1_wb_rf_wnum = WB_rf_waddr_a;
 assign debug1_wb_rf_wdata = WB_rf_wdata_a;
 endmodule

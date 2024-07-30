@@ -17,7 +17,7 @@ module FU_BR(
 
     // input                       stall_dcache,
     input                       stall_dcache_buf,
-    input                       stall_div_buf,
+    input                       stall_ex_buf,
     
     output                      EX_br_a,            //A指令是否需要修正预测的结果
     output                      EX_br,              //是否需要修正预测的结果
@@ -47,7 +47,7 @@ assign EX_pc_br_a   =br_orig_a?pc_br_orig_a:(EX_pc_a+32'd4); //修正后的地�
 assign EX_pc_br_b   =br_orig_b?pc_br_orig_b:(EX_pc_b+32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
 
 assign EX_br_orig   =EX_br_a|EX_br_b;
-assign EX_br        =EX_br_orig&(~stall_dcache_buf)&(~stall_div_buf); 
+assign EX_br        =EX_br_orig&(~stall_dcache_buf)&(~stall_ex_buf); 
 //MEM段dcache stall流水线时，若EX段为BR指令，在stall的整个期间（stall_dcache为1以及其后的第一个为0的周期）
 //因stall造成的EX段的EX_br_orig连续置1的多个周期中，EX段的EX_BR仅在第一个周期可以被置1
 //stall_div/stall_dcache/ex_br的产生是同时的，均用buf来抑制，ex_br的再次产生前stall置零，再次产生时buf置零，不会有多余干涉
@@ -56,7 +56,7 @@ assign EX_pc_br     =(EX_br_a)?EX_pc_br_a:EX_pc_br_b;
 //发给分支预测
 assign EX_pc_of_br  =EX_pd_type_a==2'b00 ? EX_pc_b : EX_pc_a;
 assign EX_pd_type   =(EX_pd_type_a==2'b00 ? EX_pd_type_b : EX_pd_type_a)
-                        &{2{~stall_dcache_buf}}&{2{~stall_div_buf}};
+                        &{2{~stall_dcache_buf}}&{2{~stall_ex_buf}};
 assign EX_br_target =EX_pd_type_a==2'b00 ? pc_br_orig_b : pc_br_orig_a;
 assign EX_br_jump   =EX_pd_type_a==2'b00 ? br_orig_b : br_orig_a;
 Branch Branch_A(

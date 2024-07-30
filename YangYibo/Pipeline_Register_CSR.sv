@@ -2,7 +2,7 @@ module Pipeline_Register_CSR(
     input                       clk,
     input                       rstn,
     input                       stall_dcache,
-    input                       stall_div,
+    input                       stall_ex,
     input                       EX_br_a,      //A指令是否需要修正预测的结果，在EX段发生跳转
 
     //CSR读写
@@ -100,7 +100,7 @@ begin
         WB_flush_csr<=1'b0;
         WB_flush_csr_pc<=32'h0000_0000;
     end
-    else if(!stall_dcache&&!stall_div)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
+    else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         //EX->MEM
         //不需要修正分支预测
         if(!EX_br_a) begin 
