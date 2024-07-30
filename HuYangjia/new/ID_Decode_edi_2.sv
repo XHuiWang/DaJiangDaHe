@@ -321,9 +321,9 @@ module ID_Decode_edi_2(
                         blt_inst | bge_inst | bltu_inst | bgeu_inst | csrrd_inst | 
                         csrwr_inst | csrxchg_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
-    assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | 
-                    ~data_valid | rf_rd == 0 | (plv == 2'b11 && (csrwr_inst | csrxchg_inst | ertn_inst)) | 
-                    csrrd_inst)) ? 1'b0 : 1'b1;
+    assign rf_we =  (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | 
+                    sth_inst | st_inst |~data_valid | rf_rd == 0 | 
+                    (plv == 2'b11 && (csrwr_inst | csrxchg_inst | ertn_inst)))) ? 1'b0 : 1'b1;
     // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         

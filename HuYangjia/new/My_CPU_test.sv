@@ -174,6 +174,7 @@ module My_CPU_test(
     logic we_b;
 
     // CSR中的信号
+    logic [ 0: 0] stable_clk;
     logic [ 1: 0] plv;
     logic [ 5: 0] ecode;
     logic [13: 0] csr_raddr_1;
@@ -189,6 +190,7 @@ module My_CPU_test(
     logic [ 1: 0] direct_d_mat;
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     assign hardware_int = 8'b0;
+    assign stable_clk = clk;
 
 
 
