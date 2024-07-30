@@ -166,10 +166,6 @@ module My_CPU_test(
     logic [31: 0] rdata_a2;
     logic [31: 0] rdata_b1;
     logic [31: 0] rdata_b2;
-    logic [31: 0] rdata_a1_n;
-    logic [31: 0] rdata_a2_n;
-    logic [31: 0] rdata_b1_n;
-    logic [31: 0] rdata_b2_n;
     logic [ 4: 0] waddr_a;
     logic [ 4: 0] waddr_b;
     logic [31: 0] wdata_a;
@@ -216,10 +212,6 @@ module My_CPU_test(
     logic [31: 0] EX_rf_rdata_a2;
     logic [31: 0] EX_rf_rdata_b1;
     logic [31: 0] EX_rf_rdata_b2;
-    logic [31: 0] EX_rf_rdata_a1_n;
-    logic [31: 0] EX_rf_rdata_a2_n;
-    logic [31: 0] EX_rf_rdata_b1_n;
-    logic [31: 0] EX_rf_rdata_b2_n;
     logic [31: 0] EX_imm_a;
     logic [31: 0] EX_imm_b;
     logic [ 2: 0] EX_alu_src_sel_a1;
@@ -450,6 +442,7 @@ module My_CPU_test(
         .flush_BR(flush_of_ALL),
         .i_is_valid(is_valid),
         .stall_ICache(stall_ICache),
+        .stall_full_instr(stall_full_instr),
         .BR_predecoder(BR_predecoder),
         .o_PC1(i_PC1),
         .o_PC2(i_PC2),
@@ -610,10 +603,6 @@ module My_CPU_test(
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
         .rdata_b2(rdata_b2),
-        .rdata_a1_n(rdata_a1_n),
-        .rdata_a2_n(rdata_a2_n),
-        .rdata_b1_n(rdata_b1_n),
-        .rdata_b2_n(rdata_b2_n),
         .waddr_a(WB_rf_waddr_a),
         .waddr_b(WB_rf_waddr_b),
         .wdata_a(WB_rf_wdata_a),
@@ -675,10 +664,6 @@ module My_CPU_test(
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
         .rdata_b2(rdata_b2),
-        .rdata_a1_n(rdata_a1_n),
-        .rdata_a2_n(rdata_a2_n),
-        .rdata_b1_n(rdata_b1_n),
-        .rdata_b2_n(rdata_b2_n),
         .csr_rdata_1(csr_rdata_1),
         .csr_rdata_2(csr_rdata_2),
         .flush_BR(flush_of_ALL),
@@ -700,10 +685,6 @@ module My_CPU_test(
         .EX_rf_rdata_a2(EX_rf_rdata_a2),
         .EX_rf_rdata_b1(EX_rf_rdata_b1),
         .EX_rf_rdata_b2(EX_rf_rdata_b2),
-        .EX_rf_rdata_a1_n(EX_rf_rdata_a1_n),
-        .EX_rf_rdata_a2_n(EX_rf_rdata_a2_n),
-        .EX_rf_rdata_b1_n(EX_rf_rdata_b1_n),
-        .EX_rf_rdata_b2_n(EX_rf_rdata_b2_n),
         .EX_imm_a(EX_imm_a),
         .EX_imm_b(EX_imm_b),
         .EX_alu_src_sel_a1(EX_alu_src_sel_a1),

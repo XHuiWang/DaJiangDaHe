@@ -27,7 +27,6 @@ module RF #(
     input                           clk,     
     input       [ADDR_WIDTH -1:0]   raddr_a1  , raddr_a2  , raddr_b1  , raddr_b2,   //读地址
     output  reg [DATA_WIDTH -1:0]   rdata_a1  , rdata_a2  , rdata_b1  , rdata_b2,   //读数据
-    output  reg [DATA_WIDTH -1:0]   rdata_a1_n, rdata_a2_n, rdata_b1_n, rdata_b2_n, //读数据取负
     input       [ADDR_WIDTH -1:0]   waddr_a, waddr_b,                       //写地址
     input       [DATA_WIDTH -1:0]   wdata_a, wdata_b,                       //写数据
     input                           we_a,we_b                               //写使能
@@ -37,11 +36,7 @@ module RF #(
     assign rdata_a1   = (raddr_a1 == waddr_b && we_b) ? wdata_b : ((raddr_a1 == waddr_a && we_a) ? wdata_a : rf[raddr_a1]);   
     assign rdata_a2   = (raddr_a2 == waddr_b && we_b) ? wdata_b : ((raddr_a2 == waddr_a && we_a) ? wdata_a : rf[raddr_a2]);   
     assign rdata_b1   = (raddr_b1 == waddr_b && we_b) ? wdata_b : ((raddr_b1 == waddr_a && we_a) ? wdata_a : rf[raddr_b1]);   
-    assign rdata_b2   = (raddr_b2 == waddr_b && we_b) ? wdata_b : ((raddr_b2 == waddr_a && we_a) ? wdata_a : rf[raddr_b2]);   
-    assign rdata_a1_n = ~((raddr_a1 == waddr_b && we_b) ? wdata_b : ((raddr_a1 == waddr_a && we_a) ? wdata_a : rf[raddr_a1])) + 1;   
-    assign rdata_a2_n = ~((raddr_a2 == waddr_b && we_b) ? wdata_b : ((raddr_a2 == waddr_a && we_a) ? wdata_a : rf[raddr_a2])) + 1;   
-    assign rdata_b1_n = ~((raddr_b1 == waddr_b && we_b) ? wdata_b : ((raddr_b1 == waddr_a && we_a) ? wdata_a : rf[raddr_b1])) + 1;   
-    assign rdata_b2_n = ~((raddr_b2 == waddr_b && we_b) ? wdata_b : ((raddr_b2 == waddr_a && we_a) ? wdata_a : rf[raddr_b2])) + 1;   
+    assign rdata_b2   = (raddr_b2 == waddr_b && we_b) ? wdata_b : ((raddr_b2 == waddr_a && we_a) ? wdata_a : rf[raddr_b2]);    
 
     initial begin
         foreach (rf[i]) rf[i] = 32'h0000_0000;      //初始化寄存器堆

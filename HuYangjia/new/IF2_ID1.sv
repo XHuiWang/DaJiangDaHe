@@ -57,20 +57,25 @@ module IF2_ID1(
     assign flush = flush_BR;
     assign stall = stall_full_instr;
 
+
+    logic [ 1: 0] o_is_valid_temp;
     always @(posedge clk) begin
         if( !rstn ) begin
-            o_is_valid <= 2'b00;
+            o_is_valid_temp <= 2'b00;
         end
         else if(flush) begin
-            o_is_valid <= 2'b00;
+            o_is_valid_temp <= 2'b00;
         end
         else if(stall) begin
-            o_is_valid <= o_is_valid;
+            o_is_valid_temp <= o_is_valid_temp;
         end
         else begin
-            o_is_valid <= i_is_valid;
+            o_is_valid_temp <= i_is_valid;
         end
     end
+    assign o_is_valid = o_is_valid_temp & {2{~stall_full_instr}};
+
+
     always @(posedge clk) begin
         if( !rstn ) begin
             o_IR1 <= 32'h0;
