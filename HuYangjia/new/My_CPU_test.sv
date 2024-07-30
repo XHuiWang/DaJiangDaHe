@@ -183,6 +183,7 @@ module My_CPU_test(
     logic [31: 0] csr_rdata_2;
     logic [31: 0] era_out;
     logic [31: 0] eentry;
+    logic [31: 0] csr_tid;
     logic [ 0: 0] has_interrupt_cpu;
     logic [ 0: 0] has_interrupt_idle;
     logic [ 1: 0] translate_mode;
@@ -191,7 +192,7 @@ module My_CPU_test(
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     assign hardware_int = 8'b0;
     assign stable_clk = clk;
-    assign has_interrupt_cpu = MEM_interrupt;
+    assign MEM_interrupt = has_interrupt_cpu;
 
 
 
@@ -235,7 +236,7 @@ module My_CPU_test(
     logic [ 0: 0] EX_mem_we_b;
     logic [ 2: 0] EX_mem_type_a;
     logic [ 2: 0] EX_mem_type_b;
-    logic [ 5: 0] EX_mux_select;
+    logic [ 8: 0] EX_mux_select;
     logic [ 0: 0] EX_signed;
     logic [ 0: 0] EX_div_en;
     logic [ 0: 0] EX_mul_en;
@@ -246,12 +247,14 @@ module My_CPU_test(
     // add for csr
     logic [ 2: 0] EX_csr_type;
     logic [31: 0] EX_csr_rdata;
+    logic [31: 0] EX_tid;
     logic [13: 0] EX_csr_waddr;
     logic [ 0: 0] EX_ertn;    
     logic [ 6: 0] EX_ecode_in_a;
     logic [ 6: 0] EX_ecode_in_b;
     logic [ 0: 0] EX_ecode_we_a;
     logic [ 0: 0] EX_ecode_we_b;
+    logic [ 0: 0] MEM_interrupt;
 
 
 
@@ -672,6 +675,7 @@ module My_CPU_test(
         .rdata_b2(rdata_b2),
         .csr_rdata_1(csr_rdata_1),
         .csr_rdata_2(csr_rdata_2),
+        .csr_tid(csr_tid),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
         .stall_div(stall_ex),
@@ -718,6 +722,7 @@ module My_CPU_test(
         .csr_type(EX_csr_type),
         .csr_raddr(EX_csr_waddr),
         .csr_rdata(EX_csr_rdata),
+        .EX_tid(EX_tid),
         .ecode_in_a(EX_ecode_in_a),
         .ecode_we_a(EX_ecode_we_a),
         .ecode_in_b(EX_ecode_in_b),

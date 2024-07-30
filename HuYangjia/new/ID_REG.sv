@@ -110,7 +110,7 @@ module ID_REG (
     assign error_set.alu_op = 12'd0;
     assign error_set.mem_we = 1'b0;
     assign error_set.ldst_type = 4'd0;
-    assign error_set.mux_sel = 5'b0;
+    assign error_set.mux_sel = 9'b0;
     assign error_set.rf_raddr1 = 5'd0;
     assign error_set.rf_raddr2 = 5'd0;
     assign error_set.rf_rdata1 = 32'd0;

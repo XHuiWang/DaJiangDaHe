@@ -41,6 +41,7 @@ module Issue_EXE(
 
     input [31: 0] csr_rdata_1,
     input [31: 0] csr_rdata_2,
+    input [31: 0] csr_tid,
 
     // stall&flush
     input [ 0: 0] flush_BR,
@@ -87,7 +88,7 @@ module Issue_EXE(
 
     output logic [ 0: 0]  EX_mem_we_a,        //A指令内存写使能
     output logic [ 0: 0]  EX_mem_we_b,        //B指令内存写使能
-    output logic [ 5: 0]  EX_mux_sel,         //B指令WB来源选择信号
+    output logic [ 8: 0]  EX_mux_sel,         //B指令WB来源选择信号
     output logic [ 2: 0]  EX_mem_type_a,      //A指令内存访问类型
     output logic [ 2: 0]  EX_mem_type_b,      //B指令内存访问类型
     
@@ -99,6 +100,7 @@ module Issue_EXE(
     output logic [ 2: 0] csr_type,           //csr指令的类型
     output logic [13: 0] csr_raddr,          //csr指令的读csr地址
     output logic [31: 0] csr_rdata,          //csr指令的读csr数据
+    output logic [31: 0] EX_tid,             //tid,计时器编号
     output logic [ 6: 0] ecode_in_a,         //异常处理的输入
     output logic [ 0: 0] ecode_we_a,         //异常处理的写曾经，表示已经修改过ecode_in
     output logic [ 6: 0] ecode_in_b,         //异常处理的输入
@@ -167,7 +169,7 @@ module Issue_EXE(
             EX_rf_we_b        <= 1'b0;
             EX_mem_type_a     <= 3'h0;
             EX_mem_type_b     <= 3'h0;
-            EX_mux_sel        <= 5'h00;
+            EX_mux_sel        <= 9'h000;
             EX_rf_waddr_a     <= 5'h00;
             EX_rf_waddr_b     <= 5'h00;
             EX_mem_we_a       <= 1'b0;
@@ -187,6 +189,7 @@ module Issue_EXE(
             ecode_we_a        <= 1'b0;
             ecode_in_b        <= 7'h00;
             ecode_we_b        <= 1'b0;
+            EX_tid            <= 32'h0000_0000;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -235,6 +238,7 @@ module Issue_EXE(
             ecode_we_a        <= ecode_we_1;
             ecode_in_b        <= ecode_in_2;
             ecode_we_b        <= ecode_we_2;
+            EX_tid            <= EX_tid;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -262,7 +266,7 @@ module Issue_EXE(
                 EX_br_pd_b        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_rf_we_a        <= i_set2.rf_we & Issue_b_enable;
                 EX_rf_we_b        <= i_set1.rf_we & Issue_a_enable;
-                EX_mux_sel        <= i_set1.mux_sel & {6{Issue_a_enable}};
+                EX_mux_sel        <= i_set1.mux_sel & {9{Issue_a_enable}};
                 EX_mem_type_a     <= i_set2.ldst_type[ 2: 0] & {3{Issue_b_enable}};
                 EX_mem_type_b     <= i_set1.ldst_type[ 2: 0] & {3{Issue_a_enable}};
                 EX_rf_waddr_a     <= i_set2.rf_rd;
@@ -284,6 +288,7 @@ module Issue_EXE(
                 ecode_we_a        <= i_set2.ecode_we & Issue_b_enable;
                 ecode_in_b        <= i_set1.ecode_in & {7{Issue_a_enable}};
                 ecode_we_b        <= i_set1.ecode_we & Issue_a_enable;
+                EX_tid            <= csr_tid;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -311,7 +316,7 @@ module Issue_EXE(
                 // TODO: 预测跳转
                 EX_rf_we_a        <= i_set1.rf_we & Issue_a_enable;
                 EX_rf_we_b        <= i_set2.rf_we & Issue_b_enable;
-                EX_mux_sel        <= i_set2.mux_sel & {6{Issue_b_enable}};
+                EX_mux_sel        <= i_set2.mux_sel & {9{Issue_b_enable}};
                 EX_mem_type_a     <= i_set1.ldst_type[ 2: 0] & {3{Issue_a_enable}};
                 EX_mem_type_b     <= i_set2.ldst_type[ 2: 0] & {3{Issue_b_enable}};
                 EX_rf_waddr_a     <= i_set1.rf_rd;
@@ -333,6 +338,7 @@ module Issue_EXE(
                 ecode_we_a        <= i_set1.ecode_we & Issue_a_enable;
                 ecode_in_b        <= i_set2.ecode_in & {7{Issue_b_enable}};
                 ecode_we_b        <= i_set2.ecode_we & Issue_b_enable;
+                EX_tid            <= csr_tid;
             end
         end
     end

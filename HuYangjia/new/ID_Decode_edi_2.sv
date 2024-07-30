@@ -56,7 +56,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
     // logic [ 0: 0] wb_sel; // TODO: act as mux_sel 
-    logic [ 5: 0] mux_sel; // B通道WB来源的选择信号
+    logic [ 8: 0] mux_sel; // B通道WB来源的选择信号
     logic [ 0: 0] sign_bit; // 符号位,运用于乘除法
 
     logic [ 2: 0] csr_type; // 用于csr指令的类型
@@ -161,6 +161,10 @@ module ID_Decode_edi_2(
     wire break_inst;
     wire syscall_inst;
 
+    wire rdcntid_inst;
+    wire rdcntvl_inst;
+    wire rdcntvh_inst;
+
 
     assign add_inst       = (IF_IR [31:15] == 17'h00020) ? 1'b1 : 1'b0;
     assign sub_inst       = (IF_IR [31:15] == 17'h00022) ? 1'b1 : 1'b0;
@@ -223,6 +227,10 @@ module ID_Decode_edi_2(
     assign break_inst     = (IF_IR [31:15] == 17'h00054) ? 1'b1 : 1'b0;
     assign syscall_inst   = (IF_IR [31:15] == 17'h00056) ? 1'b1 : 1'b0;
 
+    assign rdcntid_inst   = (IF_IR [31:10] == 22'h000018 && ~(|IF_IR [ 4: 0])) ? 1'b1 : 1'b0;
+    assign rdcntvl_inst   = (IF_IR [31: 5] == 27'h0000180) ? 1'b1 : 1'b0;
+    assign rdcntvh_inst   = (IF_IR [31: 5] == 27'h0000190) ? 1'b1 : 1'b0;
+
 
     assign o_valid = data_valid & o_inst_lawful;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
@@ -233,7 +241,8 @@ module ID_Decode_edi_2(
                             beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | 
                             b_inst | bl_inst | jirl_inst | mul_inst | mulh_inst | mulhu_inst | 
                             div_inst | mod_inst | divu_inst | modu_inst | csrrd_inst | csrwr_inst |
-                            csrxchg_inst | ertn_inst | break_inst | syscall_inst) ? 1'b1 : 1'b0;
+                            csrxchg_inst | ertn_inst | break_inst | syscall_inst | rdcntid_inst | 
+                            rdcntvl_inst | rdcntvh_inst) ? 1'b1 : 1'b0;
 
 
     
@@ -244,18 +253,24 @@ module ID_Decode_edi_2(
 
     // mux_sel
     // MEM段B指令RF写回数据多选器独热码 
-    // 6'b00_0001: ALU
-    // 6'b00_0010: LD类型指令
-    // 6'b00_0100: MUL  取低32位
-    // 6'b00_1000: MULH 取高32位
-    // 6'b01_0000: DIV 取商
-    // 6'b10_0000: MOD 取余
-    assign mux_sel = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst) ? 6'b00_0010 :
-                     (mul_inst) ? 6'b00_0100 :
-                     (mulh_inst | mulhu_inst) ? 6'b00_1000 :
-                     (div_inst | divu_inst) ? 6'b01_0000 :
-                     (mod_inst | modu_inst) ? 6'b10_0000 :
-                     6'b00_0001;
+    // 9'b0_0000_0001: ALU
+    // 9'b0_0000_0010: LD类型指令
+    // 9'b0_0000_0100: MUL  取低32位
+    // 9'b0_0000_1000: MULH 取高32位
+    // 9'b0_0001_0000: DIV 取商
+    // 9'b0_0010_0000: MOD 取余
+    // 9'b0_0100_0000: RDCNTVL.W 取低32位
+    // 9'b0_1000_0000: RDCNTVH.W 取高32位
+    // 9'b1_0000_0000: RDCNTID
+    assign mux_sel = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst) ? 9'b0_0000_0010 :
+                     (mul_inst) ? 9'b0_0000_0100 :
+                     (mulh_inst | mulhu_inst) ? 9'b0_0000_1000 :
+                     (div_inst | divu_inst)   ? 9'b0_0001_0000 :
+                     (mod_inst | modu_inst)   ? 9'b0_0010_0000 :
+                     (rdcntvl_inst)           ? 9'b0_0100_0000 :
+                     (rdcntvh_inst)           ? 9'b0_1000_0000 :
+                     (rdcntid_inst)           ? 9'b1_0000_0000 :
+                     9'b0_0000_0001;
 
 
     // inst_type
@@ -265,11 +280,13 @@ module ID_Decode_edi_2(
     // 10'h008: 4 div
     // 10'h010: 3 csr
     // 10'h020: 1 ertn
+    // 10'h040: 3 rdcnt
     assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'h002 :
                        (mul_inst | mulh_inst | mulhu_inst) ? 10'h004 :
                        (div_inst | mod_inst | divu_inst | modu_inst) ? 10'h008 : 
                        ((csrrd_inst | csrwr_inst | csrxchg_inst) & ~(|plv)) ? 10'h010 :
                        (ertn_inst & ~(|plv)) ? 10'h020 :
+                       (rdcntid_inst | rdcntvl_inst | rdcntvh_inst) ? 10'h040 :
                        10'h001;
 
 
@@ -320,7 +337,7 @@ module ID_Decode_edi_2(
     assign rf_raddr2 =  ( stb_inst | sth_inst | st_inst | beq_inst | bne_inst | 
                         blt_inst | bge_inst | bltu_inst | bgeu_inst | csrrd_inst | 
                         csrwr_inst | csrxchg_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
-    assign rf_rd = (bl_inst) ? 1 : IF_IR[ 4: 0];
+    assign rf_rd = (bl_inst) ? 1 : (~rdcntid_inst) ? IF_IR[ 4: 0] : IF_IR[ 9: 5];
     assign rf_we =  (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | 
                     sth_inst | st_inst |~data_valid | rf_rd == 0 | 
                     (plv == 2'b11 && (csrwr_inst | csrxchg_inst | ertn_inst)))) ? 1'b0 : 1'b1;
