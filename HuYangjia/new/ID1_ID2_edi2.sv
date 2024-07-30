@@ -157,6 +157,17 @@ module ID1_ID2_edi2(
             // 写入，不写出
             a_head <= (|a_length_add) ? a_head_plus_1 : a_head;
             a_tail <= a_tail;
+            a_length_left <= a_length;
+            b_head <= (|b_length_add) ? b_head_plus_1 : b_head;
+            b_tail <= b_tail;
+            b_length_left <= b_length;
+            if(|a_length_add) begin
+                // a_PC_Buffer[a_head[15]] <= i_PC1;
+                // a_IR_Buffer[a_head[15]] <= i_IR1;
+                // a_brtype_pcpre_Buffer[a_head[15]] <= i_brtype_pcpre_1;
+                // a_ecode_Buffer[a_head[15]] <= i_ecode_1;
+            end
+            // if()
         end
         
     end

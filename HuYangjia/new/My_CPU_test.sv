@@ -391,7 +391,7 @@ module My_CPU_test(
     assign flush_BR = EX_br;
     assign stall_full_issue = o_is_full_2;
     assign stall_full_instr = o_is_full;
-    assign flush_of_ALL = EX_br | WB_era_en | WB_eentry_en;
+    assign flush_of_ALL = EX_br | WB_era_en | WB_eentry_en | WB_flush_csr;
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
@@ -411,6 +411,8 @@ module My_CPU_test(
         .WB_era_en(WB_era_en),
         .PC_eentry(eentry),
         .WB_eentry_en(WB_eentry_en),
+        .WB_flush_csr_pc(WB_flush_csr_pc),
+        .WB_flush_csr(WB_flush_csr),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
         .pc_IF1(pc_IF1),

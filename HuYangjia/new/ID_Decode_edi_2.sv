@@ -217,7 +217,7 @@ module ID_Decode_edi_2(
 
     assign csrrd_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h00) ? 1'b1 : 1'b0;
     assign csrwr_inst     = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] == 5'h01) ? 1'b1 : 1'b0;
-    assign csrxchg_inst   = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] != 5'h02) ? 1'b1 : 1'b0;
+    assign csrxchg_inst   = (IF_IR [31:24] == 8'h04 && IF_IR [ 9: 5] != 5'h00 && IF_IR [ 9: 5] != 5'h01) ? 1'b1 : 1'b0;
     assign ertn_inst      = (IF_IR [31: 0] == 32'h06483800) ? 1'b1 : 1'b0;
 
     assign break_inst     = (IF_IR [31:15] == 17'h00054) ? 1'b1 : 1'b0;

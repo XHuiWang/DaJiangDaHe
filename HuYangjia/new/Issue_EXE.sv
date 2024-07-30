@@ -68,10 +68,10 @@ module Issue_EXE(
     output logic [31: 0] EX_imm_a,           //A指令的立即数
     output logic [31: 0] EX_imm_b,           //B指令的立即数
 
-    output logic [ 2: 0] EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
-    output logic [ 2: 0] EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
-    output logic [ 2: 0] EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
-    output logic [ 2: 0] EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
+    output logic [ 3: 0] EX_alu_src_sel_a1,  //A指令的第一个操作数选择信号
+    output logic [ 3: 0] EX_alu_src_sel_a2,  //A指令的第二个操作数选择信号
+    output logic [ 3: 0] EX_alu_src_sel_b1,  //B指令的第一个操作数选择信号
+    output logic [ 3: 0] EX_alu_src_sel_b2,  //B指令的第二个操作数选择信号
     output logic [11: 0] EX_alu_op_a,        //A指令的运算类型
     output logic [11: 0] EX_alu_op_b,        //B指令的运算类型
 
@@ -183,10 +183,10 @@ module Issue_EXE(
             csr_raddr         <= 14'h0000;
             csr_rdata         <= 32'h0000_0000;
             ertn_check        <= 1'b0;
-            ecode_in_1        <= 7'h00;
-            ecode_we_1        <= 1'b0;
-            ecode_in_2        <= 7'h00;
-            ecode_we_2        <= 1'b0;
+            ecode_in_a        <= 7'h00;
+            ecode_we_a        <= 1'b0;
+            ecode_in_b        <= 7'h00;
+            ecode_we_b        <= 1'b0;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -231,10 +231,10 @@ module Issue_EXE(
             csr_raddr         <= csr_raddr;
             csr_rdata         <= csr_rdata;
             ertn_check        <= ertn_check;
-            ecode_in_1        <= ecode_in_1;
-            ecode_we_1        <= ecode_we_1;
-            ecode_in_2        <= ecode_in_2;
-            ecode_we_2        <= ecode_we_2;
+            ecode_in_a        <= ecode_in_1;
+            ecode_we_a        <= ecode_we_1;
+            ecode_in_b        <= ecode_in_2;
+            ecode_we_b        <= ecode_we_2;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -276,14 +276,14 @@ module Issue_EXE(
                 type_predict_b    <= i_set1.type_predict;
                 EX_PC_pre_a       <= i_set2.PC_pre;
                 EX_PC_pre_b       <= i_set1.PC_pre;
-                csr_type          <= i_set2.csr_type & {3{Issue_b_enable}};
-                csr_raddr         <= i_set2.csr_raddr;
-                csr_rdata         <= csr_rdata_2;
-                ertn_check        <= (i_set2.inst_type == 10'h020) & Issue_b_enable;
-                ecode_in_1        <= i_set2.ecode_in & {7{Issue_b_enable}};
-                ecode_we_1        <= i_set2.ecode_we & Issue_b_enable;
-                ecode_in_2        <= i_set1.ecode_in & {7{Issue_a_enable}};
-                ecode_we_2        <= i_set1.ecode_we & Issue_a_enable;
+                csr_type          <= i_set1.csr_type & {3{Issue_a_enable}};
+                csr_raddr         <= i_set1.csr_raddr;
+                csr_rdata         <= csr_rdata_1;
+                ertn_check        <= (i_set1.inst_type == 10'h020) & Issue_a_enable;
+                ecode_in_a        <= i_set2.ecode_in & {7{Issue_b_enable}};
+                ecode_we_a        <= i_set2.ecode_we & Issue_b_enable;
+                ecode_in_b        <= i_set1.ecode_in & {7{Issue_a_enable}};
+                ecode_we_b        <= i_set1.ecode_we & Issue_a_enable;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -325,14 +325,14 @@ module Issue_EXE(
                 type_predict_b    <= i_set2.type_predict;
                 EX_PC_pre_a       <= i_set1.PC_pre;
                 EX_PC_pre_b       <= i_set2.PC_pre;
-                csr_type          <= i_set1.csr_type & {3{Issue_a_enable}};
-                csr_raddr         <= i_set1.csr_raddr;
-                csr_rdata         <= csr_rdata_1;
-                ertn_check        <= (i_set1.inst_type == 10'h020) & Issue_a_enable;
-                ecode_in_1        <= i_set1.ecode_in & {7{Issue_a_enable}};
-                ecode_we_1        <= i_set1.ecode_we & Issue_a_enable;
-                ecode_in_2        <= i_set2.ecode_in & {7{Issue_b_enable}};
-                ecode_we_2        <= i_set2.ecode_we & Issue_b_enable;
+                csr_type          <= i_set2.csr_type & {3{Issue_b_enable}};
+                csr_raddr         <= i_set2.csr_raddr;
+                csr_rdata         <= csr_rdata_2;
+                ertn_check        <= (i_set2.inst_type == 10'h020) & Issue_b_enable;
+                ecode_in_a        <= i_set1.ecode_in & {7{Issue_a_enable}};
+                ecode_we_a        <= i_set1.ecode_we & Issue_a_enable;
+                ecode_in_b        <= i_set2.ecode_in & {7{Issue_b_enable}};
+                ecode_we_b        <= i_set2.ecode_we & Issue_b_enable;
             end
         end
     end

@@ -38,6 +38,8 @@ module IF1(
     input [ 0: 0] WB_era_en,
     input [31: 0] PC_eentry,
     input [ 0: 0] WB_eentry_en,
+    input [31: 0] WB_flush_csr_pc,
+    input [ 0: 0] WB_flush_csr,
 
 
     // stall信号
@@ -80,6 +82,9 @@ module IF1(
         end
         else if(BR_eentry) begin
             pc_IF1 <= PC_eentry;
+        end
+        else if(WB_flush_csr) begin
+            pc_IF1 <= WB_flush_csr_pc;
         end
         else if(EX_BR) begin
             pc_IF1 <= pc_BR;
