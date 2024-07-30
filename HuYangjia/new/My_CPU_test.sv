@@ -235,6 +235,7 @@ module My_CPU_test(
     logic [ 5: 0] EX_mux_select;
     logic [ 0: 0] EX_signed;
     logic [ 0: 0] EX_div_en;
+    logic [ 0: 0] EX_mul_en;
     logic [ 1: 0] type_predict_a;
     logic [ 1: 0] type_predict_b;
     logic [31: 0] EX_PC_pre_a;
@@ -380,7 +381,7 @@ module My_CPU_test(
     logic [ 0: 0] stall_full_instr; // 由于Instruction Buffer满带来的stall信号，作用于IF1
     logic [ 0: 0] stall_ICache; // 由于Icache缺失带来的逻辑的stall信号，作用于IF1的取值模块和IF1_IF2段间寄存器
     logic [ 0: 0] stall_iCache; // 由于Icache缺失带来的真正的stall信号
-    logic [ 0: 0] stall_div;// 由于除法器忙带来的stall信号
+    logic [ 0: 0] stall_ex;// 由于除法器和乘法器忙带来的stall信号
     logic [ 0: 0] flush_BR; // 由于分支预测错误带来的flush信号，作用于两个Buffer和IF1_IF2段间寄存器，作用于ICache(在Miss则停止操作)
     logic [ 0: 0] flush_of_ALL; // 由于任何原因带来的flush信号，作用于所有段间寄存器
 
@@ -575,7 +576,7 @@ module My_CPU_test(
         .i_usingNUM(i_usingNUM),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
-        .stall_div(stall_div),
+        .stall_div(stall_ex),
         .o_PC_set1(PC_set1_back),
         .o_PC_set2(PC_set2_back),
         .a_rf_raddr1(raddr_a1),
@@ -668,7 +669,7 @@ module My_CPU_test(
         .csr_rdata_2(csr_rdata_2),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
-        .stall_div(stall_div),
+        .stall_div(stall_ex),
         .EX_a_enable(EX_a_enable),
         .EX_b_enable(EX_b_enable),
         .type_predict_a(type_predict_a),
@@ -708,6 +709,7 @@ module My_CPU_test(
         .EX_mem_type_b(EX_mem_type_b),
         .EX_sign_bit(EX_signed),
         .EX_div_en(EX_div_en),
+        .EX_mul_en(EX_mul_en),
         .csr_type(EX_csr_type),
         .csr_raddr(EX_csr_waddr),
         .csr_rdata(EX_csr_rdata),
@@ -745,7 +747,8 @@ module My_CPU_test(
         .EX_rf_rdata_b2_n(EX_rf_rdata_b2_n),
         .EX_signed(EX_signed),
         .EX_div_en(EX_div_en),
-        .stall_div(stall_div),
+        .EX_mul_en(EX_mul_en),
+        .stall_ex(stall_ex),
         .EX_rf_we_a(EX_rf_we_a),
         .EX_rf_we_b(EX_rf_we_b),
         .EX_rf_waddr_a(EX_rf_waddr_a),

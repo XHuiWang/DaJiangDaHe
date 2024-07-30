@@ -69,8 +69,6 @@ module ID1_ID2_edi2(
     logic [15: 0] a_tail;
     logic [15: 0] a_head_plus_1;
     logic [15: 0] a_tail_plus_1;
-    logic [15: 0] a_head_plus_2;
-    logic [15: 0] a_tail_plus_2;
     logic [ 6: 0] a_length; // 缓存数组的长度+将要存入的数据的长度
     logic [ 6: 0] a_length_left; // 缓存数组的长度
     logic [ 6: 0] a_length_add; // 将要存入的数据的长度
@@ -80,8 +78,6 @@ module ID1_ID2_edi2(
     logic [15: 0] b_tail;
     logic [15: 0] b_head_plus_1;
     logic [15: 0] b_tail_plus_1;
-    logic [15: 0] b_head_plus_2;
-    logic [15: 0] b_tail_plus_2;
     logic [ 6: 0] b_length; // 缓存数组的长度+将要存入的数据的长度
     logic [ 6: 0] b_length_left; // 缓存数组的长度
     logic [ 6: 0] b_length_add; // 将要存入的数据的长度
@@ -107,25 +103,23 @@ module ID1_ID2_edi2(
     assign b_length_add = ((i_is_valid == 2'b10 &&  Input_status) | (i_is_valid == 2'b11)) ? 7'd1 : 7'd0;
     assign a_length = a_length_left + a_length_add;
     assign b_length = b_length_left + b_length_add;
-    assign a_is_full = (a_length[]) ? 1'b1 : 1'b0;
-    assign b_is_full = (b_length[]) ? 1'b1 : 1'b0;
+    assign a_is_full = |(a_length[ 6: 4]) ? 1'b1 : 1'b0;
+    assign b_is_full = |(b_length[ 6: 4]) ? 1'b1 : 1'b0;
+
+    assign a_head_plus_1 = {a_head[14: 0], a_head[15]};
+    assign a_tail_plus_1 = {a_tail[14: 0], a_tail[15]};
+    assign b_head_plus_1 = {b_head[14: 0], b_head[15]};
+    assign b_tail_plus_1 = {b_tail[14: 0], b_tail[15]};
+
 
     always @(posedge clk) begin
         if( !rstn ) begin
             a_head <= 0;
             a_tail <= 0;
-            a_head_plus_1 <= 0;
-            a_tail_plus_1 <= 0;
-            a_head_plus_2 <= 0;
-            a_tail_plus_2 <= 0;
             a_length_left <= 0;
 
             b_head <= 0;
             b_tail <= 0;
-            b_head_plus_1 <= 0;
-            b_tail_plus_1 <= 0;
-            b_head_plus_2 <= 0;
-            b_tail_plus_2 <= 0;
             b_length_left <= 0;
 
             o_PC1 <= 32'h0000_0000;
@@ -152,24 +146,17 @@ module ID1_ID2_edi2(
         else if (flush) begin
             a_head <= 0;
             a_tail <= 0;
-            a_head_plus_1 <= 0;
-            a_tail_plus_1 <= 0;
-            a_head_plus_2 <= 0;
-            a_tail_plus_2 <= 0;
             a_length_left <= 0;
 
             b_head <= 0;
             b_tail <= 0;
-            b_head_plus_1 <= 0;
-            b_tail_plus_1 <= 0;
-            b_head_plus_2 <= 0;
-            b_tail_plus_2 <= 0;
             b_length_left <= 0;            
         end
 
         else if(stall) begin
             // 写入，不写出
-
+            a_head <= (|a_length_add) ? a_head_plus_1 : a_head;
+            a_tail <= a_tail;
         end
         
     end

@@ -93,6 +93,7 @@ module Issue_EXE(
     
     output logic [ 0: 0] EX_sign_bit,        //符号位,运用于乘除法 // 1为有符号数
     output logic [ 0: 0] EX_div_en,          //除法使能
+    output logic [ 0: 0] EX_mul_en,          //除法使能
 
     // CSR
     output logic [ 2: 0] csr_type,           //csr指令的类型
@@ -172,6 +173,7 @@ module Issue_EXE(
             EX_mem_we_a       <= 1'b0;
             EX_mem_we_b       <= 1'b0;
             EX_div_en         <= 1'b0;
+            EX_mul_en         <= 1'b0;
             EX_sign_bit       <= 1'b0;
             type_predict_a    <= 2'h0;
             type_predict_b    <= 2'h0;
@@ -219,6 +221,7 @@ module Issue_EXE(
             EX_mem_we_a       <= EX_mem_we_a;
             EX_mem_we_b       <= EX_mem_we_b;
             EX_div_en         <= EX_div_en;
+            EX_mul_en         <= EX_mul_en;
             EX_sign_bit       <= EX_sign_bit;
             type_predict_a    <= type_predict_a;
             type_predict_b    <= type_predict_b;
@@ -268,6 +271,7 @@ module Issue_EXE(
                 EX_mem_we_b       <= i_set1.mem_we & Issue_a_enable;
                 EX_sign_bit       <= i_set1.sign_bit;
                 EX_div_en         <= (i_set1.inst_type == 10'h008) & Issue_a_enable;
+                EX_mul_en         <= (i_set1.inst_type == 10'h004) & Issue_a_enable;
                 type_predict_a    <= i_set2.type_predict;
                 type_predict_b    <= i_set1.type_predict;
                 EX_PC_pre_a       <= i_set2.PC_pre;
@@ -316,6 +320,7 @@ module Issue_EXE(
                 EX_mem_we_b       <= i_set2.mem_we & Issue_b_enable;
                 EX_sign_bit       <= i_set2.sign_bit;
                 EX_div_en         <= (i_set2.inst_type == 10'h008) & Issue_b_enable;
+                EX_mul_en         <= (i_set2.inst_type == 10'h004) & Issue_b_enable;
                 type_predict_a    <= i_set1.type_predict;
                 type_predict_b    <= i_set2.type_predict;
                 EX_PC_pre_a       <= i_set1.PC_pre;
