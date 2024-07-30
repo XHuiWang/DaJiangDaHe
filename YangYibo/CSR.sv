@@ -1,7 +1,7 @@
 `include "CSR_h.vh"
 module CSR(
     input                           clk,
-    input                           stable_clk,
+    input                           stable_clk, //遗留接口，直接连接clk
     input                           rstn,
     //software query port (exe stage)
     input                           software_we,//是否允许软件写入
@@ -544,7 +544,7 @@ always @(posedge clk)
     else just_set_timer<=0;
 
 //TVAL
-reg time_out;
+reg time_out;   //定时器计时是否完成
 always @(posedge stable_clk)
     if(~rstn) begin
         csr_tval <= 0;
@@ -553,12 +553,13 @@ always @(posedge stable_clk)
     //FIXME: 设置TCFG.InitVal后自动重置定时器，这在手册中未提及
     else if(csr_tval==0||just_set_timer) begin
         time_out <= 0;
+        //循环计数模式下，定时器计时完成后自动重置
         //计时器的初始值比标准大1，否则给定时器设置0无法触发中断
         if(tcfg_periodic||just_set_timer) csr_tval<={tcfg_initval[`TCFG_INITVAL],2'd1};
     end else if(tcfg_en) begin
         csr_tval<=csr_tval-1;
         time_out<=csr_tval==1;
-    end
+    end else time_out<=0;   //Try
 
 //TICLR
 always @(posedge stable_clk)
@@ -566,6 +567,7 @@ always @(posedge stable_clk)
         timer_int <= 0;
     else if(time_out)
         timer_int <= 1;
+    else timer_int <= 0; //Try
 
 //CTAG
 always @(posedge clk)

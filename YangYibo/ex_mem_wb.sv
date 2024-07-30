@@ -70,6 +70,7 @@ module ex_mem_wb(
     input           [ 6: 0]     EX_ecode_in_b,      
     input                       EX_ecode_we_a,      //A指令例外码写使能/是否产生例外
     input                       EX_ecode_we_b,
+    input                       MEM_interrupt,      //中断信号，CSR直接发到MEM段
 
     output  reg     [ 6: 0]     WB_ecode_in,        //例外码 WB段写入
     output  reg                 WB_ecode_we,        //例外码写使能/是否产生例外
@@ -350,6 +351,7 @@ FU_CSR  FU_CSR_inst (
 FU_CSR2  FU_CSR2_inst (
     .MEM_csr_we(MEM_csr_we),
     .MEM_ertn(MEM_ertn),
+    .MEM_interrupt(MEM_interrupt),
     .MEM_pc_a(MEM_pc_a),
     .MEM_pc_b(MEM_pc_b),
     .MEM_ecode_in_a(MEM_ecode_in_a),
@@ -430,6 +432,7 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .WB_csr_waddr(WB_csr_waddr),
     .WB_csr_we(WB_csr_we),
     .WB_csr_wdata(WB_csr_wdata),
+    .MEM_interrupt(MEM_interrupt),
     .EX_ertn(EX_ertn),
     .MEM_ertn(MEM_ertn),
     .WB_ertn(WB_ertn),

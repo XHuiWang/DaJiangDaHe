@@ -3,6 +3,7 @@ module FU_CSR2(
     input           [31: 0]     MEM_csr_we,         //是否写CSR
     //CSR控制
     input                       MEM_ertn,           //是否从例外返回
+    input                       MEM_interrupt,      //中断信号，CSR直接发给MEM段
 
     input           [31: 0]     MEM_pc_a,           //A指令的PC值
     input           [31: 0]     MEM_pc_b,           //B指令的PC值
@@ -29,15 +30,16 @@ module FU_CSR2(
     output  wire                MEM_flush_csr,      //因任何原因写CSR时，清空流水线
     output  wire    [31: 0]     MEM_flush_csr_pc    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
 );
-assign MEM_ecode_in = MEM_ecode_we_a ? MEM_ecode_in_a : MEM_ecode_in_b;
-assign MEM_ecode_we = MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_ecode_in = MEM_interrupt ? 7'h0 : 
+    ( MEM_ecode_we_a ? MEM_ecode_in_a : MEM_ecode_in_b );
+assign MEM_ecode_we = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_badv_in  = MEM_badv_we_a ? MEM_badv_in_a : MEM_badv_in_b;
 assign MEM_badv_we  = MEM_badv_we_a | MEM_badv_we_b;
 assign MEM_era_in   = MEM_ecode_we_a ? MEM_pc_a : MEM_pc_b;
-assign MEM_era_we   = MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_era_we   = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_era_en   = MEM_ertn;
-assign MEM_eentry_en= MEM_ecode_we_a | MEM_ecode_we_b;
-assign MEM_store_state = MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_eentry_en= MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_store_state = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_restore_state = MEM_ertn;
 
 assign MEM_flush_csr = MEM_ecode_we | (|MEM_csr_we) | MEM_ertn; //触发例外/写CSR/例外返回

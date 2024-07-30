@@ -16,6 +16,7 @@ module Pipeline_Register_CSR(
     output  reg     [31: 0]     WB_csr_wdata,
 
     //CSR控制
+    input                       MEM_interrupt,
     input                       EX_ertn,
     output  reg                 MEM_ertn,
     output  reg                 WB_ertn,
@@ -69,7 +70,7 @@ logic   [13: 0]     MEM_csr_waddr;
 logic   [31: 0]     MEM_csr_wdata;
 always@(posedge clk)
 begin
-    if(!rstn | WB_flush_csr)
+    if(!rstn)
     begin
         MEM_csr_waddr<=14'h0000;
         MEM_csr_we<=32'h0000_0000;
@@ -99,6 +100,36 @@ begin
         WB_restore_state<=1'b0;
         WB_flush_csr<=1'b0;
         WB_flush_csr_pc<=32'h0000_0000;
+    end
+    else if(WB_flush_csr)begin     //例外不能打断中断
+        MEM_csr_waddr<=14'h0000;
+        MEM_csr_we<=32'h0000_0000;
+        MEM_csr_wdata<=32'h0000_0000;
+        WB_csr_waddr<=14'h0000;
+        WB_csr_we<=32'h0000_0000;
+        WB_csr_wdata<=32'h0000_0000;
+        MEM_ertn<=1'b0;
+        WB_ertn<=1'b0;
+        MEM_ecode_in_a<=7'h0;
+        MEM_ecode_in_b<=7'h0;
+        MEM_ecode_we_a<=1'b0;
+        MEM_ecode_we_b<=1'b0;
+        MEM_badv_in_a<=32'h0000_0000;
+        MEM_badv_in_b<=32'h0000_0000;
+        MEM_badv_we_a<=1'b0;
+        MEM_badv_we_b<=1'b0;
+        WB_ecode_in<=7'h0;
+        WB_ecode_we<=MEM_interrupt;
+        WB_badv_in<=32'h0000_0000;
+        WB_badv_we<=1'b0;
+        WB_era_in<=32'h0000_0000;
+        WB_era_we<=MEM_interrupt;
+        WB_era_en<=1'b0;
+        WB_eentry_en<=MEM_interrupt;
+        WB_store_state<=MEM_interrupt;
+        WB_restore_state<=1'b0;
+        WB_flush_csr<=MEM_interrupt;
+        WB_flush_csr_pc<=MEM_interrupt ? MEM_flush_csr_pc : 32'h0;
     end
     else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         //EX->MEM
