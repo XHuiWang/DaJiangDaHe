@@ -68,6 +68,8 @@ module Pipeline_Register_CSR(
 logic   [13: 0]     MEM_csr_waddr;
 // logic   [31: 0]     MEM_csr_we;
 logic   [31: 0]     MEM_csr_wdata;
+logic               WB_interrupt;   //interrupt留存一级，中断造成的WB_flush_csr应能够完全清空流水线
+                                    //例外造成的WB_flush_csr，不能清除interrupt信号的传递
 always@(posedge clk)
 begin
     if(!rstn)
@@ -100,6 +102,7 @@ begin
         WB_restore_state<=1'b0;
         WB_flush_csr<=1'b0;
         WB_flush_csr_pc<=32'h0000_0000;
+        WB_interrupt<=1'b0;
     end
     else if(WB_flush_csr)begin     //例外不能打断中断
         MEM_csr_waddr<=14'h0000;
@@ -119,17 +122,18 @@ begin
         MEM_badv_we_a<=1'b0;
         MEM_badv_we_b<=1'b0;
         WB_ecode_in<=7'h0;
-        WB_ecode_we<=MEM_interrupt;
+        WB_ecode_we<=MEM_interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
         WB_badv_in<=32'h0000_0000;
         WB_badv_we<=1'b0;
         WB_era_in<=32'h0000_0000;
-        WB_era_we<=MEM_interrupt;
+        WB_era_we<=MEM_interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
         WB_era_en<=1'b0;
-        WB_eentry_en<=MEM_interrupt;
-        WB_store_state<=MEM_interrupt;
+        WB_eentry_en<=MEM_interrupt & ~WB_interrupt;
+        WB_store_state<=MEM_interrupt & ~WB_interrupt;
         WB_restore_state<=1'b0;
-        WB_flush_csr<=MEM_interrupt;
-        WB_flush_csr_pc<=MEM_interrupt ? MEM_flush_csr_pc : 32'h0;
+        WB_flush_csr<=MEM_interrupt & ~WB_interrupt;
+        WB_flush_csr_pc<=MEM_flush_csr_pc;
+        WB_interrupt<=MEM_interrupt;
     end
     else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         //EX->MEM
@@ -181,6 +185,7 @@ begin
         WB_restore_state<=MEM_restore_state;
         WB_flush_csr<=MEM_flush_csr;
         WB_flush_csr_pc<=MEM_flush_csr_pc;
+        WB_interrupt<=MEM_interrupt;
     end
     else begin end
 end
