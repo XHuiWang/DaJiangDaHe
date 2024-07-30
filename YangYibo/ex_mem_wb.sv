@@ -498,7 +498,7 @@ always @(posedge clk) begin
   end
   else begin
     stall_dcache_buf <= stall_dcache;
-    stall_ex_buf <= stall_div;
+    stall_ex_buf <= stall_ex;
   end
 end
 
