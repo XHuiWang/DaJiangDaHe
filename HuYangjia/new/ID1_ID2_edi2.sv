@@ -154,9 +154,29 @@ module ID1_ID2_edi2(
         end
     endfunction
 
-    assign a_tail_PC = a_PC_Buffer[0] & {32{a_tail[0]}} | 
-                       a_PC_Buffer[1] & {32{a_tail[1]}} |
-                       
+    ID1_ID2_readMUX # (
+        .NUM(NUM)
+    )
+    ID1_ID2_readMUX_inst (
+        .a_tail(a_tail),
+        .b_tail(b_tail),
+        .a_PC_Buffer(a_PC_Buffer),
+        .a_IR_Buffer(a_IR_Buffer),
+        .a_brtype_pcpre_Buffer(a_brtype_pcpre_Buffer),
+        .a_ecode_Buffer(a_ecode_Buffer),
+        .b_PC_Buffer(b_PC_Buffer),
+        .b_IR_Buffer(b_IR_Buffer),
+        .b_brtype_pcpre_Buffer(b_brtype_pcpre_Buffer),
+        .b_ecode_Buffer(b_ecode_Buffer),
+        .a_tail_PC(a_tail_PC),
+        .a_tail_IR(a_tail_IR),
+        .a_tail_brtype_pcpre(a_tail_brtype_pcpre),
+        .a_tail_ecode(a_tail_ecode),
+        .b_tail_PC(b_tail_PC),
+        .b_tail_IR(b_tail_IR),
+        .b_tail_brtype_pcpre(b_tail_brtype_pcpre),
+        .b_tail_ecode(b_tail_ecode)
+    );
 
 
     always @(posedge clk) begin
@@ -208,19 +228,41 @@ module ID1_ID2_edi2(
             b_head <= (|b_length_add) ? b_head_plus_1 : b_head;
             b_tail <= b_tail;
             b_length_left <= b_length;
-            if(|a_length_add) begin
+            if(a_length_add[0]) begin
+                // 确认A通道写入
                 a_head <= a_head_plus_1;
-                // a_PC_Buffer[a_head[15]] <= i_PC1;
-                // a_IR_Buffer[a_head[15]] <= i_IR1;
-                // a_brtype_pcpre_Buffer[a_head[15]] <= i_brtype_pcpre_1;
-                // a_ecode_Buffer[a_head[15]] <= i_ecode_1;
+                if(Input_status) begin
+                    // B先写，则一定从2号通道写
+                    Write_Array_A(a_head, i_PC2, i_IR2, i_brtype_pcpre_2, i_ecode_2);
+                end
+                else begin
+                    // 其他
+                    Write_Array_A(a_head, i_PC1, i_IR1, i_brtype_pcpre_1, i_ecode_1);
+                end
             end
             else begin
                 a_head <= a_head;
             end
-            // if()
+            if(b_length_add[0]) begin
+                // 确认B通道写入
+                b_head <= b_head_plus_1;
+                if(~Input_status) begin
+                    // A先写，则一定从2号通道写
+                    Write_Array_B(b_head, i_PC2, i_IR2, i_brtype_pcpre_2, i_ecode_2);
+                end
+                else begin
+                    // 其他
+                    Write_Array_B(b_head, i_PC1, i_IR1, i_brtype_pcpre_1, i_ecode_1);
+                end
+            end
+            else begin
+                b_head <= b_head;
+            end
         end
-        
+        else begin
+            // 有进有出
+            
+        end
     end
 
 

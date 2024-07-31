@@ -228,8 +228,8 @@ module ID_Decode_edi_2(
     assign syscall_inst   = (IF_IR [31:15] == 17'h00056) ? 1'b1 : 1'b0;
 
     assign rdcntid_inst   = (IF_IR [31:10] == 22'h000018 && ~(|IF_IR [ 4: 0])) ? 1'b1 : 1'b0;
-    assign rdcntvl_inst   = (IF_IR [31: 5] == 27'h0000180) ? 1'b1 : 1'b0;
-    assign rdcntvh_inst   = (IF_IR [31: 5] == 27'h0000190) ? 1'b1 : 1'b0;
+    assign rdcntvl_inst   = (IF_IR [31: 5] == 27'h0000300) ? 1'b1 : 1'b0;
+    assign rdcntvh_inst   = (IF_IR [31: 5] == 27'h0000320) ? 1'b1 : 1'b0;
 
 
     assign o_valid = data_valid;

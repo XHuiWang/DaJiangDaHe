@@ -31,7 +31,7 @@
 
     * 缓存数组： 32位*N个元素，PC和IR分别一个
 */
-module ID1_ID2(
+  module ID1_ID2(
     input [ 0: 0] clk,
     input [ 0: 0] rstn,
 
