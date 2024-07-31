@@ -40,7 +40,7 @@ module CSR(
     output [1:0] direct_i_mat, //处于直接地址翻译模式时，存储访问类型
     output [1:0] direct_d_mat, //0: 非缓存, 1: 可缓存
 
-    //timer
+        //timer
     output [31:0] tid
 );
 reg timer_int;      //定时器中断
@@ -660,5 +660,6 @@ assign translate_mode = {crmd_pg,crmd_da};
 assign direct_i_mat = crmd_datf;
 assign direct_d_mat = crmd_datm;
 assign ecode = estat_ecode;
+assign tid = csr_tid;
 //end CSR read
 endmodule

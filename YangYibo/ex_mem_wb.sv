@@ -77,7 +77,7 @@ module ex_mem_wb(
 
     output  reg     [ 6: 0]     WB_ecode_in,        //例外码 WB段写入
     output  reg                 WB_ecode_we,        //例外码写使能/是否产生例外
-    output  reg     [31: 0]     WB_badv_in,         //取指地址错记录PC，地址非对齐记录地址
+    output  reg     [31: 0]     WB_badv_in,         //取指地址错（非对齐）记录PC，地址非对齐记录地址
     output  reg                 WB_badv_we,         //出错虚地址写使能
     output  reg     [31: 0]     WB_era_in,          //产生例外的指令PC
     output  reg                 WB_era_we,          //产生例外的指令PC写使能
@@ -211,7 +211,7 @@ logic   [31: 0]   MEM_rdcntid;
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | WB_flush_csr) 
+assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
