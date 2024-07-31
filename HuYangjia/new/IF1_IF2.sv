@@ -72,7 +72,7 @@ module IF1_IF2(
         end
     end
     assign o_is_valid = o_is_valid_temp & {2{~flush}} & {2{~stall}};
-    assign o_signFor_ADEF_ALE = (|o_is_valid_temp) & IF1_ecode[7];
+    assign o_signFor_ADEF_ALE = (|o_is_valid_temp) & o_ecode_1[7];
     always @(posedge clk) begin
         if(stall) begin
             o_PC1 <= o_PC1;
