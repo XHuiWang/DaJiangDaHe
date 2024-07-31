@@ -61,7 +61,8 @@ module IF1(
     assign BR_eentry = WB_eentry_en;
 
 
-    assign ecode = (pc_IF1[ 1: 0] == 2'b00) ? (plv == 2'b11 && pc_IF1[31] == 1'b1) ? 8'b1_000_1000 : 8'd0 : 8'b1_000_1001;
+    assign ecode = (pc_IF1[ 1: 0] == 2'b00) ? 8'd0 : 8'b1_000_1000;
+    // assign ecode = (pc_IF1[ 1: 0] == 2'b00) ? (plv == 2'b11 && pc_IF1[31] == 1'b1) ? 8'b1_000_1000 : 8'd0 : 8'b1_000_1001;
 
     always @(posedge clk) begin
         if( !rstn ) begin

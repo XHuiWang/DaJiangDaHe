@@ -117,6 +117,7 @@ module My_CPU_test(
     logic [ 1: 0] i_is_valid;
     logic [ 7: 0] IF2_ecode_1;
     logic [ 7: 0] IF2_ecode_2;
+    logic [ 0: 0] o_signFor_ADEF_ALE;
 
     // 预译码
     logic [33: 0] o_brtype_pcpre_1;
@@ -459,6 +460,7 @@ module My_CPU_test(
         .o_brtype_pcpre_2(IF2_brtype_pcpre_2),
         .o_ecode_1(IF2_ecode_1),
         .o_ecode_2(IF2_ecode_2),
+        .o_signFor_ADEF_ALE(o_signFor_ADEF_ALE),
         .o_is_valid(IF1_IF2_valid)
     );
 
@@ -482,7 +484,7 @@ module My_CPU_test(
     );
     
 
-    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid};
+    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{data_valid | o_signFor_ADEF_ALE}};
 
     IF2_ID1  IF2_ID1_inst (
         .clk(clk),
