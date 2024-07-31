@@ -39,7 +39,7 @@ always @(*) begin
     if      (~|(EX_rf_raddr_a1^MEM_rf_waddr_b) && (MEM_rf_we_b&&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_a1_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_) begin
+    else if (~|(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_a1_f=MEM_alu_result_a;
     end
     else if (~|(EX_rf_raddr_a1^WB_rf_waddr_b) &&  WB_rf_we_b) begin
