@@ -20,7 +20,7 @@ module PHT(
     input  [29:0] pc,
     output logic  pht_jump,
     //更新端
-    input  update, //跳转有效信号
+    input  update, //跳转有效信号,不为00就有有效
     input  [1:0]  update_type,
     input  [29:0] update_pc,
     input         update_pht_jump
@@ -29,11 +29,9 @@ module PHT(
 
     logic [1:0] pht_out1;//读口1
     logic [1:0] pht_out2;
-    logic       pht_in;  //pht更新数据
-    logic       pht_wen; //phtr更新使能
+    logic [1:0] pht_in;  //pht更新数据
 
     assign pht_jump = pht_out1[1]; //预测跳转
-    assign pht_wen = (update_type != 2'b00 && update); //更新使能
 
     //例化pht_table
     pht_table pht_table_inst(
@@ -46,7 +44,7 @@ module PHT(
         .addrb2(update_pc[10:1]),
         .doutb2(pht_out2),
         //写口
-        .wea(pht_wen),
+        .wea(update),
         .addra(update_pc[10:1]),
         .dina(pht_in)
     );
