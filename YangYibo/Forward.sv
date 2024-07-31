@@ -8,6 +8,7 @@ module Forward(
     input           [ 4: 0]     MEM_rf_waddr_b,     //B指令的写寄存器的地址
     input                       MEM_rf_we_a,        //A指令的写使能
     input                       MEM_rf_we_b,        //B指令的写使能
+    input           [ 8: 0]     MEM_wb_mux_select_b;//B指令的多选器选择信号
 
     //此处屏蔽的为多选器选择后的信号，多选器包含MUL2/DIV2/Dache的输出，为了防止过长的通路，前递不使用此信号
     // input           [31: 0]     MEM_rf_wdata_a,     //A指令的写寄存器的数据
@@ -35,10 +36,10 @@ module Forward(
 );
 //rd为0时译码段会使we为0
 always @(*) begin
-    if      (~|(EX_rf_raddr_a1^MEM_rf_waddr_b) && MEM_rf_we_b/*&&TODO多选器要选择*/) begin
+    if      (~|(EX_rf_raddr_a1^MEM_rf_waddr_b) && (MEM_rf_we_b&&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_a1_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_a/*&&TODO多选器要选择*/ ) begin
+    else if (~|(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_) begin
         EX_rf_rdata_a1_f=MEM_alu_result_a;
     end
     else if (~|(EX_rf_raddr_a1^WB_rf_waddr_b) &&  WB_rf_we_b) begin
@@ -53,10 +54,10 @@ always @(*) begin
 end
 
 always @(*)begin
-    if     (~|(EX_rf_raddr_a2^MEM_rf_waddr_b) && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
+    if     (~|(EX_rf_raddr_a2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_a2_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_a2^MEM_rf_waddr_a) && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
+    else if (~|(EX_rf_raddr_a2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_a2_f=MEM_alu_result_a;
     end
     else if (~|(EX_rf_raddr_a2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
@@ -71,10 +72,10 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (~|(EX_rf_raddr_b1^MEM_rf_waddr_b) && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
+    if      (~|(EX_rf_raddr_b1^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_b1_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_b1^MEM_rf_waddr_a) && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
+    else if (~|(EX_rf_raddr_b1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_b1_f=MEM_alu_result_a;
     end
     else if (~|(EX_rf_raddr_b1^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
@@ -89,10 +90,10 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (~|(EX_rf_raddr_b2^MEM_rf_waddr_b) && MEM_rf_we_b /*&&TODO多选器要选择*/) begin
+    if      (~|(EX_rf_raddr_b2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_b2_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_b2^MEM_rf_waddr_a) && MEM_rf_we_a /*&&TODO多选器要选择*/ ) begin
+    else if (~|(EX_rf_raddr_b2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_b2_f=MEM_alu_result_a;
     end
     else if (~|(EX_rf_raddr_b2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin

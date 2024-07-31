@@ -245,6 +245,7 @@ Forward  Forward_inst (
     .MEM_rf_waddr_b(MEM_rf_waddr_b),
     .MEM_rf_we_a(MEM_rf_we_a),
     .MEM_rf_we_b(MEM_rf_we_b),
+    .MEM_wb_mux_select_b(MEM_wb_mux_select_b),
     .MEM_alu_result_a(MEM_alu_result_a),
     .MEM_alu_result_b(MEM_alu_result_b),
     .WB_rf_waddr_a(WB_rf_waddr_a),
