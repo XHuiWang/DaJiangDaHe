@@ -649,7 +649,8 @@ module My_CPU_test(
         .hardware_int(hardware_int), 
         .translate_mode(translate_mode), // 
         .direct_i_mat(direct_i_mat), //
-        .direct_d_mat(direct_d_mat) //
+        .direct_d_mat(direct_d_mat), //
+        .tid(csr_tid)
     );
 
     Issue_dispatch  Issue_dispatch_inst (
@@ -733,6 +734,8 @@ module My_CPU_test(
     ex_mem_wb  ex_mem_wb_inst (
         .clk(clk),
         .rstn(rstn),
+        .EX_a_enable(EX_a_enable),
+        .EX_b_enable(EX_b_enable),
         .EX_pc_a(EX_pc_a),
         .EX_pc_b(EX_pc_b),
         .EX_rf_rdata_a1(EX_rf_rdata_a1),
@@ -785,6 +788,7 @@ module My_CPU_test(
         .EX_csr_type(EX_csr_type), // begin
         .EX_csr_rdata(EX_csr_rdata),
         .EX_csr_waddr(EX_csr_waddr),
+        .EX_tid(EX_tid),
         .WB_csr_waddr(WB_csr_waddr),
         .WB_csr_we(WB_csr_we),
         .WB_csr_wdata(WB_csr_wdata),

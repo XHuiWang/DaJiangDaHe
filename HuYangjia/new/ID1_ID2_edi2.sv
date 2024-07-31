@@ -111,6 +111,53 @@ module ID1_ID2_edi2(
     assign b_head_plus_1 = {b_head[14: 0], b_head[15]};
     assign b_tail_plus_1 = {b_tail[14: 0], b_tail[15]};
 
+    // 读取数组和输入数组的实现
+    logic [31: 0] a_tail_PC;
+    logic [31: 0] a_tail_IR;
+    logic [33: 0] a_tail_brtype_pcpre;
+    logic [ 7: 0] a_tail_ecode;
+    logic [31: 0] b_tail_PC;
+    logic [31: 0] b_tail_IR;
+    logic [33: 0] b_tail_brtype_pcpre;
+    logic [ 7: 0] b_tail_ecode;
+
+    function void Write_Array_A(
+        input [15: 0] pointer,
+        input [31: 0] PC,
+        input [31: 0] IR,
+        input [33: 0] brtype_pcpre,
+        input [ 7: 0] ecode
+    );
+        for(integer i = 0; i < NUM; i++) begin
+            if(pointer[i]) begin
+                a_PC_Buffer[i] <= PC;
+                a_IR_Buffer[i] <= IR;
+                a_brtype_pcpre_Buffer[i] <= brtype_pcpre;
+                a_ecode_Buffer[i] <= ecode;
+            end
+        end
+    endfunction
+    function void Write_Array_B(
+        input [15: 0] pointer,
+        input [31: 0] PC,
+        input [31: 0] IR,
+        input [33: 0] brtype_pcpre,
+        input [ 7: 0] ecode
+    );
+        for(integer i = 0; i < NUM; i++) begin
+            if(pointer[i]) begin
+                b_PC_Buffer[i] <= PC;
+                b_IR_Buffer[i] <= IR;
+                b_brtype_pcpre_Buffer[i] <= brtype_pcpre;
+                b_ecode_Buffer[i] <= ecode;
+            end
+        end
+    endfunction
+
+    assign a_tail_PC = a_PC_Buffer[0] & {32{a_tail[0]}} | 
+                       a_PC_Buffer[1] & {32{a_tail[1]}} |
+                       
+
 
     always @(posedge clk) begin
         if( !rstn ) begin
@@ -162,10 +209,14 @@ module ID1_ID2_edi2(
             b_tail <= b_tail;
             b_length_left <= b_length;
             if(|a_length_add) begin
+                a_head <= a_head_plus_1;
                 // a_PC_Buffer[a_head[15]] <= i_PC1;
                 // a_IR_Buffer[a_head[15]] <= i_IR1;
                 // a_brtype_pcpre_Buffer[a_head[15]] <= i_brtype_pcpre_1;
                 // a_ecode_Buffer[a_head[15]] <= i_ecode_1;
+            end
+            else begin
+                a_head <= a_head;
             end
             // if()
         end
