@@ -177,8 +177,8 @@ module Issue_dispatch(
     // assign ld_exist = (LDSW_Mul_Div_plus_any & (o_usingNUM != 2'b00)) | (any_plus_LDSW & (o_usingNUM == 2'd2)) | ((is_valid == 2'b10) & (o_usingNUM != 2'b00) & ~o_set1.ldst_type[3]);
     assign ld_exist[1] = (o_usingNUM != 2'd0) & ~o_set1.ldst_type[3];
     assign ld_exist[0] = (o_usingNUM == 2'd2) & ~o_set2.ldst_type[3];
-    assign rdcnt_exist[1] = (o_usingNUM != 2'd0) & ~o_set1.inst_type[6];
-    assign rdcnt_exist[0] = (o_usingNUM == 2'd2) & ~o_set2.inst_type[6];
+    assign rdcnt_exist[1] = (o_usingNUM != 2'd0) & o_set1.inst_type[6];
+    assign rdcnt_exist[0] = (o_usingNUM == 2'd2) & o_set2.inst_type[6];
     
 
 

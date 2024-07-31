@@ -234,10 +234,10 @@ module Issue_EXE(
             csr_raddr         <= csr_raddr;
             csr_rdata         <= csr_rdata;
             ertn_check        <= ertn_check;
-            ecode_in_a        <= ecode_in_1;
-            ecode_we_a        <= ecode_we_1;
-            ecode_in_b        <= ecode_in_2;
-            ecode_we_b        <= ecode_we_2;
+            ecode_in_a        <= ecode_in_a;
+            ecode_we_a        <= ecode_we_a;
+            ecode_in_b        <= ecode_in_b;
+            ecode_we_b        <= ecode_we_b;
             EX_tid            <= EX_tid;
         end
         else begin

@@ -192,7 +192,6 @@ module My_CPU_test(
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     assign hardware_int = 8'b0;
     assign stable_clk = clk;
-    assign MEM_interrupt = has_interrupt_cpu;
 
 
 
@@ -218,10 +217,10 @@ module My_CPU_test(
     logic [31: 0] EX_rf_rdata_b2;
     logic [31: 0] EX_imm_a;
     logic [31: 0] EX_imm_b;
-    logic [ 2: 0] EX_alu_src_sel_a1;
-    logic [ 2: 0] EX_alu_src_sel_a2;
-    logic [ 2: 0] EX_alu_src_sel_b1;
-    logic [ 2: 0] EX_alu_src_sel_b2;
+    logic [ 3: 0] EX_alu_src_sel_a1;
+    logic [ 3: 0] EX_alu_src_sel_a2;
+    logic [ 3: 0] EX_alu_src_sel_b1;
+    logic [ 3: 0] EX_alu_src_sel_b2;
     logic [11: 0] EX_alu_op_a;
     logic [11: 0] EX_alu_op_b;
     logic [ 3: 0] EX_br_type_a;
@@ -255,6 +254,7 @@ module My_CPU_test(
     logic [ 0: 0] EX_ecode_we_a;
     logic [ 0: 0] EX_ecode_we_b;
     logic [ 0: 0] MEM_interrupt;
+    assign MEM_interrupt = has_interrupt_cpu;
 
 
 
@@ -754,10 +754,6 @@ module My_CPU_test(
         .EX_alu_src_sel_b2(EX_alu_src_sel_b2),
         .EX_alu_op_a(EX_alu_op_a),
         .EX_alu_op_b(EX_alu_op_b),
-        .EX_rf_rdata_a1_n(EX_rf_rdata_a1_n),
-        .EX_rf_rdata_a2_n(EX_rf_rdata_a2_n),
-        .EX_rf_rdata_b1_n(EX_rf_rdata_b1_n),
-        .EX_rf_rdata_b2_n(EX_rf_rdata_b2_n),
         .EX_signed(EX_signed),
         .EX_div_en(EX_div_en),
         .EX_mul_en(EX_mul_en),
