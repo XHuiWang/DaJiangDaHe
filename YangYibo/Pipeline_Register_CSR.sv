@@ -1,9 +1,12 @@
 module Pipeline_Register_CSR(
     input                       clk,
     input                       rstn,
-    input                       stall_dcache,
+
     input                       stall_ex,
-    input                       EX_br_a,      //A指令是否需要修正预测的结果，在EX段发生跳转
+    input                       stall_dcache,
+
+    input                       EX_br_a,        //A指令是否需要修正预测的结果，在EX段发生跳转
+    input                       MEM_br,         //作为EX->MEM段的flush信号
 
     //CSR读写
     //CSRRD CSRWR CSRXCHG ERTN均单发B指令
@@ -79,20 +82,20 @@ logic   [13: 0]     MEM_csr_waddr;
 logic   [31: 0]     MEM_csr_wdata;
 logic               WB_interrupt;   //interrupt留存一级，中断造成的WB_flush_csr应能够完全清空流水线
                                     //例外造成的WB_flush_csr，不能清除interrupt信号的传递
+logic   interrupt;  //本次MEM段有尚未处理的中断且可以处理  
+        //尚未处理的中断：包括新发来的MEM_interrupt和此前未处理的MEM_interrupt_buf
+assign interrupt = ( MEM_a_enable | MEM_b_enable ) & (MEM_interrupt | MEM_interrupt_buf);
+
 always@(posedge clk)
 begin
-    if(!rstn)
+    if(!rstn | WB_flush_csr | MEM_br)
     begin
         MEM_a_enable<=1'b0;
         MEM_b_enable<=1'b0;
         MEM_csr_waddr<=14'h0000;
         MEM_csr_we<=32'h0000_0000;
         MEM_csr_wdata<=32'h0000_0000;
-        WB_csr_waddr<=14'h0000;
-        WB_csr_we<=32'h0000_0000;
-        WB_csr_wdata<=32'h0000_0000;
         MEM_ertn<=1'b0;
-        WB_ertn<=1'b0;
         MEM_ecode_in_a<=7'h0;
         MEM_ecode_in_b<=7'h0;
         MEM_ecode_we_a<=1'b0;
@@ -101,62 +104,10 @@ begin
         MEM_badv_in_b<=32'h0000_0000;
         MEM_badv_we_a<=1'b0;
         MEM_badv_we_b<=1'b0;
-        MEM_interrupt_buf<=1'b0;
         MEM_rdcntv<=64'h0000_0000_0000_0000;
         MEM_rdcntid<=32'h0000_0000;
-        WB_ecode_in<=7'h0;
-        WB_ecode_we<=1'b0;
-        WB_badv_in<=32'h0000_0000;
-        WB_badv_we<=1'b0;
-        WB_era_in<=32'h0000_0000;
-        WB_era_we<=1'b0;
-        WB_era_en<=1'b0;
-        WB_eentry_en<=1'b0;
-        WB_store_state<=1'b0;
-        WB_restore_state<=1'b0;
-        WB_flush_csr<=1'b0;
-        WB_flush_csr_pc<=32'h0000_0000;
-        WB_interrupt<=1'b0;
     end
-    else if(WB_flush_csr)begin     //例外不能打断中断
-        MEM_a_enable<=1'b0;
-        MEM_b_enable<=1'b0;
-        MEM_csr_waddr<=14'h0000;
-        MEM_csr_we<=32'h0000_0000;
-        MEM_csr_wdata<=32'h0000_0000;
-        WB_csr_waddr<=14'h0000;
-        WB_csr_we<=32'h0000_0000;
-        WB_csr_wdata<=32'h0000_0000;
-        MEM_ertn<=1'b0;
-        WB_ertn<=1'b0;
-        MEM_ecode_in_a<=7'h0;
-        MEM_ecode_in_b<=7'h0;
-        MEM_ecode_we_a<=1'b0;
-        MEM_ecode_we_b<=1'b0;
-        MEM_badv_in_a<=32'h0000_0000;
-        MEM_badv_in_b<=32'h0000_0000;
-        MEM_badv_we_a<=1'b0;
-        MEM_badv_we_b<=1'b0;
-        MEM_interrupt_buf <= (~MEM_a_enable&~MEM_b_enable&(MEM_interrupt|MEM_interrupt_buf)) & ~WB_interrupt;
-            //存在尚未处理的中断且本轮MEM段不能处理中断，中断信号保留一拍，若flush由中断引发，不保留
-        MEM_rdcntv<=64'h0000_0000_0000_0000;
-        MEM_rdcntid<=32'h0000_0000;
-        WB_ecode_in<=7'h0;
-        WB_ecode_we<=MEM_interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
-        WB_badv_in<=32'h0000_0000;
-        WB_badv_we<=1'b0;
-        WB_era_in<=32'h0000_0000;
-        WB_era_we<=MEM_interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
-        WB_era_en<=1'b0;
-        WB_eentry_en<=MEM_interrupt & ~WB_interrupt;
-        WB_store_state<=MEM_interrupt & ~WB_interrupt;
-        WB_restore_state<=1'b0;
-        WB_flush_csr<=MEM_interrupt & ~WB_interrupt;
-        WB_flush_csr_pc<=MEM_flush_csr_pc;
-        WB_interrupt<=MEM_interrupt;
-    end
-    else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
-        //EX->MEM
+    else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall应阻塞所有段间寄存器
         //不需要修正分支预测 跳转指令似乎不会产生例外，此处可能可以去除
         if(!EX_br_a) begin 
             MEM_b_enable<=EX_b_enable;
@@ -190,10 +141,56 @@ begin
         MEM_badv_in_a<=EX_badv_in_a;
         MEM_badv_we_a<=EX_badv_we_a;
         MEM_a_enable<=EX_a_enable;
-        MEM_interrupt_buf <= (~MEM_a_enable&~MEM_b_enable)&(MEM_interrupt|MEM_interrupt_buf);
-            //存在尚未处理的中断且本轮MEM段不能处理中断，中断信号保留一拍
+    end
+    else begin end
+end
 
-        //MEM->WB
+//MEM->WB
+always@(posedge clk)begin
+    if(!rstn) begin
+        MEM_interrupt_buf<=1'b0;
+        WB_csr_waddr<=14'h0000;
+        WB_csr_we<=32'h0000_0000;
+        WB_csr_wdata<=32'h0000_0000;
+        WB_ertn<=1'b0;
+        WB_ecode_in<=7'h0;
+        WB_ecode_we<=1'b0;
+        WB_badv_in<=32'h0000_0000;
+        WB_badv_we<=1'b0;
+        WB_era_in<=32'h0000_0000;
+        WB_era_we<=1'b0;
+        WB_era_en<=1'b0;
+        WB_eentry_en<=1'b0;
+        WB_store_state<=1'b0;
+        WB_restore_state<=1'b0;
+        WB_flush_csr<=1'b0;
+        WB_flush_csr_pc<=32'h0000_0000;
+        WB_interrupt<=1'b0;
+    end
+    else if(WB_flush_csr)begin  //TOFIX: 要考虑中断在MEM，例外在WB时，MEM_interrupt_buf在本级保留直到新的有效指令到来
+        MEM_interrupt_buf <= (~MEM_a_enable&~MEM_b_enable&(MEM_interrupt|MEM_interrupt_buf)) & ~WB_interrupt;
+            //存在尚未处理的中断且本轮MEM段不能处理中断，中断信号保留一拍，若flush由中断引发，不保留
+        WB_csr_waddr<=14'h0000;
+        WB_csr_we<=32'h0000_0000;
+        WB_csr_wdata<=32'h0000_0000;
+        WB_ertn<=1'b0;
+        WB_ecode_in<=7'h0;
+        WB_ecode_we<=interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
+        WB_badv_in<=32'h0000_0000;
+        WB_badv_we<=1'b0;
+        WB_era_in<=MEM_era_in;
+        WB_era_we<=interrupt & ~WB_interrupt;   //中断不受非中断影响，中断受中断影响
+        WB_era_en<=1'b0;
+        WB_eentry_en<=interrupt & ~WB_interrupt;
+        WB_store_state<=interrupt & ~WB_interrupt;
+        WB_restore_state<=1'b0;
+        WB_flush_csr<=interrupt & ~WB_interrupt;
+        WB_flush_csr_pc<=MEM_flush_csr_pc;
+        WB_interrupt<=interrupt;
+    end
+    else if(!stall_dcache&&!stall_ex)begin
+        //存在尚未处理的中断且本轮MEM段不能处理中断，中断信号保留一拍
+        MEM_interrupt_buf <= (~MEM_a_enable&~MEM_b_enable)&(MEM_interrupt|MEM_interrupt_buf);
         WB_csr_waddr<=MEM_csr_waddr;
         WB_csr_we<= |MEM_ecode_in ? 32'h0 : MEM_csr_we; //非中断例外，特别是特权等级错例外时不写入
         WB_csr_wdata<=MEM_csr_wdata;
@@ -213,7 +210,5 @@ begin
         WB_interrupt<=(MEM_a_enable | MEM_b_enable) & (MEM_interrupt | MEM_interrupt_buf);
             //WB_interrupt记录MEM段的中断是否被处理
     end
-    else begin end
 end
-
 endmodule

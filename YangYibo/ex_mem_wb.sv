@@ -95,15 +95,15 @@ module ex_mem_wb(
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
     input           [31: 0]     EX_pc_pd_a,         //A指令的分支预测的跳转结果PC
     input           [31: 0]     EX_pc_pd_b,         //B指令的分支预测的跳转结果PC
-    output          [ 0: 0]     EX_br,              //是否需要修正预测的结果
-    output          [31: 0]     EX_pc_br,           //修正时应跳转到的地址
+    output          [ 0: 0]     MEM_br,             //是否需要修正预测的结果
+    output          [31: 0]     MEM_pc_br,           //修正时应跳转到的地址
     //发给分支预测的信号
-    output          [31: 0]     EX_pc_of_br,        //分支指令的PC
-    input           [ 1: 0]     EX_pd_type_a,       //A指令的分支类型（与分支预测交互）
-    input           [ 1: 0]     EX_pd_type_b,       //B指令的分支类型（与分支预测交互）
-    output          [ 1: 0]     EX_pd_type,         //分支指令的分支类型（与分支预测交互）
-    output          [31: 0]     EX_br_target,       //分支指令原本的目标地址
-    output                      EX_br_jump,         //分支指令原本是否跳转     
+    output          [31: 0]     MEM_pc_of_br,        //分支指令的PC
+    input           [ 1: 0]     EX_pd_type_a,        //A指令的分支类型（与分支预测交互）
+    input           [ 1: 0]     EX_pd_type_b,        //B指令的分支类型（与分支预测交互）
+    output          [ 1: 0]     MEM_pd_type,         //分支指令的分支类型（与分支预测交互）
+    output          [31: 0]     MEM_br_target,       //分支指令原本的目标地址
+    output                      MEM_br_jump,         //分支指令原本是否跳转     
 
     //UnCache
     output  wire                EX_UnCache,         //是否在访问外设
@@ -146,7 +146,15 @@ logic   [63: 0]     MEM_mul_res;                    //乘法结果
 logic   [31: 0]     MEM_div_quo;                    //除法商
 logic   [31: 0]     MEM_div_rem;                    //除法余数
 
+//BR
 logic               EX_br_a;                        //A指令是否需要修正预测的结果
+logic               EX_br;                          //是否需要修正预测的结果，推迟到MEM段生效
+logic   [31: 0]     EX_pc_br;                       //修正时应跳转到的地址
+//发给分支预测
+logic   [31: 0]     EX_pc_of_br;                    //分支指令的PC
+logic   [ 1: 0]     EX_pd_type;                     //分支指令的分支类型（与分支预测交互）
+logic   [31: 0]     EX_br_target;                   //分支指令原本的目标地址
+logic               EX_br_jump;                     //分支指令原本是否跳转
 logic               EX_mem_we;                      //内存写使能 由DCache考虑STORE指令的W/H/B分类
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
 
@@ -211,7 +219,7 @@ logic   [31: 0]   MEM_rdcntid;
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
+assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
@@ -286,10 +294,10 @@ FU_ALU  FU_ALU_inst (
 FU_BR  FU_BR_inst (
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
-    .EX_rf_rdata_a1(EX_rf_rdata_a1_f),
-    .EX_rf_rdata_a2(EX_rf_rdata_a2_f),
-    .EX_rf_rdata_b1(EX_rf_rdata_b1_f),
-    .EX_rf_rdata_b2(EX_rf_rdata_b2_f),
+    .EX_rf_rdata_a1(EX_rf_rdata_a1),
+    .EX_rf_rdata_a2(EX_rf_rdata_a2),
+    .EX_rf_rdata_b1(EX_rf_rdata_b1),
+    .EX_rf_rdata_b2(EX_rf_rdata_b2),
     .EX_imm_a(EX_imm_a),
     .EX_imm_b(EX_imm_b),
     .EX_br_type_a(EX_br_type_a),
@@ -298,9 +306,6 @@ FU_BR  FU_BR_inst (
     .EX_br_pd_b(EX_br_pd_b),
     .EX_pc_pd_a(EX_pc_pd_a),
     .EX_pc_pd_b(EX_pc_pd_b),
-    // .stall_dcache(stall_dcache),
-    .stall_dcache_buf(stall_dcache_buf),
-    .stall_ex_buf(stall_ex_buf),
     .EX_br_a(EX_br_a),
     .EX_br(EX_br),
     .EX_pc_br(EX_pc_br),
@@ -404,12 +409,26 @@ FU_CSR2  FU_CSR2_inst (
 Pipeline_Register  Pipeline_Register_inst (
     .clk(clk),
     .rstn(rstn),
-    .stall_dcache(stall_dcache),
     .stall_ex(stall_ex),
-    .EX_br_a(EX_br_a),
+    .stall_ex_buf(stall_ex_buf),
+    .stall_dcache(stall_dcache),
+    .stall_dcache_buf(stall_dcache_buf),
     .MEM_ecode_in_a(MEM_ecode_in_a),
     .MEM_ecode_in_b(MEM_ecode_in_b),
     .WB_flush_csr(WB_flush_csr),
+    .EX_br_a(EX_br_a),
+    .EX_br(EX_br),
+    .EX_pc_br(EX_pc_br),
+    .EX_pc_of_br(EX_pc_of_br),
+    .EX_pd_type(EX_pd_type),
+    .EX_br_target(EX_br_target),
+    .EX_br_jump(EX_br_jump),
+    .MEM_br(MEM_br),
+    .MEM_pc_br(MEM_pc_br),
+    .MEM_pc_of_br(MEM_pc_of_br),
+    .MEM_pd_type(MEM_pd_type),
+    .MEM_br_target(MEM_br_target),
+    .MEM_br_jump(MEM_br_jump),
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
     .MEM_pc_a(MEM_pc_a),
@@ -420,8 +439,6 @@ Pipeline_Register  Pipeline_Register_inst (
     .EX_alu_result_b(EX_alu_result_b),
     .MEM_alu_result_a(MEM_alu_result_a),
     .MEM_alu_result_b(MEM_alu_result_b),
-    // .WB_alu_result_a(WB_alu_result_a),
-    // .WB_alu_result_b(WB_alu_result_b),
     .EX_mul_tmp1(EX_mul_tmp1),
     .EX_mul_tmp2(EX_mul_tmp2),
     .MEM_mul_tmp1(MEM_mul_tmp1),
@@ -448,9 +465,10 @@ Pipeline_Register  Pipeline_Register_inst (
 Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .clk(clk),
     .rstn(rstn),
-    .stall_dcache(stall_dcache),
     .stall_ex(stall_ex),
+    .stall_dcache(stall_dcache),
     .EX_br_a(EX_br_a),
+    .MEM_br(MEM_br),
     .EX_csr_waddr(EX_csr_waddr),
     .EX_csr_we(EX_csr_we),
     .EX_csr_wdata(EX_csr_wdata),
