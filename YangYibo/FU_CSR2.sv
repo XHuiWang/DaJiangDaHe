@@ -4,7 +4,10 @@ module FU_CSR2(
     //CSR控制
     input                       MEM_ertn,           //是否从例外返回
     input                       MEM_interrupt,      //中断信号，CSR直接发给MEM段
+    input                       MEM_interrupt_buf,  //若MEM_a_enable MEM_b_enable均为0，MEM_interrupt在MEM段保留一拍
 
+    input                       MEM_a_enable,       //A指令是否有效
+    input                       MEM_b_enable,       //B指令是否有效
     input           [31: 0]     MEM_pc_a,           //A指令的PC值
     input           [31: 0]     MEM_pc_b,           //B指令的PC值
     input           [ 6: 0]     MEM_ecode_in_a,     //A指令的异常码
@@ -30,16 +33,21 @@ module FU_CSR2(
     output  wire                MEM_flush_csr,      //因任何原因写CSR时，清空流水线
     output  wire    [31: 0]     MEM_flush_csr_pc    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
 );
-assign MEM_ecode_in = MEM_interrupt ? 7'h0 : 
+logic   interrupt;  //本次MEM段有尚未处理的中断且可以处理  
+        //尚未处理的中断：包括新发来的MEM_interrupt和此前未处理的MEM_interrupt_buf
+assign interrupt = ( MEM_a_enable | MEM_b_enable ) & (MEM_interrupt | MEM_interrupt_buf);
+        //能触发例外的指令在此前已保证是enable的，中断不会因为未附着而落后于例外
+assign MEM_ecode_in = interrupt ? 7'h0 : 
     ( MEM_ecode_we_a ? MEM_ecode_in_a : MEM_ecode_in_b );
-assign MEM_ecode_we = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_ecode_we = interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_badv_in  = MEM_badv_we_a ? MEM_badv_in_a : MEM_badv_in_b;
 assign MEM_badv_we  = MEM_badv_we_a | MEM_badv_we_b;
-assign MEM_era_in   = MEM_ecode_we_a ? MEM_pc_a : MEM_pc_b;
-assign MEM_era_we   = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_era_in   = interrupt ? (MEM_a_enable ? MEM_pc_a : MEM_pc_b ) 
+    : (MEM_ecode_we_a ? MEM_pc_a : MEM_pc_b);   //中断优先于例外，A优先于B
+assign MEM_era_we   = interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_era_en   = MEM_ertn;
-assign MEM_eentry_en= MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
-assign MEM_store_state = MEM_interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_eentry_en= interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
+assign MEM_store_state = interrupt | MEM_ecode_we_a | MEM_ecode_we_b;
 assign MEM_restore_state = MEM_ertn;
 
 assign MEM_flush_csr = MEM_ecode_we | (|MEM_csr_we) | MEM_ertn; //触发例外/写CSR/例外返回

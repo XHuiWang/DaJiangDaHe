@@ -2,6 +2,8 @@ module ex_mem_wb(
     input                       clk,
     input                       rstn,
 
+    input                       EX_a_enable,        //A指令是否是有效指令（影响中断信号的附着）
+    input                       EX_b_enable,        //B指令是否是有效指令（影响中断信号的附着）
     //ALU计算相关
     input           [31: 0]     EX_pc_a,            //A指令的PC值
     input           [31: 0]     EX_pc_b,            //B指令的PC值
@@ -32,7 +34,7 @@ module ex_mem_wb(
     input                       EX_rf_we_b,         //B指令寄存器写使能
     input           [ 4: 0]     EX_rf_waddr_a,      //A指令寄存器写地址
     input           [ 4: 0]     EX_rf_waddr_b,      //B指令寄存器写地址
-    input           [ 5: 0]     EX_wb_mux_select_b, //MEM段B指令RF写回数据多选器独热码
+    input           [ 8: 0]     EX_wb_mux_select_b, //MEM段B指令RF写回数据多选器独热码
     output  reg                 WB_rf_we_a,         //A指令寄存器写使能
     output  reg                 WB_rf_we_b,         //B指令寄存器写使能
     output  reg     [ 4: 0]     WB_rf_waddr_a,      //A指令寄存器写地址
@@ -59,6 +61,7 @@ module ex_mem_wb(
     input           [ 2: 0]     EX_csr_type,        //CSR类型 001RD 010WR 100 XCHG 
     input           [31: 0]     EX_csr_rdata,       //CSR读数据 CSR单发B指令
     input           [13: 0]     EX_csr_waddr,       //CSR写地址 MEM段生效
+    input           [31: 0]     EX_tid,             //定时器/计时器编号
     
     output  reg     [13: 0]     WB_csr_waddr,       //CSR写地址 MEM段生效
     output  reg     [31: 0]     WB_csr_we,          //CSR写使能 MEM段生效 按位
@@ -133,7 +136,7 @@ logic               MEM_rf_we_a;                    //A指令寄存器写使能
 logic               MEM_rf_we_b;                    //B指令寄存器写使能
 logic   [ 4: 0]     MEM_rf_waddr_a;                 //A指令寄存器写地址
 logic   [ 4: 0]     MEM_rf_waddr_b;                 //B指令寄存器写地址
-logic   [ 5: 0]     MEM_wb_mux_select_b;            //MEM段B指令RF写回数据多选器独热码
+logic   [ 8: 0]     MEM_wb_mux_select_b;            //MEM段B指令RF写回数据多选器独热码
 
 logic   [63: 0]     EX_mul_tmp1;                    //乘法临时结果的第一个加数
 logic   [63: 0]     EX_mul_tmp2;                    //乘法临时结果的第二个加数
@@ -194,10 +197,17 @@ logic             MEM_store_state;
 logic             MEM_restore_state;
 logic             MEM_flush_csr;
 logic   [31: 0]   MEM_flush_csr_pc;
+logic             MEM_a_enable;
+logic             MEM_b_enable;
 
 logic             WB_ertn;
 
-
+//RDCNTV RDCNTID
+logic   [63: 0]   EX_rdcntv;
+logic   [63: 0]   MEM_rdcntv;
+logic   [31: 0]   EX_rdcntid;
+logic   [31: 0]   MEM_rdcntid;
+assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
 assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | WB_flush_csr) 
@@ -210,16 +220,21 @@ assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
 assign  stall_ex = stall_mul | stall_div;
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
-assign MEM_rf_wdata_b = ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata ) | 
-                        ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) | 
-                        ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem ); 
+assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata      )   | 
+                          ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) ) | 
+                        ( ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem        )   |
+                          ( {32{MEM_wb_mux_select_b[6]}}&MEM_rdcntv[31:0]   | {32{MEM_wb_mux_select_b[7]}}&MEM_rdcntv[63:32]  ) ) |
+                          ( {32{MEM_wb_mux_select_b[8]}}&MEM_rdcntid        ); 
 // MEM段B指令RF写回数据多选器独热码 
-// 6'b00_0001: ALU
-// 6'b00_0010: LD类型指令
-// 6'b00_0100: MUL  取低32位
-// 6'b00_1000: MULH 取高32位
-// 6'b01_0000: DIV 取商
-// 6'b10_0000: MOD 取余
+// 9'b0_0000_0001: ALU
+// 9'b0_0000_0010: LD类型指令
+// 9'b0_0000_0100: MUL  取低32位
+// 9'b0_0000_1000: MULH 取高32位
+// 9'b0_0001_0000: DIV 取商
+// 9'b0_0010_0000: MOD 取余
+// 9'b0_0100_0000: RDCNTVL.W 取低32位
+// 9'b0_1000_0000: RDCNTVH.W 取高32位
+// 9'b1_0000_0000: RDCNTID
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
     .EX_rf_rdata_a2(EX_rf_rdata_a2),
@@ -323,6 +338,12 @@ Div  Div_inst (
     .MEM_div_quo(MEM_div_quo),
     .MEM_div_rem(MEM_div_rem)
   );
+Stable_Counter  Stable_Counter_inst (
+    .clk(clk),
+    .rstn(rstn),
+    .EX_rdcntv(EX_rdcntv)
+  );
+
 FU_CSR  FU_CSR_inst (
     .EX_rf_rdata_b1_f(EX_rf_rdata_b1_f),
     .EX_rf_rdata_b2_f(EX_rf_rdata_b2_f),
@@ -352,6 +373,9 @@ FU_CSR2  FU_CSR2_inst (
     .MEM_csr_we(MEM_csr_we),
     .MEM_ertn(MEM_ertn),
     .MEM_interrupt(MEM_interrupt),
+    .MEM_interrupt_buf(MEM_interrupt_buf),
+    .MEM_a_enable(MEM_a_enable),
+    .MEM_b_enable(MEM_b_enable),
     .MEM_pc_a(MEM_pc_a),
     .MEM_pc_b(MEM_pc_b),
     .MEM_ecode_in_a(MEM_ecode_in_a),
@@ -428,11 +452,20 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .EX_csr_waddr(EX_csr_waddr),
     .EX_csr_we(EX_csr_we),
     .EX_csr_wdata(EX_csr_wdata),
+    .EX_rdcntv(EX_rdcntv),
+    .EX_rdcntid(EX_rdcntid),
     .MEM_csr_we(MEM_csr_we),
     .WB_csr_waddr(WB_csr_waddr),
     .WB_csr_we(WB_csr_we),
     .WB_csr_wdata(WB_csr_wdata),
+    .MEM_rdcntv(MEM_rdcntv),
+    .MEM_rdcntid(MEM_rdcntid),
+    .EX_a_enable(EX_a_enable),
+    .EX_b_enable(EX_b_enable),
+    .MEM_a_enable(MEM_a_enable),
+    .MEM_b_enable(MEM_b_enable),
     .MEM_interrupt(MEM_interrupt),
+    .MEM_interrupt_buf(MEM_interrupt_buf),
     .EX_ertn(EX_ertn),
     .MEM_ertn(MEM_ertn),
     .WB_ertn(WB_ertn),

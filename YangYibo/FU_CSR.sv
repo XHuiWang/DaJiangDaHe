@@ -13,7 +13,7 @@ module FU_CSR(
     input           [ 6: 0]     EX_ecode_in_b,      //B指令的异常码
     input                       EX_ecode_we_a,      //A指令是否产生例外
     input                       EX_ecode_we_b,      //B指令是否产生例外
-    input           [ 5: 0]     EX_wb_mux_select_b, //[1] B指令为LOAD指令
+    input           [ 8: 0]     EX_wb_mux_select_b, //[1] B指令为LOAD指令
     input                       EX_mem_we_b,        //B指令为STORE指令
     input           [31: 0]     EX_mem_addr,        //B指令访存地址
     input           [ 2: 0]     EX_mem_type,        //B指令访存类型

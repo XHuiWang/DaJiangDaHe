@@ -38,7 +38,10 @@ module CSR(
     //MMU
     output [1:0] translate_mode,    //01: direct, 10: paged
     output [1:0] direct_i_mat, //处于直接地址翻译模式时，存储访问类型
-    output [1:0] direct_d_mat  //0: 非缓存, 1: 可缓存
+    output [1:0] direct_d_mat, //0: 非缓存, 1: 可缓存
+
+        //timer
+    output [31:0] tid
 );
 reg timer_int;      //定时器中断
 //CRMD
@@ -175,7 +178,6 @@ always @(posedge clk)
         if(we[7]) ecfg_lie[7]<=wdata[7];
         if(we[8]) ecfg_lie[8]<=wdata[8];
         if(we[9]) ecfg_lie[9]<=wdata[9];
-        if(we[10]) ecfg_lie[10]<=wdata[10];
         if(we[11]) ecfg_lie[11]<=wdata[11];
         if(we[12]) ecfg_lie[12]<=wdata[12];
     end
@@ -559,7 +561,7 @@ always @(posedge stable_clk)
     end else if(tcfg_en) begin
         csr_tval<=csr_tval-1;
         time_out<=csr_tval==1;
-    end else time_out<=0;   //Try
+    end
 
 //TICLR
 always @(posedge stable_clk)
@@ -567,7 +569,6 @@ always @(posedge stable_clk)
         timer_int <= 0;
     else if(time_out)
         timer_int <= 1;
-    else timer_int <= 0; //Try
 
 //CTAG
 always @(posedge clk)

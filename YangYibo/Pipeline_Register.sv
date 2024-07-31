@@ -31,8 +31,8 @@ module Pipeline_Register(
     input                       EX_rf_we_b,         //B指令寄存器写使能
     input           [ 4: 0]     EX_rf_waddr_a,      //A指令寄存器写地址
     input           [ 4: 0]     EX_rf_waddr_b,      //B指令寄存器写地址
-    input           [ 5: 0]     EX_wb_mux_select_b,
-    output  reg     [ 5: 0]     MEM_wb_mux_select_b,
+    input           [ 8: 0]     EX_wb_mux_select_b,
+    output  reg     [ 8: 0]     MEM_wb_mux_select_b,
 
     output  reg                 MEM_rf_we_a,
     output  reg                 MEM_rf_we_b,
@@ -67,7 +67,7 @@ begin
         WB_rf_waddr_b<=5'b00000;
         WB_rf_wdata_a<=32'h0000_0000;
         WB_rf_wdata_b<=32'h0000_0000;
-        MEM_wb_mux_select_b<=6'b000000;
+        MEM_wb_mux_select_b<=9'b000000;
         MEM_mul_tmp1<=64'h0000_0000;
         MEM_mul_tmp2<=64'h0000_0000;
         MEM_pc_a<=32'h0000_0000;
@@ -90,7 +90,7 @@ begin
         else begin 
             MEM_alu_result_b<=32'h0000_0000;
             MEM_rf_we_b<=1'b0;
-            MEM_wb_mux_select_b<=6'b000000;
+            MEM_wb_mux_select_b<=9'b000000;
             MEM_mul_tmp1<=64'h0000_0000;
             MEM_mul_tmp2<=64'h0000_0000;
             MEM_pc_b<=32'h0000_0000;
