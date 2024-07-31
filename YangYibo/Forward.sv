@@ -8,7 +8,7 @@ module Forward(
     input           [ 4: 0]     MEM_rf_waddr_b,     //B指令的写寄存器的地址
     input                       MEM_rf_we_a,        //A指令的写使能
     input                       MEM_rf_we_b,        //B指令的写使能
-    input           [ 8: 0]     MEM_wb_mux_select_b;//B指令的多选器选择信号
+    input           [ 8: 0]     MEM_wb_mux_select_b,//B指令的多选器选择信号
 
     //此处屏蔽的为多选器选择后的信号，多选器包含MUL2/DIV2/Dache的输出，为了防止过长的通路，前递不使用此信号
     // input           [31: 0]     MEM_rf_wdata_a,     //A指令的写寄存器的数据
