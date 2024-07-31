@@ -345,7 +345,7 @@ module ID_Decode_edi_2(
     // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
     // assign rf_we = (((br_type_temp != 0 & ~bl_inst & ~jirl_inst) | stb_inst | sth_inst | st_inst | ~ID_status | rf_rd == 0)) ? 1'b0 : 1'b1;
                                         
-    assign alu_src1_sel = (bl_inst | pcaddu12i_inst) ? 4'h1 ://pc
+    assign alu_src1_sel = (bl_inst | pcaddu12i_inst | jirl_inst) ? 4'h1 ://pc
                           (~(lu12i_inst | csrxchg_inst | csrwr_inst | csrrd_inst)) ? 4'h2 :          //rf 
                           4'h4;                             //0
     assign alu_src2_sel = (imm_exist & ~(bl_inst | jirl_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst)) ? 4'h1 : //imm
