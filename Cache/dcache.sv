@@ -106,7 +106,7 @@ module dcache(
     assign d_wstrb = uncache_pipe ? d_wstrb_temp : 4'b1111;
     assign d_arlen = uncache_pipe ? 8'd0 : 8'd3;
     assign d_arsize = 3'd4;
-    assign d_awaddr = uncache_pipe ? address : d_awaddr_cache;
+    assign d_awaddr = uncache_pipe ? {address[31:2],2'b00} : d_awaddr_cache;
     assign d_wdata = uncache_pipe ? wdata_pipe_temp : d_wdata_cache;
 
     assign r_index = addr[11:4];
@@ -142,7 +142,7 @@ module dcache(
                 case(address[1:0])//st.h
                     2'b00: wdata_pipe_temp = {16'h0, wdata_pipe[15:0]};
                     2'b10: wdata_pipe_temp = {wdata_pipe[15:0], 16'h0};
-                    default: wdata_pipe_temp = 4'b1111;
+                    default: wdata_pipe_temp = wdata_pipe;
                 endcase
             end
         endcase
