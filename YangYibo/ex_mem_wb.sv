@@ -199,6 +199,7 @@ logic             MEM_flush_csr;
 logic   [31: 0]   MEM_flush_csr_pc;
 logic             MEM_a_enable;
 logic             MEM_b_enable;
+logic             MEM_interrupt_buf;
 
 logic             WB_ertn;
 
