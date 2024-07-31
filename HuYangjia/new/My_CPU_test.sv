@@ -354,8 +354,8 @@ module My_CPU_test(
     logic [ 4: 0] WB_rf_waddr_b;
     logic [31: 0] WB_rf_wdata_a;
     logic [31: 0] WB_rf_wdata_b;
-    logic [ 0: 0] EX_br;
-    logic [31: 0] EX_pc_br;
+    logic [ 0: 0] MEM_br;
+    logic [31: 0] MEM_pc_br;
     logic [ 0: 0] EX_mem_rvalid;
     logic [ 0: 0] EX_mem_wvalid;
     logic [ 0: 0] MEM_mem_rready;
@@ -397,10 +397,10 @@ module My_CPU_test(
     // temp测试
     assign stall_ICache = ~stall_iCache;
     assign stall_DCache = ~(MEM_mem_rready | MEM_mem_wready);
-    assign flush_BR = EX_br;
+    assign flush_BR = MEM_br;
     assign stall_full_issue = o_is_full_2;
     assign stall_full_instr = o_is_full;
-    assign flush_of_ALL = EX_br | WB_era_en | WB_eentry_en | WB_flush_csr;
+    assign flush_of_ALL = MEM_br | WB_era_en | WB_eentry_en | WB_flush_csr;
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
@@ -411,8 +411,8 @@ module My_CPU_test(
         .clk(clk),
         .rstn(rstn),
         .pc_predict(pc_predict),
-        .pc_BR(EX_pc_br),
-        .EX_BR(EX_br),
+        .pc_BR(MEM_pc_br),
+        .MEM_br(MEM_br),
         .plv(plv),
         .BR_predecoder(BR_predecoder),
         .PC_predecoder(PC_predecoder),
@@ -818,14 +818,14 @@ module My_CPU_test(
         .EX_br_pd_b(EX_br_pd_b),
         .EX_pc_pd_a(EX_PC_pre_a),
         .EX_pc_pd_b(EX_PC_pre_b),
-        .EX_br(EX_br),
-        .EX_pc_br(EX_pc_br),
-        .EX_pc_of_br(branch_pc),
+        .MEM_br(MEM_br),
+        .MEM_pc_br(MEM_pc_br),
+        .MEM_pc_of_br(branch_pc),
         .EX_pd_type_a(type_predict_a),
         .EX_pd_type_b(type_predict_b),
-        .EX_pd_type(branch_br_type),
-        .EX_br_target(branch_br_target),
-        .EX_br_jump(branch_jump),
+        .MEM_pd_type(branch_br_type),
+        .MEM_br_target(branch_br_target),
+        .MEM_br_jump(branch_jump),
         .EX_UnCache(EX_UnCache),
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
