@@ -1,10 +1,10 @@
 module FU_BR(
     input           [31: 0]     EX_pc_a,            //A指令的PC值
     input           [31: 0]     EX_pc_b,            //B指令的PC值
-    input           [31: 0]     EX_rf_rdata_a1,     //A指令的第一个寄存器的值
-    input           [31: 0]     EX_rf_rdata_a2,     //A指令的第二个寄存器的值
-    input           [31: 0]     EX_rf_rdata_b1,     //B指令的第一个寄存器的值
-    input           [31: 0]     EX_rf_rdata_b2,     //B指令的第二个寄存器的值
+    input           [31: 0]     EX_rf_rdata_a1_f,     //A指令的第一个寄存器的值
+    input           [31: 0]     EX_rf_rdata_a2_f,     //A指令的第二个寄存器的值
+    input           [31: 0]     EX_rf_rdata_b1_f,     //B指令的第一个寄存器的值
+    input           [31: 0]     EX_rf_rdata_b2_f,     //B指令的第二个寄存器的值
     input           [31: 0]     EX_imm_a,           //A指令的立即数
     input           [31: 0]     EX_imm_b,           //B指令的立即数
     input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
@@ -57,8 +57,8 @@ Branch Branch_A(
     .br_type(EX_br_type_a),
     .pc_orig(EX_pc_a),
     .imm(EX_imm_a),
-    .rf_rdata1(EX_rf_rdata_a1),
-    .rf_rdata2(EX_rf_rdata_a2),
+    .rf_rdata1(EX_rf_rdata_a1_f),
+    .rf_rdata2(EX_rf_rdata_a2_f),
     .br(br_orig_a),
     .pc_br(pc_br_orig_a)
 );
@@ -66,8 +66,8 @@ Branch Branch_B(
     .br_type(EX_br_type_b),
     .pc_orig(EX_pc_b),
     .imm(EX_imm_b),
-    .rf_rdata1(EX_rf_rdata_b1),
-    .rf_rdata2(EX_rf_rdata_b2),
+    .rf_rdata1(EX_rf_rdata_b1_f),
+    .rf_rdata2(EX_rf_rdata_b2_f),
     .br(br_orig_b),
     .pc_br(pc_br_orig_b)
 );
