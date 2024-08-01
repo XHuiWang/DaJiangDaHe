@@ -15,7 +15,7 @@ module Branch                   //用于判断跳转指令是否本应跳转
 );
 always @(*) begin
 
-    pc_br=pc_orig+imm;//默认值 不跳转
+    pc_br=pc_orig+32'h4;//默认值 不跳转 要求上游在非跳转指令或预测不跳转时将预测跳转地址置为pc+4
     br=1'b0;
     case(br_type)
         4'b0000:br=1'b0;
