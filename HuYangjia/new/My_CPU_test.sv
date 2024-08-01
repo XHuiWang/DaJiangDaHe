@@ -120,6 +120,8 @@ module My_CPU_test(
     logic [ 7: 0] IF2_ecode_1;
     logic [ 7: 0] IF2_ecode_2;
     logic [ 0: 0] o_signFor_ADEF_ALE;
+    logic [31: 0] IF2_PC1_plus_4;
+    logic [31: 0] IF2_PC2_plus_4;
 
     // 预译码
     logic [33: 0] o_brtype_pcpre_1;
@@ -135,6 +137,8 @@ module My_CPU_test(
     // IF2_ID1
     logic [31: 0] ID1_PC1;
     logic [31: 0] ID1_PC2;
+    logic [31: 0] ID1_PC1_plus_4;
+    logic [31: 0] ID1_PC2_plus_4;
     logic [31: 0] ID1_IR1;
     logic [31: 0] ID1_IR2;
     logic [33: 0] ID1_brtype_pcpre_1;
@@ -505,10 +509,12 @@ module My_CPU_test(
         .flush_BR(flush_of_ALL),
         .stall_full_instr(stall_full_instr),
         .o_PC1(ID1_PC1),
+        .o_PC1_plus_4(ID1_PC1_plus_4),
         .o_IR1(ID1_IR1),
         .o_brtype_pcpre_1(ID1_brtype_pcpre_1),
         .o_ecode_1(ID1_ecode_1),
         .o_PC2(ID1_PC2),
+        .o_PC2_plus_4(ID1_PC2_plus_4),
         .o_IR2(ID1_IR2),
         .o_brtype_pcpre_2(ID1_brtype_pcpre_2),
         .o_ecode_2(ID1_ecode_2),
@@ -521,6 +527,8 @@ module My_CPU_test(
         .IR2(ID1_IR2),
         .PC1(ID1_PC1),
         .PC2(ID1_PC2),
+        .PC1_plus_4(ID1_PC1_plus_4),
+        .PC2_plus_4(ID1_PC2_plus_4),
         .brtype_pcpre1(ID1_brtype_pcpre_1),
         .brtype_pcpre2(ID1_brtype_pcpre_2),
         .i_is_valid(ID1_is_valid),
@@ -533,7 +541,7 @@ module My_CPU_test(
 
     assign fact_valid = ID1_is_valid & predecoder_valid;   
 
-    ID1_ID2  ID1_ID2_inst (
+    ID1_ID2_edi2  ID1_ID2_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(ID1_PC1),

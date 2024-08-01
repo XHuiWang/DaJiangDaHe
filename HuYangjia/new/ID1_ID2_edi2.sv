@@ -222,10 +222,8 @@ module ID1_ID2_edi2(
 
         else if(stall) begin
             // 写入，不写出
-            a_head <= (|a_length_add) ? a_head_plus_1 : a_head;
             a_tail <= a_tail;
             a_length_left <= a_length;
-            b_head <= (|b_length_add) ? b_head_plus_1 : b_head;
             b_tail <= b_tail;
             b_length_left <= b_length;
             if(a_length_add[0]) begin
@@ -261,10 +259,108 @@ module ID1_ID2_edi2(
         end
         else begin
             // 有进有出
-            
+            if(|a_length) begin
+                a_tail <= a_tail_plus_1;
+                a_length_left <= a_length - 1;
+            end
+            else begin
+                a_tail <= a_tail;
+                a_length_left <= a_length;
+            end
+            if(|b_length) begin
+                b_tail <= b_tail_plus_1;
+                b_length_left <= b_length - 1;
+            end
+            else begin
+                b_tail <= b_tail;
+                b_length_left <= b_length;
+            end
+
+            if(a_length_add[0]) begin
+                // 确认A通道写入
+                a_head <= a_head_plus_1;
+                if(Input_status) begin
+                    // B先写，则一定从2号通道写
+                    Write_Array_A(a_head, i_PC2, i_IR2, i_brtype_pcpre_2, i_ecode_2);
+                end
+                else begin
+                    // 其他
+                    Write_Array_A(a_head, i_PC1, i_IR1, i_brtype_pcpre_1, i_ecode_1);
+                end
+            end
+            else begin
+                a_head <= a_head;
+            end
+            if(b_length_add[0]) begin
+                // 确认B通道写入
+                b_head <= b_head_plus_1;
+                if(~Input_status) begin
+                    // A先写，则一定从2号通道写
+                    Write_Array_B(b_head, i_PC2, i_IR2, i_brtype_pcpre_2, i_ecode_2);
+                end
+                else begin
+                    // 其他
+                    Write_Array_B(b_head, i_PC1, i_IR1, i_brtype_pcpre_1, i_ecode_1);
+                end
+            end
+            else begin
+                b_head <= b_head;
+            end
         end
     end
 
+
+    // Input_status的确定,Output_status的确定
+    always @(posedge clk) begin
+        if( !rstn ) begin
+            Input_status <= 0;
+            Output_status <= 0;
+        end
+        else if(flush) begin
+            Input_status <= 0;
+            Output_status <= 0;
+        end
+        else if(stall) begin
+            Input_status <= (&i_is_valid) ? Input_status : ~Input_status;
+            Output_status <= Output_status;
+        end
+        else begin
+            Input_status <= (&i_is_valid) ? Input_status : ~Input_status;
+            Output_status <= ((|a_length) ^ (|b_length)) ? ~Output_status : Output_status;
+        end
+    end
+
+    // o_is_full
+    assign o_is_full = (a_is_full | b_is_full) ? 1'b1 : 1'b0;
+
+    // o_is_valid 是否有效
+    assign o_is_valid = (|a_length) ? (|b_length) ? 2'b11 : 2'b10 : (|b_length) ? 2'b10 : 2'b00;
+
+    // 输出
+    always @(*) begin
+        if(~Output_status) begin
+            // 从A通道取
+            o_PC1 <= a_tail_PC;
+            o_IR1 <= a_tail_IR;
+            o_brtype_pcpre_1 <= a_tail_brtype_pcpre;
+            o_ecode_1 <= a_tail_ecode;
+            o_PC2 <= b_tail_PC;
+            o_IR2 <= b_tail_IR;
+            o_brtype_pcpre_2 <= b_tail_brtype_pcpre;
+            o_ecode_2 <= b_tail_ecode;
+        end
+        else begin
+            // 从B通道取
+            o_PC1 <= b_tail_PC;
+            o_IR1 <= b_tail_IR;
+            o_brtype_pcpre_1 <= b_tail_brtype_pcpre;
+            o_ecode_1 <= b_tail_ecode;
+            o_PC2 <= a_tail_PC;
+            o_IR2 <= a_tail_IR;
+            o_brtype_pcpre_2 <= a_tail_brtype_pcpre;
+            o_ecode_2 <= a_tail_ecode;
+        end    
+    end
 
 
 
