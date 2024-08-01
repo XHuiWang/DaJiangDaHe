@@ -14,11 +14,19 @@ module Branch                   //用于判断跳转指令是否本应跳转
     output  logic               br,     //跳转指令是否本应跳转
     output  logic   [31:0]      pc_br   //分支预测不跳转，预测失败，应跳转到的地址
 );
-assign br = ( br_type[1] | br_type[2] | br_type[3] ) | 
-            ( br_type[4]&!(rf_rdata1^rf_rdata2) | br_type[5]&|(rf_rdata1^rf_rdata2)  )| 
-            ( br_type[6]&($signed(rf_rdata1)<$signed(rf_rdata2)) | br_type[7]&($signed(rf_rdata1)>=$signed(rf_rdata2)) )|
-            ( br_type[8]&rf_rdata1<rf_rdata2 | br_type[9]&rf_rdata1>=rf_rdata2 );
-assign pc_br = br_type[0] ? pc_orig+32'h4 : ( br_type[1] ? rf_rdata1+imm : pc_orig+imm );
+logic       br_JIRL;    //是JIRL，且本应跳转，目标地址为R1+imm
+logic       br_Branch;  //是B/BL/BEQ/BNE/BLT/BGE/BLTU/BGEU，且本应跳转，目标地址为PC+imm
+assign br_JIRL   =    br_type[1];
+assign br_Branch =  ( br_type[2] | br_type[3] ) | 
+                    ( br_type[4]&!(rf_rdata1^rf_rdata2) | br_type[5]&|(rf_rdata1^rf_rdata2)  )| 
+                    ( br_type[6]&($signed(rf_rdata1)<$signed(rf_rdata2)) | br_type[7]&($signed(rf_rdata1)>=$signed(rf_rdata2)) )|
+                    ( br_type[8]&rf_rdata1<rf_rdata2 | br_type[9]&rf_rdata1>=rf_rdata2 );
+
+assign br        =  ( br_type[1] | br_type[2] | br_type[3] ) | 
+                    ( br_type[4]&!(rf_rdata1^rf_rdata2) | br_type[5]&|(rf_rdata1^rf_rdata2)  )| 
+                    ( br_type[6]&($signed(rf_rdata1)<$signed(rf_rdata2)) | br_type[7]&($signed(rf_rdata1)>=$signed(rf_rdata2)) )|
+                    ( br_type[8]&rf_rdata1<rf_rdata2 | br_type[9]&rf_rdata1>=rf_rdata2 );
+assign pc_br     =    br_Branch ? pc_orig+imm : ( br_JIRL ? rf_rdata1+imm : pc_orig+32'h4 );
 // always @(*) begin
 
 //     pc_br=pc_orig+32'h4;//默认值 不跳转 要求上游在非跳转指令或预测不跳转时将预测跳转地址置为pc+4
