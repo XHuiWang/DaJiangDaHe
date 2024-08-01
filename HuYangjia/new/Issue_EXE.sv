@@ -76,8 +76,8 @@ module Issue_EXE(
     output logic [11: 0] EX_alu_op_a,        //A指令的运算类型
     output logic [11: 0] EX_alu_op_b,        //B指令的运算类型
 
-    output logic [ 3: 0] EX_br_type_a,       //A指令的分支类型
-    output logic [ 3: 0] EX_br_type_b,       //B指令的分支类型
+    output logic [ 9: 0] EX_br_type_a,       //A指令的分支类型
+    output logic [ 9: 0] EX_br_type_b,       //B指令的分支类型
     output logic [ 0: 0] EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转
     output logic [ 0: 0] EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转
 
@@ -161,8 +161,8 @@ module Issue_EXE(
             EX_alu_src_sel_b2 <= 3'h0;
             EX_alu_op_a       <= 12'h000;
             EX_alu_op_b       <= 12'h000;
-            EX_br_type_a      <= 4'h0;
-            EX_br_type_b      <= 4'h0;
+            EX_br_type_a      <= 10'h001;
+            EX_br_type_b      <= 10'h001;
             EX_br_pd_a        <= 1'b0;
             EX_br_pd_b        <= 1'b0;
             EX_rf_we_a        <= 1'b0;
@@ -260,8 +260,8 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set1.alu_src2_sel;
                 EX_alu_op_a       <= i_set2.alu_op;
                 EX_alu_op_b       <= i_set1.alu_op;
-                EX_br_type_a      <= i_set2.br_type & {4{Issue_b_enable}};
-                EX_br_type_b      <= i_set1.br_type & {4{Issue_a_enable}};
+                EX_br_type_a      <= (Issue_b_enable) ? i_set2.br_type : 10'h001;
+                EX_br_type_b      <= (Issue_a_enable) ? i_set1.br_type : 10'h001;
                 EX_br_pd_a        <= ~(i_set2.PC_pre == i_set2.PC + 4);
                 EX_br_pd_b        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_rf_we_a        <= i_set2.rf_we & Issue_b_enable;
@@ -309,8 +309,8 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set2.alu_src2_sel;
                 EX_alu_op_a       <= i_set1.alu_op;
                 EX_alu_op_b       <= i_set2.alu_op;
-                EX_br_type_a      <= i_set1.br_type & {4{Issue_a_enable}};
-                EX_br_type_b      <= i_set2.br_type & {4{Issue_b_enable}};
+                EX_br_type_a      <= (Issue_a_enable) ? i_set1.br_type : 10'h001;
+                EX_br_type_b      <= (Issue_b_enable) ? i_set2.br_type : 10'h001;
                 EX_br_pd_a        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_br_pd_b        <= ~(i_set2.PC_pre == i_set2.PC + 4);
                 // TODO: 预测跳转

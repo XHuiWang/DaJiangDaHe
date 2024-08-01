@@ -39,7 +39,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] o_inst_lawful;
 
     logic [ 9: 0] inst_type;
-    logic [ 3: 0] br_type; 
+    logic [ 9: 0] br_type; 
 
     logic [31: 0] imm;
     logic [ 4: 0] rf_rd;
@@ -290,18 +290,28 @@ module ID_Decode_edi_2(
                        10'h001;
 
 
-    logic [ 8: 0] br_type_temp;
-    assign br_type_temp =   (beq_inst  )  ? 4'b0110 : 
-                            (bne_inst  )  ? 4'b0111 :
-                            (blt_inst  )  ? 4'b1000 :
-                            (bge_inst  )  ? 4'b1001 :
-                            (bltu_inst )  ? 4'b1010 :
-                            (bgeu_inst )  ? 4'b1011 :
-                            (b_inst    )  ? 4'b0100 :
-                            (bl_inst   )  ? 4'b0101 :
-                            (jirl_inst )  ? 4'b0011 : 4'b0000;
-    assign br_type = (data_valid) ? br_type_temp : 4'b0000;
-    // assign br_type = (ID_status && data_valid) ? br_type_temp : 4'b0000;
+    // 00 0000 0001:无跳转
+    // 00 0000 0010:JIRL
+    // 00 0000 0100:B
+    // 00 0000 1000:BL
+    // 00 0001 0000:BEQ
+    // 00 0010 0000:BNE
+    // 00 0100 0000:BLT
+    // 00 1000 0000:BGE
+    // 01 0000 0000:BLTU
+    // 10 0000 0000:BGEU
+    logic [ 9: 0] br_type_temp;
+    assign br_type_temp =   (jirl_inst) ? 10'h002 :
+                            (b_inst)    ? 10'h004 :
+                            (bl_inst)   ? 10'h008 :
+                            (beq_inst)  ? 10'h010 :
+                            (bne_inst)  ? 10'h020 :
+                            (blt_inst)  ? 10'h040 :
+                            (bge_inst)  ? 10'h080 :
+                            (bltu_inst) ? 10'h100 :
+                            (bgeu_inst) ? 10'h200 :
+                            10'h001;
+    assign br_type = (data_valid) ? br_type_temp : 10'h001;
 
     // 0000 ld.w
     // 0001 st.w

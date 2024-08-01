@@ -230,8 +230,8 @@ module My_CPU_test(
     logic [ 3: 0] EX_alu_src_sel_b2;
     logic [11: 0] EX_alu_op_a;
     logic [11: 0] EX_alu_op_b;
-    logic [ 3: 0] EX_br_type_a;
-    logic [ 3: 0] EX_br_type_b;
+    logic [ 9: 0] EX_br_type_a;
+    logic [ 9: 0] EX_br_type_b;
     logic [ 0: 0] EX_br_pd_a;
     logic [ 0: 0] EX_br_pd_b;
     logic [ 0: 0] EX_rf_we_a;
@@ -541,7 +541,7 @@ module My_CPU_test(
 
     assign fact_valid = ID1_is_valid & predecoder_valid;   
 
-    ID1_ID2_edi2  ID1_ID2_inst (
+    ID1_ID2  ID1_ID2_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(ID1_PC1),

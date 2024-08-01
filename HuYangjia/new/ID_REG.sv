@@ -101,7 +101,7 @@ module ID_REG (
     assign error_set.o_inst_lawful = 1'b0;
     assign error_set.o_valid = 1'b0;
     assign error_set.inst_type = 10'd1;
-    assign error_set.br_type = 4'd0;
+    assign error_set.br_type = 10'd1;
     assign error_set.imm = 32'd0;
     assign error_set.rf_rd = 5'd0;
     assign error_set.rf_we = 1'b0;

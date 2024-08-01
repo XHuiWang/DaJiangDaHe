@@ -184,13 +184,13 @@ module Issue_dispatch(
     // &is_valid <==> is_valid == 2'b11 
 
 
-    assign double_BR     = (&is_valid) ? ( (|(i_set1.br_type)) && (|(i_set2.br_type))) : 0; // 同时为BR，两个都不是全0
+    assign double_BR     = (&is_valid) ? ( ~((i_set1.br_type[0])) && ~((i_set2.br_type[0]))) : 0; // 同时为BR，两个都不是全0
     assign LDSW_Mul_Div_csr_rdcnt_plus_any = (&is_valid) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，3csr, ertn后任意
     
 
     assign double_LDSW   = (&is_valid ) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
     assign RAW_exist     = (&is_valid  && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
-    assign BR_LDST_prob  = (&is_valid ) ? ((~i_set2.ldst_type[3]) & (|(i_set1.br_type))) : 0; // 前BR后LDSW
+    assign BR_LDST_prob  = (&is_valid ) ? ((i_set2.mem_we) & ~((i_set1.br_type[0]))) : 0; // 前BR后LDSW
 
 
     assign lock_in_1     = (is_valid[1] & last_ld) ? (rf_waddr == i_set1.rf_raddr1) || (rf_waddr == i_set1.rf_raddr2) : 0; // LW和RDCNT与A指令互锁
