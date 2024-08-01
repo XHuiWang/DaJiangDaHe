@@ -39,8 +39,18 @@ module CSR(
     output [1:0] translate_mode,    //01: direct, 10: paged
     output [1:0] direct_i_mat, //处于直接地址翻译模式时，存储访问类型
     output [1:0] direct_d_mat, //0: 非缓存, 1: 可缓存
+    //直接映射窗口0
+    output reg dmw0_plv0,
+    output reg dmw0_plv3,
+    output reg [1:0] dmw0_mat,
+    output reg [31:29] dmw0_vseg,dmw0_pseg,
+    //直接映射窗口1
+    output reg dmw1_plv0,
+    output reg dmw1_plv3,
+    output reg [1:0] dmw1_mat,
+    output reg [31:29] dmw1_vseg,dmw1_pseg,
 
-        //timer
+    //timer
     output [31:0] tid
 );
 reg timer_int;      //定时器中断
@@ -100,6 +110,26 @@ assign csr_eentry[`EENTRY_ZERO] = 0;
 assign csr_eentry[`EENTRY_VA]   = eentry_va;
 //SAVE0~3
 reg [31:0] csr_save0,csr_save1,csr_save2,csr_save3;
+
+
+//DMW0~1
+wire [31:0] csr_dmw0, csr_dmw1;
+assign csr_dmw0[`DMW_PLV0]      = dmw0_plv0;
+assign csr_dmw0[`DMW_ZERO_0]    = 0;
+assign csr_dmw0[`DMW_PLV3]      = dmw0_plv3;
+assign csr_dmw0[`DMW_MAT]       = dmw0_mat;
+assign csr_dmw0[`DMW_ZERO_1]    = 0;
+assign csr_dmw0[`DMW_PSEG]      = dmw0_pseg;
+assign csr_dmw0[`DMW_ZERO_2]    = 0;
+assign csr_dmw0[`DMW_VSEG]      = dmw0_vseg;
+assign csr_dmw1[`DMW_PLV0]      = dmw1_plv0;
+assign csr_dmw1[`DMW_ZERO_0]    = 0;
+assign csr_dmw1[`DMW_PLV3]      = dmw1_plv3;
+assign csr_dmw1[`DMW_MAT]       = dmw1_mat;
+assign csr_dmw1[`DMW_ZERO_1]    = 0;
+assign csr_dmw1[`DMW_PSEG]      = dmw1_pseg;
+assign csr_dmw1[`DMW_ZERO_2]    = 0;
+assign csr_dmw1[`DMW_VSEG]      = dmw1_vseg;
 
 //TID
 reg [31:0] csr_tid;
@@ -458,6 +488,48 @@ always @(posedge clk)
         if(we[30]) csr_save3[30]<=wdata[30];
         if(we[31]) csr_save3[31]<=wdata[31];
     end
+
+//DMW0~1
+always @(posedge clk)
+    if(~rstn) begin
+        dmw0_plv0<=0;
+        dmw0_plv3<=0;
+        dmw0_mat<=0;
+        dmw0_pseg<=0;
+        dmw0_vseg<=0;
+    end else if(software_we&&waddr==`CSR_DMW0) begin
+        if(we[ 0]) dmw0_plv0    <=wdata[ 0];
+        if(we[ 3]) dmw0_plv3    <=wdata[ 3];
+        if(we[ 4]) dmw0_mat[ 0] <=wdata[ 4];
+        if(we[ 5]) dmw0_mat[ 1] <=wdata[ 5];
+        if(we[25]) dmw0_pseg[29]<=wdata[25];
+        if(we[26]) dmw0_pseg[30]<=wdata[26];
+        if(we[27]) dmw0_pseg[31]<=wdata[27];
+        if(we[29]) dmw0_vseg[29]<=wdata[29];
+        if(we[30]) dmw0_vseg[30]<=wdata[30];
+        if(we[31]) dmw0_vseg[31]<=wdata[31];
+    end
+
+always @(posedge clk)
+    if(~rstn) begin
+        dmw1_plv0<=0;
+        dmw1_plv3<=0;
+        dmw1_mat<=0;
+        dmw1_pseg<=0;
+        dmw1_vseg<=0;
+    end else if(software_we&&addr==`CSR_DMW1) begin
+        if(we[ 0]) dmw1_plv0    <=wdata[ 0];
+        if(we[ 3]) dmw1_plv3    <=wdata[ 3];
+        if(we[ 4]) dmw1_mat[ 0] <=wdata[ 4];
+        if(we[ 5]) dmw1_mat[ 1] <=wdata[ 5];
+        if(we[25]) dmw1_pseg[29]<=wdata[25];
+        if(we[26]) dmw1_pseg[30]<=wdata[26];
+        if(we[27]) dmw1_pseg[31]<=wdata[27];
+        if(we[29]) dmw1_vseg[29]<=wdata[29];
+        if(we[30]) dmw1_vseg[30]<=wdata[30];
+        if(we[31]) dmw1_vseg[31]<=wdata[31];
+    end
+
 //TID
 always @(posedge clk)
     if(~rstn) begin
