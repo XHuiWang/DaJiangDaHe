@@ -90,8 +90,8 @@ module IF2_PreDecoder(
     logic [ 0: 0] type_right;
     logic [ 0: 0] PC_right;
     logic [ 0: 0] weither_to_flush; // 判断由于预测错误是否需要flush
-    assign type_right = ~(br_type ^ type_predict);
-    assign PC_right   = ~(PC_pre ^ PC_pre_already);
+    assign type_right = !(br_type ^ type_predict);
+    assign PC_right   = !(PC_pre ^ PC_pre_already);
     always @(*) begin
         if(~data_valid) begin
             weither_to_flush = 1'b0;
@@ -101,7 +101,7 @@ module IF2_PreDecoder(
                 weither_to_flush = ~(PC_right);
             end
             else begin
-                if(~(PC_pre_already ^ PC_plus_4)) begin
+                if(!(PC_pre_already ^ PC_plus_4)) begin
                     weither_to_flush = 1'b0;
                 end
                 else begin
