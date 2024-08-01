@@ -179,8 +179,8 @@ module Issue_EXE(
             EX_sign_bit       <= 1'b0;
             type_predict_a    <= 2'h0;
             type_predict_b    <= 2'h0;
-            EX_PC_pre_a       <= 32'h0000_0000;
-            EX_PC_pre_b       <= 32'h0000_0000;
+            EX_PC_pre_a       <= 32'h0000_0004;
+            EX_PC_pre_b       <= 32'h0000_0004;
             csr_type          <= 3'h0;
             csr_raddr         <= 14'h0000;
             csr_rdata         <= 32'h0000_0000;
@@ -242,7 +242,7 @@ module Issue_EXE(
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
-                EX_pc_a           <= 32'hffff_ffff;
+                EX_pc_a           <= 32'h0000_0000;
                 EX_pc_b           <= i_set1.PC;
                 EX_rf_raddr_a1    <= i_set2.rf_raddr1;
                 EX_rf_raddr_a2    <= i_set2.rf_raddr2;
@@ -278,8 +278,8 @@ module Issue_EXE(
                 EX_mul_en         <= (i_set1.inst_type == 10'h004) & Issue_a_enable;
                 type_predict_a    <= i_set2.type_predict;
                 type_predict_b    <= i_set1.type_predict;
-                EX_PC_pre_a       <= i_set2.PC_pre;
-                EX_PC_pre_b       <= i_set1.PC_pre;
+                EX_PC_pre_a       <= 32'h0000_0004;
+                EX_PC_pre_b       <= (Issue_a_enable) ? i_set1.PC_pre : i_set1.PC + 4;
                 csr_type          <= i_set1.csr_type & {3{Issue_a_enable}};
                 csr_raddr         <= i_set1.csr_raddr;
                 csr_rdata         <= csr_rdata_1;
@@ -328,8 +328,8 @@ module Issue_EXE(
                 EX_mul_en         <= (i_set2.inst_type == 10'h004) & Issue_b_enable;
                 type_predict_a    <= i_set1.type_predict;
                 type_predict_b    <= i_set2.type_predict;
-                EX_PC_pre_a       <= i_set1.PC_pre;
-                EX_PC_pre_b       <= i_set2.PC_pre;
+                EX_PC_pre_a       <= (Issue_a_enable) ? i_set1.PC_pre : i_set1.PC + 4;
+                EX_PC_pre_b       <= (Issue_b_enable) ? i_set2.PC_pre : i_set2.PC + 4;
                 csr_type          <= i_set2.csr_type & {3{Issue_b_enable}};
                 csr_raddr         <= i_set2.csr_raddr;
                 csr_rdata         <= csr_rdata_2;
