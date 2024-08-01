@@ -81,7 +81,7 @@ logic   [13: 0]     MEM_csr_waddr;
 // logic   [31: 0]     MEM_csr_we;
 logic   [31: 0]     MEM_csr_wdata;
 logic               MEM_b_enable_ori;       //尚未考虑MEM_br_a
-logic               MEM_csr_we_ori;
+logic   [31: 0]     MEM_csr_we_ori;
 logic               MEM_ertn_ori;
 logic               MEM_ecode_we_b_ori;
 logic               MEM_badv_we_b_ori;
@@ -92,7 +92,7 @@ logic   interrupt;  //本次MEM段有尚未处理的中断且可以处理
         //尚未处理的中断：包括新发来的MEM_interrupt和此前未处理的MEM_interrupt_buf
 
 assign MEM_b_enable = MEM_b_enable_ori & ~MEM_br_a;
-assign MEM_csr_we = MEM_csr_we_ori & ~MEM_br_a; 
+assign MEM_csr_we = MEM_csr_we_ori & {32{~MEM_br_a}}; 
 assign MEM_ertn = MEM_ertn_ori & ~MEM_br_a;
 assign MEM_ecode_we_b = MEM_ecode_we_b_ori & ~MEM_br_a;
 assign MEM_badv_we_b = MEM_badv_we_b_ori & ~MEM_br_a;
