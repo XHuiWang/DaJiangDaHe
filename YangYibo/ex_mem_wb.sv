@@ -225,7 +225,8 @@ logic   [31: 0]   MEM_rdcntid;
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( /*EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn |*/ MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
+assign  EX_mem_we_bb = ( /*EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn |*/ 
+        EX_ecode_we_b | EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
