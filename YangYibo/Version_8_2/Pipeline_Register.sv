@@ -12,10 +12,12 @@ module Pipeline_Register(
     input                       WB_flush_csr,
     
     //BR 跳转在MEM段生效
-    input                       EX_br_a,        //A指令是否需要修正预测的结果
-    input                       EX_br_b,        //B指令是否需要修正预测的结果
-    input           [31: 0]     EX_pc_br_a,     //A指令需要修正预测结果时，PC的修正值
-    input           [31: 0]     EX_pc_br_b,     //B指令需要修正预测结果时，PC的修正值
+    // input                       EX_br_a,        //A指令是否需要修正预测的结果
+    // input                       EX_br_b,        //B指令是否需要修正预测的结果
+    // input           [31: 0]     EX_pc_br_a,     //A指令需要修正预测结果时，PC的修正值
+    // input           [31: 0]     EX_pc_br_b,     //B指令需要修正预测结果时，PC的修正值
+    input           [31: 0]     EX_pc_pd_a,     //A指令的分支预测的跳转结果PC
+    input           [31: 0]     EX_pc_pd_b,     //B指令的分支预测的跳转结果PC
     input                       EX_br_a_ori,    //A跳转指令是否本应跳转
     input                       EX_br_b_ori,    //B跳转指令是否本应跳转
     input           [31: 0]     EX_pc_br_a_ori, //无分支预测时，A应跳转到的地址
@@ -75,17 +77,27 @@ logic               MEM_br_b;           //B指令是否需要修正
 
 logic   [31: 0]     MEM_pc_br_a;        //A修正时应跳转到的地址
 logic   [31: 0]     MEM_pc_br_b;        //B修正时应跳转到的地址
+logic   [31: 0]     MEM_pc_pd_a;        //A指令的分支预测的跳转结果PC
+logic   [31: 0]     MEM_pc_pd_b;        //B指令的分支预测的跳转结果PC
 logic               MEM_br_a_ori, MEM_br_b_ori;
 logic   [31: 0]     MEM_pc_br_a_ori, MEM_pc_br_b_ori;
 logic   [ 1: 0]     MEM_pd_type_a, MEM_pd_type_b;
 
 logic               MEM_rf_we_b_ori;    //尚未考虑A指令修正预测结果
 
-assign MEM_br = ( MEM_br_a | MEM_br_b ) & ( ~stall_dcache_buf & ~stall_ex_buf );
-assign MEM_pc_br = MEM_br_a ? MEM_pc_br_a : MEM_pc_br_b;
+logic               WB_flush_csr_buf;   //留存一级flush信号来抑制MEM段的关键信号
+
+assign MEM_br_a = |(MEM_pc_pd_a^MEM_pc_br_a_ori); //是否需要修正=预测地址与原本地址的异或
+assign MEM_br_b = |(MEM_pc_pd_b^MEM_pc_br_b_ori); //是否需要修正=预测地址与原本地址的异或
+assign MEM_pc_br_a = MEM_br_a_ori ? MEM_pc_br_a_ori : (MEM_pc_a + 32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
+assign MEM_pc_br_b = MEM_br_b_ori ? MEM_pc_br_b_ori : (MEM_pc_b + 32'd4); //修正后的地址：应跳预测不跳则跳过去，不应跳预测跳则跳回去
+assign MEM_br   = ( MEM_br_a | MEM_br_b ) & 
+    ( ~stall_dcache_buf & ~stall_ex_buf ) & ~WB_flush_csr_buf;
+assign MEM_pc_br= MEM_br_a ? MEM_pc_br_a : MEM_pc_br_b;
 
 assign MEM_pc_of_br = MEM_pd_type_a==2'b00 ? MEM_pc_b : MEM_pc_a;
-assign MEM_pd_type = (MEM_pd_type_a==2'b00 ? MEM_pd_type_b : MEM_pd_type_a) & {2{~stall_dcache_buf}}&{2{~stall_ex_buf}};
+assign MEM_pd_type = (MEM_pd_type_a==2'b00 ? MEM_pd_type_b : MEM_pd_type_a) & 
+    {2{~stall_dcache_buf}}&{2{~stall_ex_buf}} & ~WB_flush_csr_buf;
 assign MEM_br_target = MEM_pd_type_a==2'b00 ? MEM_pc_br_b_ori : MEM_pc_br_a_ori;
 assign MEM_br_jump = MEM_pd_type_a==2'b00 ? MEM_br_b_ori : MEM_br_a_ori;
 
@@ -100,16 +112,16 @@ begin
     begin
         MEM_rf_we_a<=1'b0;
         MEM_rf_we_b_ori<=1'b0;
-        MEM_br_a<=1'b0;  //对B路抑制信号
-        MEM_br_b<=1'b0;
+        // MEM_br_a<=1'b0;  //对B路抑制信号
+        // MEM_br_b<=1'b0;
         MEM_pd_type_a<=2'b00;
         MEM_pd_type_b<=2'b00;
     end
     else if(!stall_dcache&&!stall_ex)begin //考虑到前递，stall_dcache应阻塞所有段间寄存器
         MEM_rf_we_a<=EX_rf_we_a;
         MEM_rf_we_b_ori<=EX_rf_we_b;
-        MEM_br_a<=EX_br_a;  //对B路抑制信号
-        MEM_br_b<=EX_br_b;
+        // MEM_br_a<=EX_br_a;  //对B路抑制信号
+        // MEM_br_b<=EX_br_b;
         MEM_pd_type_a<=EX_pd_type_a;
         MEM_pd_type_b<=EX_pd_type_b;
     end
@@ -132,8 +144,10 @@ end
 
 always@(posedge clk) begin
     if(!stall_dcache&&!stall_ex)begin
-        MEM_pc_br_a <= EX_pc_br_a;
-        MEM_pc_br_b <= EX_pc_br_b;
+        // MEM_pc_br_a <= EX_pc_br_a;
+        // MEM_pc_br_b <= EX_pc_br_b;
+        MEM_pc_pd_a <= EX_pc_pd_a;
+        MEM_pc_pd_b <= EX_pc_pd_b;
         MEM_br_a_ori<=EX_br_a_ori;
         MEM_br_b_ori<=EX_br_b_ori;
         MEM_pc_br_a_ori<=EX_pc_br_a_ori;
@@ -155,6 +169,8 @@ always@(posedge clk) begin
         WB_rf_waddr_b<=MEM_rf_waddr_b;
         WB_rf_wdata_a<=MEM_rf_wdata_a;
         WB_rf_wdata_b<=MEM_rf_wdata_b;
+
+        WB_flush_csr_buf<=WB_flush_csr;
     end
     else begin end
 end

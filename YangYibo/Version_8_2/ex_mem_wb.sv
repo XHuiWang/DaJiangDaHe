@@ -89,8 +89,8 @@ module ex_mem_wb(
     output  reg     [31: 0]     WB_flush_csr_pc,    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
     
     //BR
-    input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
-    input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    input           [ 9: 0]     EX_br_type_a,       //A指令的分支类型
+    input           [ 9: 0]     EX_br_type_b,       //B指令的分支类型
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
     input           [31: 0]     EX_pc_pd_a,         //A指令的分支预测的跳转结果PC
@@ -147,10 +147,10 @@ logic   [31: 0]     MEM_div_quo;                    //除法商
 logic   [31: 0]     MEM_div_rem;                    //除法余数
 
 //BR
-logic               EX_br_a;                        //A指令是否需要修正预测的结果
-logic               EX_br_b;                        //B指令是否需要修正预测的结果
-logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
-logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
+// logic               EX_br_a;                        //A指令是否需要修正预测的结果
+// logic               EX_br_b;                        //B指令是否需要修正预测的结果
+// logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
+// logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
 logic               EX_br_a_ori;                    //A跳转指令是否本应跳转
 logic               EX_br_b_ori;                    //B跳转指令是否本应跳转
 logic   [31: 0]     EX_pc_br_a_ori;                 //无分支预测时，A应跳转到的地址
@@ -183,8 +183,8 @@ logic   [ 6: 0]   EX_ecode_in_aa;
 logic   [ 6: 0]   EX_ecode_in_bb;
 logic             EX_ecode_we_aa;
 logic             EX_ecode_we_bb;
-logic   [31: 0]   EX_badv_in_a;
-logic   [31: 0]   EX_badv_in_b;
+// logic   [31: 0]   EX_badv_in_a;
+// logic   [31: 0]   EX_badv_in_b;
 logic             EX_badv_we_a;
 logic             EX_badv_we_b;
 
@@ -223,7 +223,8 @@ logic   [31: 0]   MEM_rdcntid;
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
+assign  EX_mem_we_bb = ( /*EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn |*/ 
+        EX_ecode_we_b | EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
@@ -306,14 +307,6 @@ FU_BR  FU_BR_inst (
     .EX_imm_b(EX_imm_b),
     .EX_br_type_a(EX_br_type_a),
     .EX_br_type_b(EX_br_type_b),
-    .EX_br_pd_a(EX_br_pd_a),
-    .EX_br_pd_b(EX_br_pd_b),
-    .EX_pc_pd_a(EX_pc_pd_a),
-    .EX_pc_pd_b(EX_pc_pd_b),
-    .EX_br_a(EX_br_a),
-    .EX_br_b(EX_br_b),
-    .EX_pc_br_a(EX_pc_br_a),
-    .EX_pc_br_b(EX_pc_br_b),
     .EX_br_a_ori(EX_br_a_ori),
     .EX_br_b_ori(EX_br_b_ori),
     .EX_pc_br_a_ori(EX_pc_br_a_ori),
@@ -357,6 +350,7 @@ Stable_Counter  Stable_Counter_inst (
 FU_CSR  FU_CSR_inst (
     .EX_rf_rdata_b1_f(EX_rf_rdata_b1_f),
     .EX_rf_rdata_b2_f(EX_rf_rdata_b2_f),
+    .EX_imm_b(EX_imm_b),
     .EX_csr_type(EX_csr_type),
     .EX_csr_we(EX_csr_we),
     .EX_csr_wdata(EX_csr_wdata),
@@ -374,8 +368,6 @@ FU_CSR  FU_CSR_inst (
     .EX_ecode_in_bb(EX_ecode_in_bb),
     .EX_ecode_we_aa(EX_ecode_we_aa),
     .EX_ecode_we_bb(EX_ecode_we_bb),
-    .EX_badv_in_a(EX_badv_in_a),
-    .EX_badv_in_b(EX_badv_in_b),
     .EX_badv_we_a(EX_badv_we_a),
     .EX_badv_we_b(EX_badv_we_b)
   );
@@ -419,10 +411,8 @@ Pipeline_Register  Pipeline_Register_inst (
     .MEM_ecode_in_a(MEM_ecode_in_a),
     .MEM_ecode_in_b(MEM_ecode_in_b),
     .WB_flush_csr(WB_flush_csr),
-    .EX_br_a(EX_br_a),
-    .EX_br_b(EX_br_b),
-    .EX_pc_br_a(EX_pc_br_a),
-    .EX_pc_br_b(EX_pc_br_b),
+    .EX_pc_pd_a(EX_pc_pd_a),
+    .EX_pc_pd_b(EX_pc_pd_b),
     .EX_br_a_ori(EX_br_a_ori),
     .EX_br_b_ori(EX_br_b_ori),
     .EX_pc_br_a_ori(EX_pc_br_a_ori),
@@ -476,6 +466,9 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .stall_dcache(stall_dcache),
     .MEM_br_a(MEM_br_a),
     .MEM_br(MEM_br),
+    .MEM_pc_a(MEM_pc_a),
+    .MEM_pc_b(MEM_pc_b),
+    .EX_mem_addr(EX_mem_addr),
     .EX_csr_waddr(EX_csr_waddr),
     .EX_csr_we(EX_csr_we),
     .EX_csr_wdata(EX_csr_wdata),
@@ -500,8 +493,6 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .EX_ecode_in_bb(EX_ecode_in_bb),
     .EX_ecode_we_aa(EX_ecode_we_aa),
     .EX_ecode_we_bb(EX_ecode_we_bb),
-    .EX_badv_in_a(EX_badv_in_a),
-    .EX_badv_in_b(EX_badv_in_b),
     .EX_badv_we_a(EX_badv_we_a),
     .EX_badv_we_b(EX_badv_we_b),
     .MEM_ecode_in_a(MEM_ecode_in_a),
