@@ -42,6 +42,8 @@ module My_CPU_test(
     logic [31: 0] pc_IF1;
     logic [ 0: 0] is_valid;
     logic [ 7: 0] IF1_ecode;
+    logic [31: 0] p_addr_IF1;
+    logic [ 0: 0] uncache_i;
   
     // ICache
     logic [ 0: 0] ICache_valid;
@@ -55,6 +57,7 @@ module My_CPU_test(
     logic         i_arready;
     logic [ 7: 0] i_arlen;
     logic [ 0: 0] data_valid;
+    logic [ 0: 0] uncache;
 
     //AXI interface
     //read request
@@ -196,6 +199,16 @@ module My_CPU_test(
     logic [ 1: 0] translate_mode;
     logic [ 1: 0] direct_i_mat;
     logic [ 1: 0] direct_d_mat;
+    logic [ 0: 0] dmw0_plv0;
+    logic [ 0: 0] dmw0_plv3;
+    logic [ 0: 0] dmw1_plv0;
+    logic [ 0: 0] dmw1_plv3;
+    logic [ 1: 0] dmw0_mat;
+    logic [ 1: 0] dmw1_mat;
+    logic [ 2: 0] dmw0_vseg;
+    logic [ 2: 0] dmw0_pseg;
+    logic [ 2: 0] dmw1_vseg;
+    logic [ 2: 0] dmw1_pseg;
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     assign hardware_int = 8'b0;
     assign stable_clk = clk;
@@ -369,6 +382,8 @@ module My_CPU_test(
     logic [31: 0] EX_mem_wdata;
     logic [31: 0] MEM_mem_rdata;
     logic [ 0: 0] EX_UnCache;
+    logic [31: 0] p_addr_EX;
+    logic [ 0: 0] uncache_d;
     // add for csr
     logic [13: 0]     WB_csr_waddr;       //CSR写地址 MEM段生效
     logic [31: 0]     WB_csr_we;          //CSR写使能 MEM段生效 按位
@@ -470,13 +485,32 @@ module My_CPU_test(
         .o_signFor_ADEF_ALE(o_signFor_ADEF_ALE),
         .o_is_valid(IF1_IF2_valid)
     );
+    inst_mmu_lite  inst_mmu_lite_inst (
+        .addr(pc_IF1),
+        .plv(plv),
+        .translate_mode(translate_mode),
+        .direct_i_mat(direct_i_mat),
+        .dmw0_plv0(dmw0_plv0),
+        .dmw0_plv3(dmw0_plv3),
+        .dmw0_mat(dmw0_mat),
+        .dmw0_vseg(dmw0_vseg),
+        .dmw0_pseg(dmw0_pseg),
+        .dmw1_plv0(dmw1_plv0),
+        .dmw1_plv3(dmw1_plv3),
+        .dmw1_mat(dmw1_mat),
+        .dmw1_vseg(dmw1_vseg),
+        .dmw1_pseg(dmw1_pseg),
+        .paddr(p_addr_IF1),
+        .uncache(uncache_i)
+    );
 
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
         .rvalid(is_valid & ~(IF1_ecode[7])),
-        .raddr(pc_IF1),
+        .raddr(p_addr_IF1),
         .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
+        .uncache(uncache_i),
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
         .flag_valid(ICache_valid),
@@ -664,6 +698,16 @@ module My_CPU_test(
         .translate_mode(translate_mode), // 
         .direct_i_mat(direct_i_mat), //
         .direct_d_mat(direct_d_mat), //
+        .dmw0_plv0 (dmw0_plv0),
+        .dmw0_plv3 (dmw0_plv3),
+        .dmw0_mat (dmw0_mat),
+        .dmw0_vseg (dmw0_vseg),
+        .dmw0_pseg (dmw0_pseg),
+        .dmw1_plv0 (dmw1_plv0),
+        .dmw1_plv3 (dmw1_plv3),
+        .dmw1_mat (dmw1_mat),
+        .dmw1_vseg (dmw1_vseg),
+        .dmw1_pseg (dmw1_pseg),
         .tid(csr_tid)
     );
 
@@ -845,14 +889,33 @@ module My_CPU_test(
         .debug1_wb_rf_wdata(debug1_wb_rf_wdata)
     );
 
+    data_mmu_lite  data_mmu_lite_inst (
+        .addr(EX_mem_addr),
+        .plv(plv),
+        .translate_mode(translate_mode),
+        .direct_d_mat(direct_d_mat),
+        .dmw0_plv0(dmw0_plv0),
+        .dmw0_plv3(dmw0_plv3),
+        .dmw0_mat(dmw0_mat),
+        .dmw0_vseg(dmw0_vseg),
+        .dmw0_pseg(dmw0_pseg),
+        .dmw1_plv0(dmw1_plv0),
+        .dmw1_plv3(dmw1_plv3),
+        .dmw1_mat(dmw1_mat),
+        .dmw1_vseg(dmw1_vseg),
+        .dmw1_pseg(dmw1_pseg),
+        .paddr(p_addr_EX),
+        .uncache(uncache_d)
+    );
+
     dcache  dcache_inst (
         .clk(clk),
         .rstn(rstn),
         .rvalid(EX_mem_rvalid),
         .wvalid(EX_mem_wvalid),
-        .uncache(EX_UnCache),
+        .uncache(uncache_d),
         .wdata(EX_mem_wdata),
-        .addr(EX_mem_addr),
+        .addr(p_addr_EX),
         .mem_type(EX_mem_type),
         .rdata(MEM_mem_rdata),
         .rready(MEM_mem_rready),
