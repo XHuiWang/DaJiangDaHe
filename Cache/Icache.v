@@ -7,6 +7,7 @@ module Icache(
     input                   rvalid,
     input       [31:0]      raddr,
     input                   Is_flush,
+    input                   uncache,
     //input                   uncache,
     //cache操作
     //input       [31:0]      icache_opcode,//cache操作
@@ -68,6 +69,7 @@ module Icache(
     wire          fbuf_clear ;
     wire          miss_LRU_update ;
     wire          miss_lru_way ;
+    wire          uncache_pipe ;
 
     assign r_index = raddr[11:4];
     assign w_index = addr[11:4];
@@ -77,7 +79,7 @@ module Icache(
     assign hit = {hit2,hit1};
     assign offset = addr[3:2];
     assign w_tagv = {addr[31:12],1'b1};
-    assign i_arlen = 8'd3;
+    assign i_arlen = uncache_pipe ? 8'd1 : 8'd3;
     assign flag_valid = offset == 2'b11 ? 0 : 1;
     assign data_valid = valid_reg;
 
@@ -86,13 +88,13 @@ module Icache(
         else if(rbuf_we) valid_reg <= rvalid;
     end
 
-    register# ( .WIDTH(32), .RST_VAL(0))
+    register# ( .WIDTH(33), .RST_VAL(0))
     request_buffer (              
         .clk    (clk),
         .rstn   (rstn),
         .en     (rbuf_we),
-        .d      (raddr),
-        .q      (addr)
+        .d      (raddr,uncache),
+        .q      (addr,uncache_pipe)
     );
 
     TagV_mem TagV_mem1(
@@ -167,6 +169,7 @@ module Icache(
         .i_rlast (i_rlast),
         .addr (addr),
         .way_sel (way_sel),
+        .uncache_pipe (uncache_pipe),
         .rready (rready),
         .i_arvalid (i_arvalid),
         .i_arready (i_arready),
@@ -188,6 +191,7 @@ module Icache(
         .i_rvalid (i_rvalid),
         .i_rlast (i_rlast),
         .i_rdata (i_rdata),
+        .uncache_pipe (uncache_pipe),
         .w_data (w_data),
         .inst_from_retbuf (inst_from_retbuf)
     );

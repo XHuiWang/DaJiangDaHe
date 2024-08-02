@@ -30,6 +30,7 @@ module FSM_icache(
     input                 i_arready,
     input     [31:0]      addr,
     input                 way_sel,
+    input                 uncache_pipe,
     output   reg          rready,
     output   reg          i_arvalid,
     output   reg          i_rready,
@@ -78,7 +79,22 @@ module FSM_icache(
                 miss_LRU_update = 1'b0;
             end
             LOOKUP:begin
-                if((hit!=2'h0) && rvalid) begin
+                if(uncache_pipe) begin
+                    next_state = MISS_A;
+                    rready = 1'b0;
+                    i_arvalid = 1'b0;
+                    mem_we = 2'b00;
+                    TagV_we = 2'b00;
+                    rbuf_we = 1'b0;
+                    data_from_mem_sel =  1'b1;
+                    i_araddr = 32'd0;
+                    i_rready = 1'b0;
+                    LRU_update = 1'b0;
+                    fbuf_clear = 1'b0;
+                    miss_lru_way = 1'b0;
+                    miss_LRU_update = 1'b0;
+                end
+                else if((hit!=2'h0) && rvalid) begin
                     next_state = LOOKUP;
                     rready = 1'b1;
                     i_arvalid = 1'b0;
@@ -133,7 +149,7 @@ module FSM_icache(
                 TagV_we = 2'b00;
                 rbuf_we = 1'b0;
                 data_from_mem_sel =  1'b1;
-                i_araddr = {addr[31:4],4'd0};
+                i_araddr = uncache_pipe ? {addr[31:2],2'b0} : {addr[31:4],4'd0};
                 i_rready = 1'b0;
                 LRU_update = 1'b0;
                 fbuf_clear = 1'b0;
@@ -142,7 +158,8 @@ module FSM_icache(
             end
             MISS:begin
                 if(i_rvalid&&i_rlast)begin
-                    next_state = REFILL;
+                    if(uncache_pipe) next_state = IDLE;
+                    else next_state = REFILL;
                 end 
                 else begin 
                     next_state = MISS;

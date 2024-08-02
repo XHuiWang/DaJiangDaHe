@@ -338,7 +338,7 @@ module FSM_dcache(
                 mbuf_we = 1'b0;
                 wbuf_we = 1'b0;
                 data_from_mem_sel = 1'b1;
-                d_araddr = {address[31:4],4'b0};
+                d_araddr = uncache_pipe ? {address[31:2],2'b0} : {address[31:4],4'b0};
                 rready = 1'b0;
                 wready = 1'b0;
                 LRU_update = 1'b0;
