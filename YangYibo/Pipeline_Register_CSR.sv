@@ -7,6 +7,10 @@ module Pipeline_Register_CSR(
 
     input                       MEM_br_a,       //在MEM段组合地抑制B路关键信号
     input                       MEM_br,         //作为EX->MEM段的flush信号
+ 
+    input           [31: 0]     MEM_pc_a,
+    input           [31: 0]     MEM_pc_b,
+    input           [31: 0]     EX_mem_addr,
 
     //CSR读写
     //CSRRD CSRWR CSRXCHG ERTN均单发B指令
@@ -15,41 +19,41 @@ module Pipeline_Register_CSR(
     input           [31: 0]     EX_csr_wdata,
     input           [63: 0]     EX_rdcntv,
     input           [31: 0]     EX_rdcntid,
-    output  reg     [31: 0]     MEM_csr_we,
-    output  reg     [13: 0]     WB_csr_waddr,
-    output  reg     [31: 0]     WB_csr_we,
-    output  reg     [31: 0]     WB_csr_wdata,
-    output  reg     [63: 0]     MEM_rdcntv,
-    output  reg     [31: 0]     MEM_rdcntid,
+    output  logic   [31: 0]     MEM_csr_we,
+    output  logic   [13: 0]     WB_csr_waddr,
+    output  logic   [31: 0]     WB_csr_we,
+    output  logic   [31: 0]     WB_csr_wdata,
+    output  logic   [63: 0]     MEM_rdcntv,
+    output  logic   [31: 0]     MEM_rdcntid,
 
     //CSR控制
     input                       EX_a_enable,
     input                       EX_b_enable,
-    output  reg                 MEM_a_enable,
-    output  reg                 MEM_b_enable,
+    output  logic               MEM_a_enable,
+    output  logic               MEM_b_enable,
     input                       MEM_interrupt,
-    output  reg                 MEM_interrupt_buf,  //若MEM_a_enable MEM_b_enable均为0，MEM_interrupt在MEM段保留一拍
+    output  logic               MEM_interrupt_buf,  //若MEM_a_enable MEM_b_enable均为0，MEM_interrupt在MEM段保留一拍
     input                       EX_ertn,
-    output  reg                 MEM_ertn,
-    output  reg                 WB_ertn,
+    output  logic               MEM_ertn,
+    output  logic               WB_ertn,
 
     input           [ 6: 0]     EX_ecode_in_aa,     //EX段处理后的A指令异常码
     input           [ 6: 0]     EX_ecode_in_bb,     //EX段处理后的B指令异常码
     input                       EX_ecode_we_aa,     //EX段处理后的A指令是否产生例外
     input                       EX_ecode_we_bb,     //EX段处理后的B指令是否产生例外
-    input           [31: 0]     EX_badv_in_a,       //取值地址错记录pc，地址非对齐记录地址
-    input           [31: 0]     EX_badv_in_b,       //B指令 EX段检测访存地址非对齐
+    // input           [31: 0]     EX_badv_in_a,       //取值地址错记录pc，地址非对齐记录地址
+    // input           [31: 0]     EX_badv_in_b,       //B指令 EX段检测访存地址非对齐
     input                       EX_badv_we_a,       //是否发生取指地址错
     input                       EX_badv_we_b,
 
-    output  reg     [ 6: 0]     MEM_ecode_in_a,
-    output  reg     [ 6: 0]     MEM_ecode_in_b,
-    output  reg                 MEM_ecode_we_a,
-    output  reg                 MEM_ecode_we_b,
-    output  reg     [31: 0]     MEM_badv_in_a,
-    output  reg     [31: 0]     MEM_badv_in_b,
-    output  reg                 MEM_badv_we_a,
-    output  reg                 MEM_badv_we_b,
+    output  logic   [ 6: 0]     MEM_ecode_in_a,
+    output  logic   [ 6: 0]     MEM_ecode_in_b,
+    output  logic               MEM_ecode_we_a,
+    output  logic               MEM_ecode_we_b,
+    output  logic   [31: 0]     MEM_badv_in_a,
+    output  logic   [31: 0]     MEM_badv_in_b,
+    output  logic               MEM_badv_we_a,
+    output  logic               MEM_badv_we_b,
 
     input           [ 6: 0]     MEM_ecode_in,
     input                       MEM_ecode_we,
@@ -64,19 +68,20 @@ module Pipeline_Register_CSR(
     input                       MEM_flush_csr,
     input           [31: 0]     MEM_flush_csr_pc,
 
-    output  reg     [ 6: 0]     WB_ecode_in,
-    output  reg                 WB_ecode_we,
-    output  reg     [31: 0]     WB_badv_in,
-    output  reg                 WB_badv_we,
-    output  reg     [31: 0]     WB_era_in,
-    output  reg                 WB_era_we,
-    output  reg                 WB_era_en,
-    output  reg                 WB_eentry_en,
-    output  reg                 WB_store_state,
-    output  reg                 WB_restore_state,
-    output  reg                 WB_flush_csr,
-    output  reg     [31: 0]     WB_flush_csr_pc
+    output  logic   [ 6: 0]     WB_ecode_in,
+    output  logic               WB_ecode_we,
+    output  logic   [31: 0]     WB_badv_in,
+    output  logic               WB_badv_we,
+    output  logic   [31: 0]     WB_era_in,
+    output  logic               WB_era_we,
+    output  logic               WB_era_en,
+    output  logic               WB_eentry_en,
+    output  logic               WB_store_state,
+    output  logic               WB_restore_state,
+    output  logic               WB_flush_csr,
+    output  logic   [31: 0]     WB_flush_csr_pc
 );
+logic   [31: 0]     MEM_mem_addr;
 logic   [13: 0]     MEM_csr_waddr;
 // logic   [31: 0]     MEM_csr_we;
 logic   [31: 0]     MEM_csr_wdata;
@@ -95,6 +100,8 @@ assign MEM_csr_we = MEM_csr_we_ori & {32{~MEM_br_a}};
 assign MEM_ertn = MEM_ertn_ori & ~MEM_br_a;
 assign MEM_ecode_we_b = MEM_ecode_we_b_ori & ~MEM_br_a;
 assign MEM_badv_we_b = MEM_badv_we_b_ori & ~MEM_br_a;
+assign MEM_badv_in_a = MEM_pc_a;
+assign MEM_badv_in_b = MEM_ecode_we_b & MEM_ecode_in_b==7'h8 ? MEM_pc_b : MEM_mem_addr;
 
 assign interrupt = ( MEM_a_enable | MEM_b_enable ) & (MEM_interrupt | MEM_interrupt_buf);
 
@@ -180,10 +187,11 @@ end
 
 always@(posedge clk) begin
     if(!stall_dcache&&!stall_ex)begin
+        MEM_mem_addr<=EX_mem_addr;
         MEM_csr_waddr<=EX_csr_waddr;
         MEM_csr_wdata<=EX_csr_wdata;
-        MEM_badv_in_a<=EX_badv_in_a;
-        MEM_badv_in_b<=EX_badv_in_b;
+        // MEM_badv_in_a<=EX_badv_in_a;
+        // MEM_badv_in_b<=EX_badv_in_b;
         MEM_ecode_in_b<=EX_ecode_in_bb;
         MEM_rdcntv<=EX_rdcntv;
         MEM_rdcntid<=EX_rdcntid;

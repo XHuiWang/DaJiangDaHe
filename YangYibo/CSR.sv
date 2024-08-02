@@ -517,7 +517,7 @@ always @(posedge clk)
         dmw1_mat<=0;
         dmw1_pseg<=0;
         dmw1_vseg<=0;
-    end else if(software_we&&addr==`CSR_DMW1) begin
+    end else if(software_we&&waddr==`CSR_DMW1) begin
         if(we[ 0]) dmw1_plv0    <=wdata[ 0];
         if(we[ 3]) dmw1_plv3    <=wdata[ 3];
         if(we[ 4]) dmw1_mat[ 0] <=wdata[ 4];
