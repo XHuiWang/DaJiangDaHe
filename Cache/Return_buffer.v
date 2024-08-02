@@ -39,7 +39,7 @@ module Return_buffer(
     end
 
     always @(*) begin
-        if(uncache_pipe) inst_from_retbuf = wdata[127:64];
+        if(uncache_pipe) inst_from_retbuf = w_data[127:64];
         else begin
             case(offset)
             2'b00: inst_from_retbuf = w_data[63:0];
