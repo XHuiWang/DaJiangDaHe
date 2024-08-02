@@ -171,9 +171,13 @@ always @(posedge clk)
         if(we[1]) crmd_plv[1]  <= wdata[1];
         if(we[2]) crmd_ie[2]   <= wdata[2];
         if(we[5]) crmd_datf[5] <= wdata[5];
+        else if (we[4]&wdata[4]) crmd_datf[5] <= 1;//当软件将 PG 置为 1 时，推荐同时将 DATF 域置为 0b01，即一致可缓存类型
         if(we[6]) crmd_datf[6] <= wdata[6];
+        else if (we[4]&wdata[4]) crmd_datf[6] <= 0;
         if(we[7]) crmd_datm[7] <= wdata[7];
+        else if (we[4]&wdata[4]) crmd_datm[7] <= 1;//当软件将 PG 置为 1 时，推荐同时将 DATM 置为 0b01，即一致可缓存类型
         if(we[8]) crmd_datm[8] <= wdata[8];
+        else if (we[4]&wdata[4]) crmd_datm[8] <= 0;
         //只在{pg,da}处在合法状态时更新
         if(we[3]||we[4]) begin
             if(pg_da_next[0]^pg_da_next[1])
