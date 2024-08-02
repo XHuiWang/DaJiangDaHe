@@ -89,8 +89,10 @@ module ex_mem_wb(
     output  reg     [31: 0]     WB_flush_csr_pc,    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
     
     //BR
-    input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
-    input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    // input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
+    // input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    input           [ 9: 0]     EX_br_type_a,       //A指令的分支类型
+    input           [ 9: 0]     EX_br_type_b,       //B指令的分支类型
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
     input           [31: 0]     EX_pc_pd_a,         //A指令的分支预测的跳转结果PC
@@ -223,7 +225,7 @@ logic   [31: 0]   MEM_rdcntid;
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
+assign  EX_mem_we_bb = ( /*EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn |*/ MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
@@ -542,17 +544,18 @@ assign EX_mem_rvalid = EX_wb_mux_select_b[1];
 assign EX_mem_wvalid = EX_mem_we;
 assign MEM_mem_ready = MEM_mem_rready | MEM_mem_wready;
 assign stall_dcache  = ~MEM_mem_ready;
-assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 |
-                        EX_mem_addr==32'hbfaf_8020 | EX_mem_addr==32'hbfaf_8030 |
-                        EX_mem_addr==32'hbfaf_8040 | EX_mem_addr==32'hbfaf_8050 |
-                        EX_mem_addr==32'hbfaf_8060 | EX_mem_addr==32'hbfaf_8070 |
-                        EX_mem_addr==32'hbfaf_f020 | EX_mem_addr==32'hbfaf_f030 |
-                        EX_mem_addr==32'hbfaf_f040 | EX_mem_addr==32'hbfaf_f050 |
-                        EX_mem_addr==32'hbfaf_f060 | EX_mem_addr==32'hbfaf_f070 |
-                        EX_mem_addr==32'hbfaf_f080 | EX_mem_addr==32'hbfaf_f090 |
-                        EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
-                        EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
-                        EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
+// assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 |
+//                         EX_mem_addr==32'hbfaf_8020 | EX_mem_addr==32'hbfaf_8030 |
+//                         EX_mem_addr==32'hbfaf_8040 | EX_mem_addr==32'hbfaf_8050 |
+//                         EX_mem_addr==32'hbfaf_8060 | EX_mem_addr==32'hbfaf_8070 |
+//                         EX_mem_addr==32'hbfaf_f020 | EX_mem_addr==32'hbfaf_f030 |
+//                         EX_mem_addr==32'hbfaf_f040 | EX_mem_addr==32'hbfaf_f050 |
+//                         EX_mem_addr==32'hbfaf_f060 | EX_mem_addr==32'hbfaf_f070 |
+//                         EX_mem_addr==32'hbfaf_f080 | EX_mem_addr==32'hbfaf_f090 |
+//                         EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
+//                         EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
+//                         EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
+assign EX_UnCache    = 1'b0;  //弃用，但保留接口
 always @(posedge clk) begin
   if(!rstn | WB_flush_csr)begin
     stall_dcache_buf <= 1'b0;

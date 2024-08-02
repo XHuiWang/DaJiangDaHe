@@ -7,8 +7,10 @@ module FU_BR(
     input           [31: 0]     EX_rf_rdata_b2_f,     //B指令的第二个寄存器的值
     input           [31: 0]     EX_imm_a,           //A指令的立即数
     input           [31: 0]     EX_imm_b,           //B指令的立即数
-    input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
-    input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    // input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
+    // input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    input           [ 9: 0]     EX_br_type_a,       //A指令的分支类型
+    input           [ 9: 0]     EX_br_type_b,       //B指令的分支类型
 
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转        
