@@ -93,8 +93,8 @@ module Icache(
         .clk    (clk),
         .rstn   (rstn),
         .en     (rbuf_we),
-        .d      (raddr,uncache),
-        .q      (addr,uncache_pipe)
+        .d      ({raddr,uncache}),
+        .q      ({addr,uncache_pipe})
     );
 
     TagV_mem TagV_mem1(
