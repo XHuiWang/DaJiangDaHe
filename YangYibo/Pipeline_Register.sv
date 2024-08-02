@@ -81,11 +81,15 @@ logic   [ 1: 0]     MEM_pd_type_a, MEM_pd_type_b;
 
 logic               MEM_rf_we_b_ori;    //尚未考虑A指令修正预测结果
 
-assign MEM_br = ( MEM_br_a | MEM_br_b ) & ( ~stall_dcache_buf & ~stall_ex_buf );
+logic               WB_flush_csr_buf;   //留存一级flush信号来抑制MEM段的关键信号
+
+assign MEM_br   = ( MEM_br_a | MEM_br_b ) & 
+    ( ~stall_dcache_buf & ~stall_ex_buf ) & ~WB_flush_csr_buf;
 assign MEM_pc_br = MEM_br_a ? MEM_pc_br_a : MEM_pc_br_b;
 
 assign MEM_pc_of_br = MEM_pd_type_a==2'b00 ? MEM_pc_b : MEM_pc_a;
-assign MEM_pd_type = (MEM_pd_type_a==2'b00 ? MEM_pd_type_b : MEM_pd_type_a) & {2{~stall_dcache_buf}}&{2{~stall_ex_buf}};
+assign MEM_pd_type = (MEM_pd_type_a==2'b00 ? MEM_pd_type_b : MEM_pd_type_a) & 
+    {2{~stall_dcache_buf}}&{2{~stall_ex_buf}} & ~WB_flush_csr_buf;
 assign MEM_br_target = MEM_pd_type_a==2'b00 ? MEM_pc_br_b_ori : MEM_pc_br_a_ori;
 assign MEM_br_jump = MEM_pd_type_a==2'b00 ? MEM_br_b_ori : MEM_br_a_ori;
 
@@ -155,6 +159,8 @@ always@(posedge clk) begin
         WB_rf_waddr_b<=MEM_rf_waddr_b;
         WB_rf_wdata_a<=MEM_rf_wdata_a;
         WB_rf_wdata_b<=MEM_rf_wdata_b;
+        
+        WB_flush_csr_buf<=WB_flush_csr;
     end
     else begin end
 end

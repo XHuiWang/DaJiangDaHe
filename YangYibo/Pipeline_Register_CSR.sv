@@ -88,10 +88,10 @@ logic               MEM_badv_we_b_ori;
 
 logic               WB_interrupt;   //interrupt留存一级，中断造成的WB_flush_csr应能够完全清空流水线
                                     //例外造成的WB_flush_csr，不能清除interrupt信号的传递
-logic   interrupt;  //本次MEM段有尚未处理的中断且可以处理  
+logic               interrupt;  //本次MEM段有尚未处理的中断且可以处理  
         //尚未处理的中断：包括新发来的MEM_interrupt和此前未处理的MEM_interrupt_buf
 
-assign MEM_b_enable = MEM_b_enable_ori & ~MEM_br_a;
+assign MEM_b_enable = MEM_b_enable_ori & ~MEM_br_a & ~WB_flush_csr;
 assign MEM_csr_we = MEM_csr_we_ori & {32{~MEM_br_a}}; 
 assign MEM_ertn = MEM_ertn_ori & ~MEM_br_a;
 assign MEM_ecode_we_b = MEM_ecode_we_b_ori & ~MEM_br_a;
