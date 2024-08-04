@@ -575,15 +575,15 @@ always @(posedge clk) begin
     MEM_mem_rdata_buf <= 32'h0;
     MEM_mem_rdata_valid <= 1'b1;
   end
-  else if((stall_dcache | stall_ex) & ~stall_dcache_buf & ~stall_ex_buf )begin
-    MEM_mem_rdata_buf <= MEM_mem_rdata;
-    MEM_mem_rdata_valid <= 1'b0;
-  end
-  else if(~stall_dcache & ~stall_ex)begin
+  else if(~stall_dcache & ~stall_ex)begin //无stall信号，流水线正常流动，原数据或保存的数据被使用，清空保存的数据
     MEM_mem_rdata_buf <= 32'h0;
     MEM_mem_rdata_valid <= 1'b1;
   end
-  else begin end
+  else if(MEM_wb_mux_select_b[1] & ~stall_dcache & MEM_mem_rdata_valid)begin  //MEM段B为LOAD，Dcache已准备好数据，并确认数据有效，保存数据
+    MEM_mem_rdata_buf <= MEM_mem_rdata;
+    MEM_mem_rdata_valid <= 1'b0;
+  end
+  else begin end  //流水线不能流动，已保存的数据还不能被使用，要继续保存
 end
 //debug interface
 assign debug0_wb_pc = WB_pc_b;
