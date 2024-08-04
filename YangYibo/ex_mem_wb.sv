@@ -163,6 +163,8 @@ logic               MEM_br_a;                       //在MEM段组合地抑制B�
 //Dcache
 logic               EX_mem_we;                      //内存写使能 由DCache考虑STORE指令的W/H/B分类
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
+logic   [31: 0]     MEM_mem_rdata_buf;              //Dcache读出的MEM_mem_rdata只能保持一个周期，需要保存
+logic               MEM_mem_rdata_valid;            //Dcache读出的MEM_mem_rdata有效, 常态为1, stall后为0
 
 // logic   [31: 0]     MEM_mem_rdata_orig;             //内存读数据，尚未考虑LOAD指令的W/B/H/BU/HU分类
 logic   [31: 0]     MEM_rf_wdata_a;                 //A指令寄存器写数据
@@ -236,7 +238,7 @@ assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
 assign  stall_ex = stall_mul | stall_div;
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
-assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata      )   | 
+assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&( MEM_mem_rdata_valid ? MEM_mem_rdata : MEM_mem_rdata_buf)  )   | 
                           ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) ) | 
                         ( ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem        )   |
                           ( {32{MEM_wb_mux_select_b[6]}}&MEM_rdcntv[31:0]   | {32{MEM_wb_mux_select_b[7]}}&MEM_rdcntv[63:32]  ) ) |
@@ -567,7 +569,22 @@ always @(posedge clk) begin
     stall_ex_buf <= stall_ex;
   end
 end
-
+//Dcache读数据保存
+always @(posedge clk) begin
+  if(!rstn | WB_flush_csr)begin
+    MEM_mem_rdata_buf <= 32'h0;
+    MEM_mem_rdata_valid <= 1'b1;
+  end
+  else if((stall_dcache | stall_ex) & ~stall_dcache_buf & ~stall_ex_buf )begin
+    MEM_mem_rdata_buf <= MEM_mem_rdata;
+    MEM_mem_rdata_valid <= 1'b0;
+  end
+  else if(~stall_dcache & ~stall_ex)begin
+    MEM_mem_rdata_buf <= 32'h0;
+    MEM_mem_rdata_valid <= 1'b1;
+  end
+  else begin end
+end
 //debug interface
 assign debug0_wb_pc = WB_pc_b;
 assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_ex_buf)}};
