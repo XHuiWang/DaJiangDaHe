@@ -27,10 +27,20 @@ module Miss_buffer_dcache(
     input       [19:0]    r_tagv1,
     input       [19:0]    r_tagv2,
     input                 mbuf_we,
+    input       [1:0]     hit,
+    input                 cacop_en_pipe,
+    input       [1:0]     cacop_code_pipe,
     output  reg [31:0]    d_awaddr_cache
     );
-    wire  [31:0]   d_waddr_temp;
-    assign d_waddr_temp = way_sel == 1'b1 ? {r_tagv2,address[11:4],4'b0} : {r_tagv1,address[11:4],4'b0};
+    reg  [31:0]   d_waddr_temp;
+    always @(*) begin
+        if(!cacop_en_pipe) d_waddr_temp = way_sel == 1'b1 ? {r_tagv2,address[11:4],4'b0} : {r_tagv1,address[11:4],4'b0};
+        else if(cacop_code_pipe == 2'b01) d_waddr_temp = address[0] == 1'b1 ? {r_tagv2,address[11:4],4'b0} : {r_tagv1,address[11:4],4'b0};
+        else begin
+            if(hit == 2'b01) d_waddr_temp = {r_tagv1,address[11:4],4'b0};
+            else d_waddr_temp = {r_tagv2,address[11:4],4'b0};
+        end
+    end
 
     always @(posedge clk)begin
         if(mbuf_we) d_awaddr_cache <= d_waddr_temp;

@@ -5,15 +5,16 @@ module Icache(
     input                   rstn,
     //from cpu
     input                   rvalid,
-    input       [31:0]      raddr,
+    input       [31:0]      pc,
     input                   Is_flush,
     input                   uncache,
-    //input                   uncache,
-    //cache操作
-    //input       [31:0]      icache_opcode,//cache操作
 
-    //0-正常访存 1-cache操作
-    //input                   icache_opflag, 
+    input                   cacop_en,
+    input       [1:0]       cacop_code,
+    input       [31:0]      cacop_va,
+    input       [31:0]      cacop_pa,
+    output                  cacop_finish,
+
 
     //to cpu
     output                  rready,
@@ -43,6 +44,7 @@ module Icache(
     );
 
     wire  [31:0]  addr ;
+    reg   [31:0]  raddr ;
     wire          rbuf_we ;
     wire  [1:0]  TagV_we ;
     wire  [1:0]  mem_we ;
@@ -70,15 +72,29 @@ module Icache(
     wire          miss_LRU_update ;
     wire          miss_lru_way ;
     wire          uncache_pipe ;
+    wire          cacop_en_pipe ;
+    wire  [1:0]   cacop_code_pipe ;
+
+    always @(*) begin
+        if(!cacop_en)  raddr = pc;
+        else if(cacop_code == 2'b10) raddr = cacop_pa;
+        else raddr = cacop_va;
+    end
 
     assign r_index = raddr[11:4];
     assign w_index = addr[11:4];
     assign Tag = addr[31:12];
-    assign hit1 = r_tagv1[0] & (Tag == r_tagv1[20:1]); // TODO: && !(Tag ^ r_tagv1[20:1])
+    assign hit1 = r_tagv1[0] & (Tag == r_tagv1[20:1]);
     assign hit2 = r_tagv2[0] & (Tag == r_tagv2[20:1]);
     assign hit = {hit2,hit1};
     assign offset = addr[3:2];
-    assign w_tagv = {addr[31:12],1'b1};
+
+    always @(*) begin
+        if(!cacop_en_pipe) w_tagv = {addr[31:12],1'b1};
+        else if(cacop_code_pipe == 2'b00) w_tagv = {20'b0, 1'b1};
+        else w_tagv = {20'b0,1'b0};
+    end
+
     assign i_arlen = uncache_pipe ? 8'd1 : 8'd3;
     assign flag_valid = offset == 2'b11 ? 0 : 1;
     assign data_valid = valid_reg;
@@ -88,13 +104,13 @@ module Icache(
         else if(rbuf_we) valid_reg <= rvalid;
     end
 
-    register# ( .WIDTH(33), .RST_VAL(0))
+    register# ( .WIDTH(36), .RST_VAL(0))
     request_buffer (              
         .clk    (clk),
         .rstn   (rstn),
         .en     (rbuf_we),
-        .d      ({raddr,uncache}),
-        .q      ({addr,uncache_pipe})
+        .d      ({raddr,uncache,cacop_en,cacop_code}),
+        .q      ({addr,uncache_pipe,cacop_en_pipe,cacop_code_pipe})
     );
 
     TagV_mem TagV_mem1(
@@ -170,6 +186,9 @@ module Icache(
         .addr (addr),
         .way_sel (way_sel),
         .uncache_pipe (uncache_pipe),
+        .cacop_en (cacop_en),
+        .cacop_code_pipe(cacop_code_pipe),
+        .cacop_finish(cacop_finish),
         .rready (rready),
         .i_arvalid (i_arvalid),
         .i_arready (i_arready),
