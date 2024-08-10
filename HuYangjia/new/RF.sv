@@ -30,6 +30,11 @@ module RF #(
     input       [ADDR_WIDTH -1:0]   waddr_a, waddr_b,                       //写地址
     input       [DATA_WIDTH -1:0]   wdata_a, wdata_b,                       //写数据
     input                           we_a,we_b                               //写使能
+    
+    `ifdef DIFFTEST_EN
+    , output logic [31: 0] regs[ 0:31]
+    `endif
+
 );
     reg [DATA_WIDTH -1:0]  rf [0:(1<<ADDR_WIDTH)-1];    //寄存器堆
     //异步读
@@ -46,4 +51,11 @@ module RF #(
         if (we_a && (!we_b || waddr_a!=waddr_b))     rf[waddr_a] <= wdata_a;
         if (we_b)                                    rf[waddr_b] <= wdata_b;
     end
+
+    `ifdef DIFFTEST_EN
+    always @(*) begin
+        regs = rf;
+    end
+    `endif
+    
 endmodule

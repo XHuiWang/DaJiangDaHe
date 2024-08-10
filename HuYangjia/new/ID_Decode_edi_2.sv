@@ -65,6 +65,7 @@ module ID_Decode_edi_2(
     logic [ 0: 0] ecode_we; // 用于异常处理的写曾经，表示已经修改过ecode_in
     logic [ 6: 0] ecode_out; // 用于异常处理的输出
     logic [ 0: 0] ecode_out_we; // 用于异常处理的输出写曾经，表示已经修改过ecode_out
+    logic [ 4: 0] code_for_cacop; // 用于cacop指令的code
 
     assign ecode_in = ecode[ 6: 0];
     assign ecode_we = ecode[ 7: 7];
@@ -97,6 +98,7 @@ module ID_Decode_edi_2(
     assign PC_set.csr_raddr = csr_raddr;
     assign PC_set.ecode_in = ecode_out;
     assign PC_set.ecode_we = ecode_out_we;
+    assign PC_set.code_for_cacop = code_for_cacop;
 
 
     // 对每一种指令的存在进行检测
@@ -165,6 +167,8 @@ module ID_Decode_edi_2(
     wire rdcntvl_inst;
     wire rdcntvh_inst;
 
+    wire cacop_inst;
+
 
     assign add_inst       = (IF_IR [31:15] == 17'h00020) ? 1'b1 : 1'b0;
     assign sub_inst       = (IF_IR [31:15] == 17'h00022) ? 1'b1 : 1'b0;
@@ -231,7 +235,10 @@ module ID_Decode_edi_2(
     assign rdcntvl_inst   = (IF_IR [31: 5] == 27'h0000300) ? 1'b1 : 1'b0;
     assign rdcntvh_inst   = (IF_IR [31: 5] == 27'h0000320) ? 1'b1 : 1'b0;
 
+    assign cacop_inst     = (IF_IR [31: 0] == 10'h018) ? 1'b1 : 1'b0;
 
+
+    // assign o_valid = data_valid & (~ ecode_out_we); // 有效的en不能是例外和异常
     assign o_valid = data_valid;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
                             sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
@@ -242,7 +249,7 @@ module ID_Decode_edi_2(
                             b_inst | bl_inst | jirl_inst | mul_inst | mulh_inst | mulhu_inst | 
                             div_inst | mod_inst | divu_inst | modu_inst | csrrd_inst | csrwr_inst |
                             csrxchg_inst | ertn_inst | break_inst | syscall_inst | rdcntid_inst | 
-                            rdcntvl_inst | rdcntvh_inst) ? 1'b1 : 1'b0;
+                            rdcntvl_inst | rdcntvh_inst | cacop_inst) ? 1'b1 : 1'b0;
 
 
     
@@ -281,12 +288,14 @@ module ID_Decode_edi_2(
     // 10'h010: 3 csr
     // 10'h020: 1 ertn
     // 10'h040: 3 rdcnt
+    // 10'h080: 1 cacop
     assign inst_type = (ld_inst | ldb_inst | ldh_inst |  ldbu_inst | ldhu_inst | st_inst | sth_inst | stb_inst) ? 10'h002 :
                        (mul_inst | mulh_inst | mulhu_inst) ? 10'h004 :
                        (div_inst | mod_inst | divu_inst | modu_inst) ? 10'h008 : 
                        ((csrrd_inst | csrwr_inst | csrxchg_inst) & ~(|plv)) ? 10'h010 :
                        (ertn_inst & ~(|plv)) ? 10'h020 :
                        (rdcntid_inst | rdcntvl_inst | rdcntvh_inst) ? 10'h040 :
+                       (cacop_inst) ? 10'h080 :
                        10'h001;
 
 
@@ -331,7 +340,7 @@ module ID_Decode_edi_2(
     assign imm_exist =  (slli_inst | srli_inst | srai_inst | slti_inst | sltui_inst | addi_inst | andi_inst | ori_inst |
                         xori_inst | lu12i_inst | pcaddu12i_inst | beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst |
                         bgeu_inst | jirl_inst | b_inst | bl_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | sth_inst | st_inst | ldbu_inst | 
-                        ldhu_inst) ? 1'b1 : 1'b0;  
+                        ldhu_inst | cacop_inst) ? 1'b1 : 1'b0;  
 
     assign imm =        (beq_inst | bne_inst | blt_inst | bge_inst | bltu_inst | bgeu_inst | jirl_inst) ? ({(IF_IR[25] == 1'b1 ? 14'h3fff: 14'd0), IF_IR[25:10], 2'h0}):
                         (b_inst | bl_inst) ? ({(IF_IR[9] == 1'b1 ? 4'hf : 4'd0), IF_IR[ 9: 0], IF_IR[25:10], 2'h0}) : 
@@ -339,7 +348,7 @@ module ID_Decode_edi_2(
                         // (lu12i_inst ) ? ({(IF_IR[24] == 1'b1 ? 12'hfff: 12'd0),IF_IR[24: 5]}) :
                         (lu12i_inst ) ? ({IF_IR[24: 5], 12'h000}) :
                         (pcaddu12i_inst ) ? ({IF_IR[24: 5], 12'h0}) :
-                        (slti_inst | sltui_inst | addi_inst ) ? ({(IF_IR[21] == 1'b1 ? 20'hfffff: 20'd0), IF_IR[21:10]}) :
+                        (slti_inst | sltui_inst | addi_inst | cacop_inst) ? ({(IF_IR[21] == 1'b1 ? 20'hfffff: 20'd0), IF_IR[21:10]}) :
                         (andi_inst | ori_inst   | xori_inst) ? ({20'd0, IF_IR[21:10]}) : 
                         (slli_inst | srli_inst | srai_inst) ? {27'd0 ,IF_IR[14:10]} : 0;
                         
@@ -349,7 +358,7 @@ module ID_Decode_edi_2(
                         csrwr_inst | csrxchg_inst) ? IF_IR[ 4: 0] : IF_IR[14:10];
     assign rf_rd = (bl_inst) ? 1 : (~rdcntid_inst) ? IF_IR[ 4: 0] : IF_IR[ 9: 5];
     assign rf_we =  ((~br_type_temp[0] & ~bl_inst & ~jirl_inst) | stb_inst | 
-                    sth_inst | st_inst |~data_valid | rf_rd == 0 | 
+                    sth_inst | st_inst |~data_valid | rf_rd == 0 | cacop_inst
                     (plv == 2'b11 && (csrwr_inst | csrxchg_inst | ertn_inst)) |
                     ~o_inst_lawful) ? 1'b0 : 1'b1;
     // TODO: 在Decoder检查目的寄存器是否为0，如果为0则不写回。那么是否可以可以在RF写回和前递的时候不检查相关内容
@@ -365,7 +374,7 @@ module ID_Decode_edi_2(
                           ~(csrrd_inst | csrwr_inst | csrxchg_inst) ? 4'h4 :  //4
                           4'h8; // csr_rdata
     assign alu_op = (add_inst | addi_inst | ld_inst | ldb_inst | ldh_inst | stb_inst | pcaddu12i_inst |
-                     sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst | lu12i_inst) ? 12'h001 :
+                     sth_inst | st_inst | ldbu_inst | ldhu_inst | bl_inst | jirl_inst | lu12i_inst | cacop_inst) ? 12'h001 :
                     (sub_inst | beq_inst | bne_inst) ? 12'h002 :
                     (slt_inst | slti_inst | blt_inst | bge_inst) ? 12'h004 :
                     (sltu_inst | sltui_inst | bltu_inst | bgeu_inst) ? 12'h008 :
@@ -378,13 +387,14 @@ module ID_Decode_edi_2(
                     (sra_inst | srai_inst) ? 12'h400 : 12'h800;
     assign mem_we = ((stb_inst | sth_inst | st_inst) & data_valid) ? 1'b1 : 1'b0;
     // assign mem_we = ((stb_inst | sth_inst | st_inst) & ID_status) ? 1'b1 : 1'b0;
-    // assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;               
+    // assign wb_sel = (ld_inst | ldb_inst | ldh_inst | ldbu_inst | ldhu_inst) ? 1'b1 : 1'b0;           
 
     assign csr_type = {3{~(|plv)}} &
                       (csrrd_inst  )   ? 3'h1 :
                       (csrwr_inst  )   ? 3'h2 :
                       (csrxchg_inst)   ? 3'h4 : 3'h0;
     assign csr_raddr = IF_IR[23:10];
+    assign code_for_cacop = IF_IR[ 4: 0];
 
     always @(*) begin
         if(ecode_we) begin

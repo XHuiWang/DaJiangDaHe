@@ -42,9 +42,9 @@ module Issue_dispatch(
     logic [ 4: 0] rf_waddr;
 
     logic [ 0: 0] double_BR;
-    logic [ 0: 0] double_LDSW;
-    logic [ 0: 0] LDSW_Mul_Div_csr_rdcnt_plus_any;
-    logic [ 0: 0] BR_exception_plus_LDST_prob;
+    logic [ 0: 0] signle_cacop; // 确定是否是两条指令有效的情况下，B是cacop
+    logic [ 0: 0] LDSW_Mul_Div_csr_rdcnt_cacop_plus_any;
+    logic [ 0: 0] BR_exception_plus_LDST_cacop_prob;
     // logic [ 0: 0] any_plus_LDSW;
     logic [ 0: 0] RAW_exist;
     logic [ 1: 0] ld_exist;
@@ -156,13 +156,13 @@ module Issue_dispatch(
                     end
                     else begin
                         // 都没有互锁现象
-                        if(LDSW_Mul_Div_csr_rdcnt_plus_any) begin
+                        if(LDSW_Mul_Div_csr_rdcnt_cacop_plus_any) begin
                             // 第一个指令只能发射在B位置
                             o_set1.o_valid = 1'b1;
                             o_set2.o_valid = 1'b0;
                             o_usingNUM = 2'd1;
                         end
-                        else if(double_BR | RAW_exist | BR_exception_plus_LDST_prob) begin
+                        else if(double_BR | signle_cacop | RAW_exist | BR_exception_plus_LDST_cacop_prob) begin
                             o_set1.o_valid = 1'b1;
                             o_set2.o_valid = 1'b0;
                             o_usingNUM = 2'd1;
@@ -190,12 +190,12 @@ module Issue_dispatch(
 
 
     assign double_BR     = (&is_valid) ? ( ~((i_set1.br_type[0])) && ~((i_set2.br_type[0]))) : 0; // 同时为BR，两个都不是全0
-    assign LDSW_Mul_Div_csr_rdcnt_plus_any = (&is_valid) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，3csr, ertn后任意
+    assign signle_cacop  = (&is_valid) ? (i_set2.inst_type == 10'h080) : 0; // B是cacop
+    assign LDSW_Mul_Div_csr_rdcnt_cacop_plus_any = (&is_valid) ? (i_set1.inst_type != 10'h001) : 0; // 前LDSW，Div， Mul，3csr, ertn, cacop后任意
     
 
-    assign double_LDSW   = (&is_valid ) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
     assign RAW_exist     = (&is_valid  && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
-    assign BR_exception_plus_LDST_prob  = (&is_valid) ? ((i_set2.mem_we) & ((~i_set1.br_type[0]) | i_set1.ecode_we)) : 0; // 前BR、例外后LDSW
+    assign BR_exception_plus_LDST_cacop_prob  = (&is_valid) ? ((i_set2.mem_we | i_set2.inst_type == 10'h080) & ((~i_set1.br_type[0]) | i_set1.ecode_we)) : 0; // 前BR、例外后LDSW
 
 
     assign lock_in_1     = (is_valid[1] & last_ld) ? (rf_waddr == i_set1.rf_raddr1) || (rf_waddr == i_set1.rf_raddr2) : 0; // LW和RDCNT与A指令互锁
