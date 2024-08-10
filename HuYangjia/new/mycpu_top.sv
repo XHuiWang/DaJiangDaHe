@@ -508,7 +508,7 @@ module mycpu_top(
     );
 
     inst_mmu_lite  inst_mmu_lite_inst (
-        .addr(pc_IF1),
+        .addr(EX_cacop_en_i == 1'b1 ? EX_cacop_va_i : pc_IF1 ),
         .plv(plv),
         .translate_mode(translate_mode),
         .direct_i_mat(direct_i_mat),
@@ -557,7 +557,7 @@ module mycpu_top(
         .cacop_en(EX_cacop_en_i), //
         .cacop_code(EX_cacop_code_i),
         .cacop_va(EX_cacop_va_i),
-        .cacop_pa(cacop_pa),
+        .cacop_pa(p_addr_IF1),
         .cacop_finish(EX_cacop_finish_i), //
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
@@ -1023,8 +1023,12 @@ module mycpu_top(
         .wvalid(EX_mem_wvalid),
         .uncache(uncache_d),
         .wdata(EX_mem_wdata),
-        .addr(p_addr_EX),
+        .paddr(p_addr_EX),
         .mem_type(EX_mem_type),
+        .cacop_en (EX_cacop_en_d),
+        .cacop_code (EX_cacop_code_d),
+        .cacop_va (EX_mem_addr),
+        .cacop_finish (EX_cacop_finish_d),
         .rdata(MEM_mem_rdata),
         .rready(MEM_mem_rready),
         .wready(MEM_mem_wready),
