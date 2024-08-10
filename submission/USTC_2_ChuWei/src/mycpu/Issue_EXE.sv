@@ -105,8 +105,10 @@ module Issue_EXE(
     output logic [ 0: 0] ecode_we_a,         //异常处理的写曾经，表示已经修改过ecode_in
     output logic [ 6: 0] ecode_in_b,         //异常处理的输入
     output logic [ 0: 0] ecode_we_b,         //异常处理的写曾经，表示已经修改过ecode_in
-    output logic [ 0: 0] ertn_check          //ertn检查
+    output logic [ 0: 0] ertn_check,         //ertn检查
 
+    output logic [ 4: 0] code_for_cacop,     //cacop指令的code
+    output logic [ 0: 0] cacop_en            //cacop指令的使能
     );
 
     logic [ 0: 0] flush;
@@ -190,6 +192,7 @@ module Issue_EXE(
             ecode_in_b        <= 7'h00;
             ecode_we_b        <= 1'b0;
             EX_tid            <= 32'h0000_0000;
+            code_for_cacop    <= 5'h00;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -239,6 +242,7 @@ module Issue_EXE(
             ecode_in_b        <= ecode_in_b;
             ecode_we_b        <= ecode_we_b;
             EX_tid            <= EX_tid;
+            code_for_cacop    <= code_for_cacop;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -289,6 +293,8 @@ module Issue_EXE(
                 ecode_in_b        <= i_set1.ecode_in & {7{Issue_a_enable}};
                 ecode_we_b        <= i_set1.ecode_we & Issue_a_enable;
                 EX_tid            <= csr_tid;
+                code_for_cacop    <= i_set1.code_for_cacop;
+                cacop_en          <= (i_set1.inst_type == 10'h080) & Issue_a_enable;
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -339,6 +345,8 @@ module Issue_EXE(
                 ecode_in_b        <= i_set2.ecode_in & {7{Issue_b_enable}};
                 ecode_we_b        <= i_set2.ecode_we & Issue_b_enable;
                 EX_tid            <= csr_tid;
+                code_for_cacop    <= i_set2.code_for_cacop;
+                cacop_en          <= (i_set2.inst_type == 10'h080) & Issue_b_enable;
             end
         end
     end

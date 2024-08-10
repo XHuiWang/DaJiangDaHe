@@ -238,6 +238,7 @@ module ID_Decode_edi_2(
     assign cacop_inst     = (IF_IR [31: 0] == 10'h018) ? 1'b1 : 1'b0;
 
 
+    // assign o_valid = data_valid & (~ ecode_out_we); // 有效的en不能是例外和异常
     assign o_valid = data_valid;
     assign o_inst_lawful = (add_inst | sub_inst | addi_inst | lu12i_inst | pcaddu12i_inst | slt_inst | 
                             sltu_inst | slti_inst | sltui_inst | and_inst | or_inst | nor_inst | 
