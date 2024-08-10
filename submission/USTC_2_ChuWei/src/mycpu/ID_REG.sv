@@ -122,6 +122,7 @@ module ID_REG (
     assign error_set.csr_raddr = 14'd0;
     assign error_set.ecode_in = 7'd0;
     assign error_set.ecode_we = 1'b0;
+    assign error_set.code_for_cacop = 5'd0;
 
 
 
