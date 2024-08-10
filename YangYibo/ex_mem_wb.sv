@@ -112,7 +112,7 @@ module ex_mem_wb(
     input           [ 4: 0]     EX_cacop_code,        //cacop指令的code码
     input                       EX_cacop_finish_i,    //I_CACOP指令是否完成，作为stall解除信号
     input                       EX_cacop_finish_d,    //D_CACOP指令是否完成，作为stall解除信号
-    output  logic               stall_cacop,          //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
+    // output  logic               stall_cacop,          //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
     output  logic               EX_cacop_en_i,        //EX段B指令是否是有效I_CACOP指令
     output  logic               EX_cacop_en_d,        //EX段B指令是否是有效D_CACOP指令
     output  logic   [ 1: 0]     EX_cacop_code_i,      //EX_cacop_code[4:3]
@@ -187,6 +187,7 @@ logic               stall_dcache;                   //~MEM_mem_ready
 logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
 logic               stall_mul;                      //乘法器暂停信号
 logic               stall_div;                      //除法器暂停信号
+logic               stall_cacop;                    //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
 logic               stall_ex_buf;                   //乘除法暂停信号保留一级
 
 //CSR读写
