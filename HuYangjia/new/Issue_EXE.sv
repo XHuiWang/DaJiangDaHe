@@ -46,7 +46,7 @@ module Issue_EXE(
     // stall&flush
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_DCache,
-    input [ 0: 0] stall_div,
+    input [ 0: 0] stall_EX,
 
     output logic [ 0: 0] EX_a_enable,        //A指令是否有效
     output logic [ 0: 0] EX_b_enable,        //B指令是否有效
@@ -114,7 +114,7 @@ module Issue_EXE(
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
     assign flush = flush_BR;
-    assign stall = stall_DCache | stall_div;
+    assign stall = stall_DCache | stall_EX;
 
     logic [ 0: 0] Issue_a_enable;
     logic [ 0: 0] Issue_b_enable;

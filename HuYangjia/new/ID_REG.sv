@@ -39,7 +39,7 @@ module ID_REG (
     // stall&flush
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_DCache,
-    input [ 0: 0] stall_div,
+    input [ 0: 0] stall_EX,
 
 
     output PC_set o_PC_set1,
@@ -64,7 +64,7 @@ module ID_REG (
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
     assign flush = flush_BR;
-    assign stall = stall_DCache | stall_div;
+    assign stall = stall_DCache | stall_EX;
 
 
     PC_set PC_set_Buffer[NUM];

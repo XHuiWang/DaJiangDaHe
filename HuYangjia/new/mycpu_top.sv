@@ -400,6 +400,21 @@ module mycpu_top(
     logic [ 0: 0]     WB_restore_state;   //从例外恢复，plv=pplv；ie=pie
     logic [ 0: 0]     WB_flush_csr;       //因任何原因写CSR时，清空流水线
     logic [31: 0]     WB_flush_csr_pc;    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
+
+
+
+
+    // for cacop
+    logic [ 0: 0]     EX_cacop_en;     
+    logic [ 4: 0]     EX_cacop_code;   
+    logic [ 0: 0]     EX_cacop_finish_i;
+    logic [ 0: 0]     EX_cacop_finish_d; 
+    logic [ 0: 0]     EX_cacop_en_i;   
+    logic [ 0: 0]     EX_cacop_en_d;   
+    logic [ 1: 0]     EX_cacop_code_i; 
+    logic [ 1: 0]     EX_cacop_code_d;
+    logic [31: 0]     EX_cacop_va_i;   
+
     
     // stall && flush
     logic [ 0: 0] stall_DCache; // 由于Dcache缺失带来的逻辑的stall信号，只作用于issue Buffer
@@ -408,7 +423,7 @@ module mycpu_top(
     logic [ 0: 0] stall_full_instr; // 由于Instruction Buffer满带来的stall信号，作用于IF1
     logic [ 0: 0] stall_ICache; // 由于Icache缺失带来的逻辑的stall信号，作用于IF1的取值模块和IF1_IF2段间寄存器
     logic [ 0: 0] stall_iCache; // 由于Icache缺失带来的真正的stall信号
-    logic [ 0: 0] stall_ex;// 由于除法器和乘法器忙带来的stall信号
+    logic [ 0: 0] stall_ex;// 由于除法器和乘法器忙带来的stall信号 现在增加了cacop的stall
     logic [ 0: 0] flush_BR; // 由于分支预测错误带来的flush信号，作用于两个Buffer和IF1_IF2段间寄存器，作用于ICache(在Miss则停止操作)
     logic [ 0: 0] flush_of_ALL; // 由于任何原因带来的flush信号，作用于所有段间寄存器
 
@@ -682,7 +697,7 @@ module mycpu_top(
         .i_usingNUM(i_usingNUM),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
-        .stall_div(stall_ex),
+        .stall_EX(stall_ex),
         .o_PC_set1(PC_set1_back),
         .o_PC_set2(PC_set2_back),
         .a_rf_raddr1(raddr_a1),
@@ -793,7 +808,7 @@ module mycpu_top(
         .csr_tid(csr_tid),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
-        .stall_div(stall_ex),
+        .stall_EX(stall_ex),
         .EX_a_enable(EX_a_enable),
         .EX_b_enable(EX_b_enable),
         .type_predict_a(type_predict_a),
@@ -842,7 +857,9 @@ module mycpu_top(
         .ecode_we_a(EX_ecode_we_a),
         .ecode_in_b(EX_ecode_in_b),
         .ecode_we_b(EX_ecode_we_b),
-        .ertn_check(EX_ertn)
+        .ertn_check(EX_ertn),
+        .code_for_cacop(EX_cacop_code),
+        .cacop_en(EX_cacop_en)
     );
 
     ex_mem_wb  ex_mem_wb_inst (
@@ -934,6 +951,17 @@ module mycpu_top(
         .MEM_pd_type(branch_br_type),
         .MEM_br_target(branch_br_target),
         .MEM_br_jump(branch_jump),
+        // cacop
+        .EX_cacop_en(EX_cacop_en),
+        .EX_cacop_code(EX_cacop_code),
+        .EX_cacop_finish_i(EX_cacop_finish_i),
+        .EX_cacop_finish_d(EX_cacop_finish_d),
+        .EX_cacop_en_i(EX_cacop_en_i),
+        .EX_cacop_en_d(EX_cacop_en_d),
+        .EX_cacop_code_i(EX_cacop_code_i),
+        .EX_cacop_code_d(EX_cacop_code_d),
+        .EX_cacop_va_i(EX_cacop_va_i),
+
         .EX_UnCache(EX_UnCache),
         .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_we(debug0_wb_rf_we),
