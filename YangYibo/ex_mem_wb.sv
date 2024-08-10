@@ -107,6 +107,18 @@ module ex_mem_wb(
     output          [31: 0]     MEM_br_target,       //分支指令原本的目标地址
     output                      MEM_br_jump,         //分支指令原本是否跳转     
 
+    //CACOP
+    input                       EX_cacop_en,          //是否是cacop指令 单发B指令
+    input           [ 4: 0]     EX_cacop_code,        //cacop指令的code码
+    input                       EX_cacop_finish_i,    //I_CACOP指令是否完成，作为stall解除信号
+    input                       EX_cacop_finish_d,    //D_CACOP指令是否完成，作为stall解除信号
+    output  logic               stall_cacop,          //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
+    output  logic               EX_cacop_en_i,        //EX段B指令是否是有效I_CACOP指令
+    output  logic               EX_cacop_en_d,        //EX段B指令是否是有效D_CACOP指令
+    output  logic   [ 1: 0]     EX_cacop_code_i,      //EX_cacop_code[4:3]
+    output  logic   [ 1: 0]     EX_cacop_code_d,      //EX_cacop_code[4:3]
+    output  logic   [31: 0]     EX_cacop_va_i,        //EX_alu_result_b[31:0] / EX_mem_addr[31:0]
+
     //UnCache
     output  wire                EX_UnCache,         //是否在访问外设
     //Debug
@@ -235,7 +247,7 @@ assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
 
 assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
 //乘除法暂停信号
-assign  stall_ex = stall_mul | stall_div;
+assign  stall_ex = stall_mul | stall_div | stall_cacop; //尝试加入cacop暂停信号，已接受finish抑制处理
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
 assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&( MEM_mem_rdata_valid ? MEM_mem_rdata : MEM_mem_rdata_buf)  )   | 
@@ -253,6 +265,16 @@ assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {3
 // 9'b0_0100_0000: RDCNTVL.W 取低32位
 // 9'b0_1000_0000: RDCNTVH.W 取高32位
 // 9'b1_0000_0000: RDCNTID
+
+//CACOP
+assign  stall_cacop   = (EX_cacop_finish_i | EX_cacop_finish_d| EX_ecode_we_b | 
+    EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr)
+    ?1'b0:EX_cacop_en;
+assign  EX_cacop_en_i = stall_cacop & EX_cacop_code[0];
+assign  EX_cacop_en_d = stall_cacop & EX_cacop_code[1];
+assign  EX_cacop_code_i = EX_cacop_code[4:3];
+assign  EX_cacop_code_d = EX_cacop_code[4:3];
+assign  EX_cacop_va_i = EX_alu_result_b;
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
     .EX_rf_rdata_a2(EX_rf_rdata_a2),
