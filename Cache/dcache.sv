@@ -132,7 +132,7 @@ module dcache(
     //产生w_tagdv的逻辑
     always @(*) begin
         if(!cacop_en_pipe) w_tagdv = {address[31:12],(wvalid_pipe == 1'b1 ? 1'b1:1'b0),1'b1};
-        else if(cacop_code_pipe == 2'b00) w_tagdv = {20'b0, 1'b0, 1'b1};
+        else if(cacop_code_pipe == 2'b00) w_tagdv = {20'b0, 1'b0, 1'b0};
         else w_tagdv = {20'b0, 1'b0, 1'b0};
     end
 

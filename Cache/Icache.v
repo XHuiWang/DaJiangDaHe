@@ -91,7 +91,7 @@ module Icache(
 
     always @(*) begin
         if(!cacop_en_pipe) w_tagv = {addr[31:12],1'b1};
-        else if(cacop_code_pipe == 2'b00) w_tagv = {20'b0, 1'b1};
+        else if(cacop_code_pipe == 2'b00) w_tagv = {20'b0, 1'b0};
         else w_tagv = {20'b0,1'b0};
     end
 
