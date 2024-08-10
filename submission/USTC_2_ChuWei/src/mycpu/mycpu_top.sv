@@ -713,39 +713,12 @@ module mycpu_top(
         .wdata_a(WB_rf_wdata_a),
         .wdata_b(WB_rf_wdata_b),
         .we_a(WB_rf_we_a),
-        .we_b(WB_rf_we_b),
-        .regs1(regs[1]),
-        .regs2(regs[2]),
-        .regs3(regs[3]),
-        .regs4(regs[4]),
-        .regs5(regs[5]),
-        .regs6(regs[6]),
-        .regs7(regs[7]),
-        .regs8(regs[8]),
-        .regs9(regs[9]),
-        .regs10(regs[10]),
-        .regs11(regs[11]),
-        .regs12(regs[12]),
-        .regs13(regs[13]),
-        .regs14(regs[14]),
-        .regs15(regs[15]),
-        .regs16(regs[16]),
-        .regs17(regs[17]),
-        .regs18(regs[18]),
-        .regs19(regs[19]),
-        .regs20(regs[20]),
-        .regs21(regs[21]),
-        .regs22(regs[22]),
-        .regs23(regs[23]),
-        .regs24(regs[24]),
-        .regs25(regs[25]),
-        .regs26(regs[26]),
-        .regs27(regs[27]),
-        .regs28(regs[28]),
-        .regs29(regs[29]),
-        .regs30(regs[30]),
-        .regs31(regs[31])
+        .we_b(WB_rf_we_b)
+        `ifdef DIFFTEST
+        ,.regs(regs)
+        `endif
     );
+
    
     CSR  CSR_inst (
         .clk(clk),
