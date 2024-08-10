@@ -527,13 +527,38 @@ module mycpu_top(
     );
 
 
+    // Icache  Icache_inst (
+    //     .clk(clk),
+    //     .rstn(rstn),
+    //     .rvalid(is_valid & ~(IF1_ecode[7])),
+    //     .raddr(p_addr_IF1),
+    //     .uncache(uncache_i),
+    //     .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
+    //     .rready(stall_iCache), // 1-> normal, 0-> stall
+    //     .rdata({i_IR2, i_IR1}),
+    //     .flag_valid(ICache_valid),
+    //     .data_valid(data_valid),
+    //     .i_rready (i_axi_rready),
+    //     .i_rvalid (i_axi_rvalid),
+    //     .i_rdata (i_axi_rdata),
+    //     .i_rlast (i_axi_rlast),
+    //     .i_arvalid (i_axi_arvalid),
+    //     .i_araddr (i_axi_araddr),
+    //     .i_arready (i_axi_arready),
+    //     .i_arlen (i_axi_arlen)
+    // );
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
         .rvalid(is_valid & ~(IF1_ecode[7])),
-        .raddr(p_addr_IF1),
+        .pc(p_addr_IF1),
+        .Is_flush(flush_of_ALL | BR_predecoder),
         .uncache(uncache_i),
-        .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
+        .cacop_en(EX_cacop_en_i), //
+        .cacop_code(EX_cacop_code_i),
+        .cacop_va(EX_cacop_va_i),
+        .cacop_pa(cacop_pa),
+        .cacop_finish(EX_cacop_finish_i), //
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
         .flag_valid(ICache_valid),
@@ -546,8 +571,7 @@ module mycpu_top(
         .i_araddr (i_axi_araddr),
         .i_arready (i_axi_arready),
         .i_arlen (i_axi_arlen)
-    );
-
+      );
     logic [ 0: 0] data_reg;
     logic [31: 0] IR1_reg;
     logic [31: 0] IR2_reg;
