@@ -86,7 +86,6 @@ module ID1_ID2_edi2(
     // 一些代表IO状态的信号
     logic [ 0: 0] Input_status;  // 0->a, 1->b,0代表首先要传向A通道
     logic [ 0: 0] Output_status; // 0->a, 1->b,0代表首先要从A通道取
-    logic [ 0: 0] o_is_valid_temp; // 指示由于flush信号带来的o_is_valid的变化
 
     // 使用数组循环队列实现
     logic [31: 0] a_PC_Buffer[0:NUM-1];
@@ -189,6 +188,15 @@ module ID1_ID2_edi2(
             b_head <= 0;
             b_tail <= 0;
             b_length_left <= 0;
+
+            o_PC1 <= 32'h0000_0000;
+            o_IR1 <= 32'h0000_0000;
+            o_PC2 <= 32'h0000_0000;
+            o_IR2 <= 32'h0000_0000;
+            o_brtype_pcpre_1 <= 34'h0_0000_0000;
+            o_brtype_pcpre_2 <= 34'h0_0000_0000;
+            o_ecode_1 <= 8'h00;
+            o_ecode_2 <= 8'h00;
 
             for(integer i = 0; i < NUM; i++) begin
                 a_PC_Buffer[i] <= 32'h0000_0000;
@@ -322,48 +330,35 @@ module ID1_ID2_edi2(
         end
     end
 
-    // o_is_valid_temp的确定
-    always @(posedge clk) begin
-        if( !rstn ) begin
-            o_is_valid_temp <= 0;
-        end
-        else if(flush) begin
-            o_is_valid_temp <= 0;
-        end
-        else begin
-            o_is_valid_temp <= 1;
-        end
-    end
-
     // o_is_full
     assign o_is_full = (a_is_full | b_is_full) ? 1'b1 : 1'b0;
 
     // o_is_valid 是否有效
-    assign o_is_valid = ((|a_length) ? (|b_length) ? 2'b11 : 2'b10 : (|b_length) ? 2'b10 : 2'b00) & {2{o_is_valid_temp}} & {2{~stall}};
+    assign o_is_valid = (|a_length) ? (|b_length) ? 2'b11 : 2'b10 : (|b_length) ? 2'b10 : 2'b00;
 
     // 输出
     always @(*) begin
         if(~Output_status) begin
             // 从A通道取
-            o_PC1 = a_tail_PC;
-            o_IR1 = a_tail_IR;
-            o_brtype_pcpre_1 = a_tail_brtype_pcpre;
-            o_ecode_1 = a_tail_ecode;
-            o_PC2 = b_tail_PC;
-            o_IR2 = b_tail_IR;
-            o_brtype_pcpre_2 = b_tail_brtype_pcpre;
-            o_ecode_2 = b_tail_ecode;
+            o_PC1 <= a_tail_PC;
+            o_IR1 <= a_tail_IR;
+            o_brtype_pcpre_1 <= a_tail_brtype_pcpre;
+            o_ecode_1 <= a_tail_ecode;
+            o_PC2 <= b_tail_PC;
+            o_IR2 <= b_tail_IR;
+            o_brtype_pcpre_2 <= b_tail_brtype_pcpre;
+            o_ecode_2 <= b_tail_ecode;
         end
         else begin
             // 从B通道取
-            o_PC1 = b_tail_PC;
-            o_IR1 = b_tail_IR;
-            o_brtype_pcpre_1 = b_tail_brtype_pcpre;
-            o_ecode_1 = b_tail_ecode;
-            o_PC2 = a_tail_PC;
-            o_IR2 = a_tail_IR;
-            o_brtype_pcpre_2 = a_tail_brtype_pcpre;
-            o_ecode_2 = a_tail_ecode;
+            o_PC1 <= b_tail_PC;
+            o_IR1 <= b_tail_IR;
+            o_brtype_pcpre_1 <= b_tail_brtype_pcpre;
+            o_ecode_1 <= b_tail_ecode;
+            o_PC2 <= a_tail_PC;
+            o_IR2 <= a_tail_IR;
+            o_brtype_pcpre_2 <= a_tail_brtype_pcpre;
+            o_ecode_2 <= a_tail_ecode;
         end    
     end
 

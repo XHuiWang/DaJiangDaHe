@@ -142,7 +142,7 @@ module Issue_EXE(
     
 
     always @(posedge clk) begin
-        if( !rstn ) begin
+        if( !rstn | flush) begin
             EX_pc_a           <= 32'h0000_0000;
             EX_pc_b           <= 32'h0000_0000;
             EX_rf_raddr_a1    <= 5'h00;

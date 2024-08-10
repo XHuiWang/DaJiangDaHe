@@ -101,7 +101,7 @@ module IF2_PreDecoder(
                 weither_to_flush = ~(PC_right);
             end
             else begin
-                if(!(PC_pre_already ^ PC_plus_4)) begin
+                if(!(PC_pre_already ^ PC_plus_4) | !type_predict) begin
                     weither_to_flush = 1'b0;
                 end
                 else begin
@@ -127,9 +127,33 @@ module IF2_PreDecoder(
     //                            PC_pre(when predict jump and addr right, and there won't change it)
     //                            PC_pre or PC + 4(when predict jump and addr wrong, and there will change it)
     // not BR,but predict jump: PC + 4
-    assign PC_fact = ~(b_inst | bl_inst | jirl_inst) ? (weither_to_flush ? (PC_pre < PC && ((beq_inst | bne_inst | blt_inst) | (bge_inst | bltu_inst | bgeu_inst)))? PC_pre : PC_plus_4 : PC_pre_already) : (jirl_inst ? PC_pre_already : PC_pre);
+    // assign PC_fact = ~(b_inst | bl_inst | jirl_inst) ? (weither_to_flush ? (PC_pre < PC && ((beq_inst | bne_inst | blt_inst) | (bge_inst | bltu_inst | bgeu_inst)))? PC_pre : PC_plus_4 :  PC_pre_already) : (jirl_inst ? PC_pre_already : PC_pre);
     assign o_valid = weither_to_flush;
     assign type_pcpre = {br_type, PC_fact};
 
+    always @(*) begin
+        if(b_inst | bl_inst) begin
+            PC_fact = PC_pre;
+        end
+        else if(jirl_inst) begin
+            PC_fact = PC_pre_already;
+        end
+        else if((beq_inst | bne_inst | blt_inst) | (bge_inst | bltu_inst | bgeu_inst)) begin
+            if(weither_to_flush) begin
+                if(PC_pre < PC) begin
+                    PC_fact = PC_pre;
+                end
+                else begin
+                    PC_fact = PC_plus_4;
+                end
+            end
+            else begin
+                PC_fact = PC_pre_already;
+            end
+        end
+        else begin
+            PC_fact = PC_plus_4;
+        end
+    end
 
 endmodule

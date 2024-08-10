@@ -213,7 +213,7 @@ module ID_REG (
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end
-        else if(length_left >= NUM - 6) begin
+        else if(length_left >= NUM - 8) begin
             o_is_full <= 1'b1;
         end
         else begin

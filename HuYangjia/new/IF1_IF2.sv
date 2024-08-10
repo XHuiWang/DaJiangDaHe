@@ -47,6 +47,7 @@ module IF1_IF2(
 
     output logic [ 0: 0] o_signFor_ADEF_ALE,
 
+
     output logic [ 1: 0] o_is_valid
     );
 
@@ -61,9 +62,9 @@ module IF1_IF2(
         if( !rstn ) begin
             o_is_valid_temp <= 2'b00;
         end
-        // else if(flush) begin
-        //     o_is_valid_temp <= 2'b00;
-        // end
+        else if(flush) begin
+            o_is_valid_temp <= 2'b00;
+        end
         else if(stall) begin
             o_is_valid_temp <= o_is_valid_temp;
         end
@@ -73,6 +74,7 @@ module IF1_IF2(
     end
     assign o_is_valid = o_is_valid_temp & {2{~flush}} & {2{~stall}};
     assign o_signFor_ADEF_ALE = (|o_is_valid_temp) & o_ecode_1[7];
+
     always @(posedge clk) begin
         if(stall) begin
             o_PC1 <= o_PC1;

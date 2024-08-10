@@ -25,6 +25,8 @@ module Issue_dispatch(
     input PC_set i_set1,
     input PC_set i_set2,
     input [ 1: 0] i_is_valid,
+    input [ 0: 0] stall,
+    input [ 0: 0] flush,
 
 
     output PC_set o_set1,
@@ -47,6 +49,7 @@ module Issue_dispatch(
     logic [ 0: 0] RAW_exist;
     logic [ 1: 0] ld_exist;
     logic [ 1: 0] rdcnt_exist;
+    logic [ 1: 0] mul_div_exist;
     logic [ 0: 0] lock_in_1;
     logic [ 0: 0] lock_in_2;
 
@@ -180,6 +183,8 @@ module Issue_dispatch(
     assign ld_exist[0] = (o_usingNUM == 2'd2) & ~o_set2.ldst_type[3];
     assign rdcnt_exist[1] = (o_usingNUM != 2'd0) & o_set1.inst_type[6];
     assign rdcnt_exist[0] = (o_usingNUM == 2'd2) & o_set2.inst_type[6];
+    assign mul_div_exist[1] = (o_usingNUM != 2'd0) & (o_set1.inst_type[2] | o_set1.inst_type[3]);
+    assign mul_div_exist[0] = (o_usingNUM == 2'd2) & (o_set2.inst_type[2] | o_set2.inst_type[3]);
     
     // &is_valid <==> is_valid == 2'b11 
 
@@ -190,7 +195,7 @@ module Issue_dispatch(
 
     assign double_LDSW   = (&is_valid ) ? ( ~((i_set1.ldst_type[3]) | (i_set2.ldst_type[3])) ) : 0; // 同时为LDSW，最高位都是0
     assign RAW_exist     = (&is_valid  && i_set1.rf_rd != 0) ? ( (i_set1.rf_rd == i_set2.rf_raddr1) || (i_set1.rf_rd == i_set2.rf_raddr2) ) : 0; // 前rd=后rf,且rd = 0
-    assign BR_exception_plus_LDST_prob  = (&is_valid) ? ((i_set2.mem_we) & ~((i_set1.br_type[0]) | i_set1.ecode_we)) : 0; // 前BR、例外后LDSW
+    assign BR_exception_plus_LDST_prob  = (&is_valid) ? ((i_set2.mem_we) & ((~i_set1.br_type[0]) | i_set1.ecode_we)) : 0; // 前BR、例外后LDSW
 
 
     assign lock_in_1     = (is_valid[1] & last_ld) ? (rf_waddr == i_set1.rf_raddr1) || (rf_waddr == i_set1.rf_raddr2) : 0; // LW和RDCNT与A指令互锁
@@ -198,8 +203,18 @@ module Issue_dispatch(
 
 
     always @(posedge clk) begin
-        last_ld <= (|ld_exist) | (|rdcnt_exist);
-        rf_waddr <= (ld_exist[1] | rdcnt_exist[1]) ? i_set1.rf_rd : i_set2.rf_rd;
+        if(flush) begin
+            last_ld <= 1'b0;
+            rf_waddr <= 5'd0;
+        end
+        else if( stall ) begin
+            last_ld <= last_ld;
+            rf_waddr <= rf_waddr;
+        end
+        else begin
+            last_ld <= (|ld_exist) | (|rdcnt_exist) | (|mul_div_exist);
+            rf_waddr <= (ld_exist[1] | rdcnt_exist[1] | mul_div_exist[1]) ? i_set1.rf_rd : i_set2.rf_rd;
+        end
     end
 
 

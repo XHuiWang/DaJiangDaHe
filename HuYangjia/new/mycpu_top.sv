@@ -2,8 +2,8 @@
 `include "Public_Info.sv"
 import Public_Info::*;
 module mycpu_top(
-    input           clk,
-    input           rstn,
+    input           aclk,
+    input           aresetn,
     input    [ 7:0] ext_int, 
     //AXI interface 
     //read reqest
@@ -50,16 +50,29 @@ module mycpu_top(
 
 
     //debug interface
-    output logic [31: 0] debug0_wb_pc,
-    output logic [ 3: 0] debug0_wb_rf_we,
-    output logic [ 4: 0] debug0_wb_rf_wnum,
-    output logic [31: 0] debug0_wb_rf_wdata,
+    output logic [31: 0] debug_wb_pc,
+    output logic [ 3: 0] debug_wb_rf_we,
+    output logic [ 4: 0] debug_wb_rf_wnum,
+    output logic [31: 0] debug_wb_rf_wdata
 
-    output logic [31: 0] debug1_wb_pc,
-    output logic [ 3: 0] debug1_wb_rf_we,
-    output logic [ 4: 0] debug1_wb_rf_wnum,
-    output logic [31: 0] debug1_wb_rf_wdata
 );
+    wire clk, rstn;
+    assign clk = aclk;
+    assign rstn = aresetn;
+
+    logic [31: 0] debug0_wb_pc;
+    logic [ 3: 0] debug0_wb_rf_we;
+    logic [ 4: 0] debug0_wb_rf_wnum;
+    logic [31: 0] debug0_wb_rf_wdata;
+
+    logic [31: 0] debug1_wb_pc;
+    logic [ 3: 0] debug1_wb_rf_we;
+    logic [ 4: 0] debug1_wb_rf_wnum;
+    logic [31: 0] debug1_wb_rf_wdata;
+    assign debug_wb_pc = debug0_wb_pc;
+    assign debug_wb_rf_we = debug0_wb_rf_we;
+    assign debug_wb_rf_wnum = debug0_wb_rf_wnum;
+    assign debug_wb_rf_wdata = debug0_wb_rf_wdata;
     
     
     PC_set PC_set1_front;
@@ -75,6 +88,8 @@ module mycpu_top(
     logic [31: 0] pc_IF1;
     logic [ 0: 0] is_valid;
     logic [ 7: 0] IF1_ecode;
+    logic [31: 0] p_addr_IF1;
+    logic [ 0: 0] uncache_i;
   
     // ICache
     logic [ 0: 0] ICache_valid;
@@ -186,6 +201,16 @@ module mycpu_top(
     logic [ 1: 0] translate_mode;
     logic [ 1: 0] direct_i_mat;
     logic [ 1: 0] direct_d_mat;
+    logic [ 0: 0] dmw0_plv0;
+    logic [ 0: 0] dmw0_plv3;
+    logic [ 0: 0] dmw1_plv0;
+    logic [ 0: 0] dmw1_plv3;
+    logic [ 1: 0] dmw0_mat;
+    logic [ 1: 0] dmw1_mat;
+    logic [ 2: 0] dmw0_vseg;
+    logic [ 2: 0] dmw0_pseg;
+    logic [ 2: 0] dmw1_vseg;
+    logic [ 2: 0] dmw1_pseg;
     logic [ 7: 0] hardware_int; // 外界输入，现在赋值0
     logic [ 0: 0] MEM_interrupt;
     assign hardware_int = 8'b0;
@@ -220,8 +245,8 @@ module mycpu_top(
     logic [ 3: 0] EX_alu_src_sel_b2;
     logic [11: 0] EX_alu_op_a;
     logic [11: 0] EX_alu_op_b;
-    logic [ 3: 0] EX_br_type_a;
-    logic [ 3: 0] EX_br_type_b;
+    logic [ 9: 0] EX_br_type_a;
+    logic [ 9: 0] EX_br_type_b;
     logic [ 0: 0] EX_br_pd_a;
     logic [ 0: 0] EX_br_pd_b;
     logic [ 0: 0] EX_rf_we_a;
@@ -311,7 +336,7 @@ module mycpu_top(
     assign i_axi_wstrb = 0;
     assign i_axi_wlast = 0;
     assign i_axi_wvalid = 0;
-    assign i_axi_bid = 0;
+    // assign i_axi_bid = 0;
     assign i_axi_bready = 0;
     assign i_axi_arid = 0;
     assign i_axi_arburst = 2'b01;
@@ -325,7 +350,7 @@ module mycpu_top(
     assign d_axi_awlock = 0;
     assign d_axi_awcache = 0;
     assign d_axi_awprot = 0;
-    assign d_axi_bid = 1;
+    // assign d_axi_bid = 1;
     assign d_axi_arid = 1;
     assign d_axi_arburst = 2'b01;
     assign d_axi_arlock = 0;
@@ -357,6 +382,8 @@ module mycpu_top(
     logic [31: 0] EX_mem_wdata;
     logic [31: 0] MEM_mem_rdata;
     logic [ 0: 0] EX_UnCache;
+    logic [31: 0] p_addr_EX;
+    logic [ 0: 0] uncache_d;
     // add for csr
     logic [13: 0]     WB_csr_waddr;       //CSR写地址 MEM段生效
     logic [31: 0]     WB_csr_we;          //CSR写使能 MEM段生效 按位
@@ -396,7 +423,7 @@ module mycpu_top(
     
   
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
-    assign pc_predict = ~(is_valid) ? pc_IF1 : {predict_br_target, 2'b00};
+    assign pc_predict = ~(is_valid) ? pc_IF1 :{predict_br_target,2'b00};
 
     
     IF1  IF1_inst (
@@ -460,11 +487,32 @@ module mycpu_top(
         .o_is_valid(IF1_IF2_valid)
     );
 
+    inst_mmu_lite  inst_mmu_lite_inst (
+        .addr(pc_IF1),
+        .plv(plv),
+        .translate_mode(translate_mode),
+        .direct_i_mat(direct_i_mat),
+        .dmw0_plv0(dmw0_plv0),
+        .dmw0_plv3(dmw0_plv3),
+        .dmw0_mat(dmw0_mat),
+        .dmw0_vseg(dmw0_vseg),
+        .dmw0_pseg(dmw0_pseg),
+        .dmw1_plv0(dmw1_plv0),
+        .dmw1_plv3(dmw1_plv3),
+        .dmw1_mat(dmw1_mat),
+        .dmw1_vseg(dmw1_vseg),
+        .dmw1_pseg(dmw1_pseg),
+        .paddr(p_addr_IF1),
+        .uncache(uncache_i)
+    );
+
+
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
         .rvalid(is_valid & ~(IF1_ecode[7])),
-        .raddr(pc_IF1),
+        .raddr(p_addr_IF1),
+        .uncache(uncache_i),
         .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
         .rready(stall_iCache), // 1-> normal, 0-> stall
         .rdata({i_IR2, i_IR1}),
@@ -480,17 +528,61 @@ module mycpu_top(
         .i_arlen (i_axi_arlen)
     );
 
+    logic [ 0: 0] data_reg;
+    logic [31: 0] IR1_reg;
+    logic [31: 0] IR2_reg;
+    logic [ 0: 0] ICache_valid_reg;
+    logic [ 0: 0] sign; // 是否第一次遇到stall 
+    always @(posedge clk) begin
+        if(flush_of_ALL) begin
+            data_reg <= 1'b0;
+            IR1_reg <= 1'b0;
+            IR2_reg <= 1'b0;
+            ICache_valid_reg <= 1'b0;
+        end 
+        else if(stall_full_instr | stall_ICache)  begin
+            if(sign == 1'b1) begin
+                data_reg <= data_reg;
+                IR1_reg <= IR1_reg;
+                IR2_reg <= IR2_reg;
+                ICache_valid_reg <= ICache_valid_reg;
+                sign <= sign;
+            end
+            else begin
+                data_reg <= data_valid;
+                IR1_reg <= i_IR1;
+                IR2_reg <= i_IR2;
+                ICache_valid_reg <= ICache_valid;
+                sign <= 1'b1;
+            end
+        end
+        else begin
+            data_reg <= 0;
+            IR1_reg <= 0;
+            IR2_reg <= 0;
+            ICache_valid_reg <= 0;
+            sign <= 0;
+        end
+    end
+
+    wire [31: 0] IR1_fac ;
+    assign IR1_fac = (data_reg & ~data_valid) ? IR1_reg : i_IR1;
+    wire [31: 0] IR2_fac ; 
+    assign IR2_fac = (data_reg & ~data_valid) ? IR2_reg : i_IR2;
+    wire [ 0: 0] ICache_valid_fac ;
+    assign ICache_valid_fac = (data_reg & ~data_valid) ? ICache_valid_reg : ICache_valid;
+
     
-    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid} & {2{data_valid | o_signFor_ADEF_ALE}};
+    assign i_is_valid = IF1_IF2_valid & {1'b1, ICache_valid_fac} & {2{data_valid | data_reg | o_signFor_ADEF_ALE}};
     IF2_ID1  IF2_ID1_inst (
         .clk(clk),
         .rstn(rstn),
         .i_PC1(i_PC1),
-        .i_IR1(i_IR1),
+        .i_IR1(IR1_fac),
         .i_brtype_pcpre_1(IF2_brtype_pcpre_1),
         .i_ecode_1(IF2_ecode_1),
         .i_PC2(i_PC2),
-        .i_IR2(i_IR2),
+        .i_IR2(IR2_fac),
         .i_brtype_pcpre_2(IF2_brtype_pcpre_2),
         .i_ecode_2(IF2_ecode_2),
         .i_is_valid(i_is_valid),
@@ -652,7 +744,17 @@ module mycpu_top(
         .translate_mode(translate_mode), // 
         .direct_i_mat(direct_i_mat), //
         .direct_d_mat(direct_d_mat), //
-        .tid(csr_tid)
+        .tid(csr_tid),
+        .dmw0_plv0 (dmw0_plv0),
+        .dmw0_plv3 (dmw0_plv3),
+        .dmw0_mat (dmw0_mat),
+        .dmw0_vseg (dmw0_vseg),
+        .dmw0_pseg (dmw0_pseg),
+        .dmw1_plv0 (dmw1_plv0),
+        .dmw1_plv3 (dmw1_plv3),
+        .dmw1_mat (dmw1_mat),
+        .dmw1_vseg (dmw1_vseg),
+        .dmw1_pseg (dmw1_pseg)
     );
 
     Issue_dispatch  Issue_dispatch_inst (
@@ -660,6 +762,8 @@ module mycpu_top(
         .i_set1(PC_set1_back),
         .i_set2(PC_set2_back),
         .i_is_valid(o_is_valid_2),
+        .flush(flush_of_ALL),
+        .stall(stall_DCache | stall_ex),
         .o_set1(set_final_1),
         .o_set2(set_final_2),
         .o_usingNUM(i_usingNUM)
@@ -831,16 +935,34 @@ module mycpu_top(
         .debug1_wb_rf_wnum(debug1_wb_rf_wnum),
         .debug1_wb_rf_wdata(debug1_wb_rf_wdata)
     );
-    
+
+    data_mmu_lite  data_mmu_lite_inst (
+        .addr(EX_mem_addr),
+        .plv(plv),
+        .translate_mode(translate_mode),
+        .direct_d_mat(direct_d_mat),
+        .dmw0_plv0(dmw0_plv0),
+        .dmw0_plv3(dmw0_plv3),
+        .dmw0_mat(dmw0_mat),
+        .dmw0_vseg(dmw0_vseg),
+        .dmw0_pseg(dmw0_pseg),
+        .dmw1_plv0(dmw1_plv0),
+        .dmw1_plv3(dmw1_plv3),
+        .dmw1_mat(dmw1_mat),
+        .dmw1_vseg(dmw1_vseg),
+        .dmw1_pseg(dmw1_pseg),
+        .paddr(p_addr_EX),
+        .uncache(uncache_d)
+    );
 
     dcache  dcache_inst (
         .clk(clk),
         .rstn(rstn),
         .rvalid(EX_mem_rvalid),
         .wvalid(EX_mem_wvalid),
-        .uncache(EX_UnCache),
+        .uncache(uncache_d),
         .wdata(EX_mem_wdata),
-        .addr(EX_mem_addr),
+        .addr(p_addr_EX),
         .mem_type(EX_mem_type),
         .rdata(MEM_mem_rdata),
         .rready(MEM_mem_rready),
