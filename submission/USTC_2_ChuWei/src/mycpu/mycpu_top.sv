@@ -422,8 +422,11 @@ module mycpu_top(
     assign flush_of_ALL = MEM_br | WB_era_en | WB_eentry_en | WB_flush_csr;
     
   
+    `ifdef DIFFTEST_EN
     // signs for difftest
     logic [31: 0] regs[31: 0];
+
+    `endif
 
     
     // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
@@ -714,7 +717,7 @@ module mycpu_top(
         .wdata_b(WB_rf_wdata_b),
         .we_a(WB_rf_we_a),
         .we_b(WB_rf_we_b)
-        `ifdef DIFFTEST
+        `ifdef DIFFTEST_EN
         ,.regs(regs)
         `endif
     );
@@ -1093,6 +1096,8 @@ module mycpu_top(
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
+
+    `ifdef DIFFTEST_EN
     DifftestGRegState DifftestGRegState(
         .clock              (aclk       ),
         .coreid             (0          ),
@@ -1129,5 +1134,7 @@ module mycpu_top(
         .gpr_30             (regs[30]   ),
         .gpr_31             (regs[31]   )
     );
+
+    `endif
 
 endmodule
