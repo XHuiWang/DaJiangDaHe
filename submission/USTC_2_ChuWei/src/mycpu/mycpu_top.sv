@@ -422,10 +422,12 @@ module mycpu_top(
     assign flush_of_ALL = MEM_br | WB_era_en | WB_eentry_en | WB_flush_csr;
     
   
-    // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
-    assign pc_predict = ~(is_valid) ? pc_IF1 :{predict_br_target,2'b00};
+    // signs for difftest
+    logic [31: 0] regs[31: 0];
 
     
+    // assign pc_predict = ~(|pred0_br_type) ? {pred1_br_target, 2'b00} : {pred0_br_target, 2'b00};
+    assign pc_predict = ~(is_valid) ? pc_IF1 :{predict_br_target,2'b00};
     IF1  IF1_inst (
         .clk(clk),
         .rstn(rstn),
@@ -711,9 +713,40 @@ module mycpu_top(
         .wdata_a(WB_rf_wdata_a),
         .wdata_b(WB_rf_wdata_b),
         .we_a(WB_rf_we_a),
-        .we_b(WB_rf_we_b)
+        .we_b(WB_rf_we_b),
+        .regs1(regs[1]),
+        .regs2(regs[2]),
+        .regs3(regs[3]),
+        .regs4(regs[4]),
+        .regs5(regs[5]),
+        .regs6(regs[6]),
+        .regs7(regs[7]),
+        .regs8(regs[8]),
+        .regs9(regs[9]),
+        .regs10(regs[10]),
+        .regs11(regs[11]),
+        .regs12(regs[12]),
+        .regs13(regs[13]),
+        .regs14(regs[14]),
+        .regs15(regs[15]),
+        .regs16(regs[16]),
+        .regs17(regs[17]),
+        .regs18(regs[18]),
+        .regs19(regs[19]),
+        .regs20(regs[20]),
+        .regs21(regs[21]),
+        .regs22(regs[22]),
+        .regs23(regs[23]),
+        .regs24(regs[24]),
+        .regs25(regs[25]),
+        .regs26(regs[26]),
+        .regs27(regs[27]),
+        .regs28(regs[28]),
+        .regs29(regs[29]),
+        .regs30(regs[30]),
+        .regs31(regs[31])
     );
-
+   
     CSR  CSR_inst (
         .clk(clk),
         .stable_clk(stable_clk),
@@ -1087,6 +1120,41 @@ module mycpu_top(
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
-
+    DifftestGRegState DifftestGRegState(
+        .clock              (aclk       ),
+        .coreid             (0          ),
+        .gpr_0              (0          ),
+        .gpr_1              (regs[1]    ),
+        .gpr_2              (regs[2]    ),
+        .gpr_3              (regs[3]    ),
+        .gpr_4              (regs[4]    ),
+        .gpr_5              (regs[5]    ),
+        .gpr_6              (regs[6]    ),
+        .gpr_7              (regs[7]    ),
+        .gpr_8              (regs[8]    ),
+        .gpr_9              (regs[9]    ),
+        .gpr_10             (regs[10]   ),
+        .gpr_11             (regs[11]   ),
+        .gpr_12             (regs[12]   ),
+        .gpr_13             (regs[13]   ),
+        .gpr_14             (regs[14]   ),
+        .gpr_15             (regs[15]   ),
+        .gpr_16             (regs[16]   ),
+        .gpr_17             (regs[17]   ),
+        .gpr_18             (regs[18]   ),
+        .gpr_19             (regs[19]   ),
+        .gpr_20             (regs[20]   ),
+        .gpr_21             (regs[21]   ),
+        .gpr_22             (regs[22]   ),
+        .gpr_23             (regs[23]   ),
+        .gpr_24             (regs[24]   ),
+        .gpr_25             (regs[25]   ),
+        .gpr_26             (regs[26]   ),
+        .gpr_27             (regs[27]   ),
+        .gpr_28             (regs[28]   ),
+        .gpr_29             (regs[29]   ),
+        .gpr_30             (regs[30]   ),
+        .gpr_31             (regs[31]   )
+    );
 
 endmodule
