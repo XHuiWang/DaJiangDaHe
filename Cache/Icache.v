@@ -50,7 +50,7 @@ module Icache(
     wire  [1:0]  mem_we ;
     wire  [7:0]   r_index ;
     wire  [7:0]   w_index ;
-    wire  [20:0]  w_tagv ;
+    reg   [20:0]  w_tagv ;
     wire  [20:0]  r_tagv1 ;
     wire  [20:0]  r_tagv2 ;
     wire  [19:0]  Tag ;

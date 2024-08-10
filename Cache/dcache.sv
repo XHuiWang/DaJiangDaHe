@@ -69,7 +69,7 @@ module dcache(
     wire  [31:0]  mem_we ;
     wire  [7:0]   r_index ;
     wire  [7:0]   w_index ;
-    wire  [21:0]  w_tagdv ;
+    reg   [21:0]  w_tagdv ;
     wire  [21:0]  r_tagdv1 ;
     wire  [21:0]  r_tagdv2 ;
     wire  [19:0]  Tag ;
@@ -87,7 +87,7 @@ module dcache(
     wire          data_from_mem_sel ;
     wire          way_sel ;
     wire          LRU_update ;
-    wire          dirty ;
+    reg           dirty ;
     wire  [31:0]  rdata_temp ;
     wire          mbuf_we ;
     wire          wbuf_we ;
