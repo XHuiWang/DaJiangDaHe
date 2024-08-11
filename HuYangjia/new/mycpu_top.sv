@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-`include "Public_Info.sv"
+// `include "Public_Info.sv"
 import Public_Info::*;
 module mycpu_top(
     input           aclk,
@@ -96,15 +96,15 @@ module mycpu_top(
     // ICache
     logic [ 0: 0] ICache_valid;
     logic [ 0: 0] data_valid;
-    logic         i_rvalid;
-    logic [31: 0] i_araddr;
-    logic         i_rready;
-    logic         i_rlast;
-    logic [31: 0] i_rdata;
-    logic         rready_icache;
-    logic         i_arvalid;
-    logic         i_arready;
-    logic [ 7: 0] i_arlen;
+    // logic         i_rvalid;
+    // logic [31: 0] i_araddr;
+    // logic         i_rready;
+    // logic         i_rlast;
+    // logic [31: 0] i_rdata;
+    // logic         rready_icache;
+    // logic         i_arvalid;
+    // logic         i_arready;
+    // logic [ 7: 0] i_arlen;
 
 
 
@@ -184,8 +184,6 @@ module mycpu_top(
     logic [ 4: 0] waddr_b;
     logic [31: 0] wdata_a;
     logic [31: 0] wdata_b;
-    logic we_a;
-    logic we_b;
 
     // CSR中的信号
     logic [ 0: 0] stable_clk;
@@ -533,27 +531,6 @@ module mycpu_top(
         .uncache(uncache_i)
     );
 
-
-    // Icache  Icache_inst (
-    //     .clk(clk),
-    //     .rstn(rstn),
-    //     .rvalid(is_valid & ~(IF1_ecode[7])),
-    //     .raddr(p_addr_IF1),
-    //     .uncache(uncache_i),
-    //     .Is_flush(flush_of_ALL | BR_predecoder), // TODO: 中断例外需要给flush
-    //     .rready(stall_iCache), // 1-> normal, 0-> stall
-    //     .rdata({i_IR2, i_IR1}),
-    //     .flag_valid(ICache_valid),
-    //     .data_valid(data_valid),
-    //     .i_rready (i_axi_rready),
-    //     .i_rvalid (i_axi_rvalid),
-    //     .i_rdata (i_axi_rdata),
-    //     .i_rlast (i_axi_rlast),
-    //     .i_arvalid (i_axi_arvalid),
-    //     .i_araddr (i_axi_araddr),
-    //     .i_arready (i_axi_arready),
-    //     .i_arlen (i_axi_arlen)
-    // );
     Icache  Icache_inst (
         .clk(clk),
         .rstn(rstn),
