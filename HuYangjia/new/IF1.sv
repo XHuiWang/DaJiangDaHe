@@ -92,7 +92,7 @@ module IF1(
             pc_IF1 <= WB_flush_csr_pc;
         end
         else if(flush_cacop) begin
-            addrs_cacop <= flush_cacop;
+            pc_IF1 <= addrs_cacop;
         end
         else if(MEM_br) begin
             pc_IF1 <= pc_BR;
