@@ -271,8 +271,8 @@ assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {3
 assign  stall_cacop   = (EX_cacop_finish_i | EX_cacop_finish_d| EX_ecode_we_b | 
     EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr)
     ?1'b0:EX_cacop_en;
-assign  EX_cacop_en_i = stall_cacop & EX_cacop_code[0];
-assign  EX_cacop_en_d = stall_cacop & EX_cacop_code[1];
+assign  EX_cacop_en_i = stall_cacop & EX_cacop_code[2:0]==3'b000;
+assign  EX_cacop_en_d = stall_cacop & EX_cacop_code[2:0]==3'b001;
 assign  EX_cacop_code_i = EX_cacop_code[4:3];
 assign  EX_cacop_code_d = EX_cacop_code[4:3];
 assign  EX_cacop_va_i = EX_alu_result_b;
