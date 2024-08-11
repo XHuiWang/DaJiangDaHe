@@ -58,7 +58,7 @@ module FSM_icache(
     parameter MISS_A = 3'h4;//地址确认状态
     parameter CACOP_EX = 3'h5;
     //state change
-    always @(posedge clk,negedge rstn)begin
+    always @(posedge clk)begin
         if(!rstn) current_state <= IDLE;
         else current_state <= next_state;
     end

@@ -69,7 +69,7 @@ module FSM_dcache(
     parameter CACOP_EX = 3'h6;
     parameter CACOP_EX_WAIT = 3'h7;
     //state change
-    always @(posedge clk,negedge rstn)begin
+    always @(posedge clk)begin
         if(!rstn) current_state <= IDLE;
         else current_state <= next_state;
     end
@@ -78,7 +78,7 @@ module FSM_dcache(
         case(current_state)
             IDLE:begin
                 if(cacop_en) next_state = CACOP_EX;
-                if(rvalid||wvalid) next_state = LOOKUP;
+                else if(rvalid||wvalid) next_state = LOOKUP;
                 else next_state = IDLE;
                 mem_we = 32'h0;
                 TagDV_we = 2'h0;
