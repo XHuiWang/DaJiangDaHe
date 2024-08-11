@@ -90,6 +90,8 @@ module mycpu_top(
     logic [ 7: 0] IF1_ecode;
     logic [31: 0] p_addr_IF1;
     logic [ 0: 0] uncache_i;
+    logic [ 0: 0] flush_cacop;
+    logic [31: 0] addrs_cacop;
   
     // ICache
     logic [ 0: 0] ICache_valid;
@@ -434,7 +436,10 @@ module mycpu_top(
     assign flush_BR = MEM_br;
     assign stall_full_issue = o_is_full_2;
     assign stall_full_instr = o_is_full;
-    assign flush_of_ALL = MEM_br | WB_era_en | WB_eentry_en | WB_flush_csr;
+    assign flush_of_ALL = MEM_br | WB_era_en | WB_eentry_en | WB_flush_csr | flush_cacop;
+    // cacop
+    assign flush_cacop = EX_cacop_finish_i | EX_cacop_finish_d;
+    assign addrs_cacop = EX_pc_b + 4;
     
   
     `ifdef DIFFTEST_EN
@@ -463,6 +468,8 @@ module mycpu_top(
         .WB_flush_csr(WB_flush_csr),
         .stall_ICache(stall_ICache),
         .stall_full_instr(stall_full_instr),
+        .flush_cacop(flush_cacop),
+        .addrs_cacop(addrs_cacop),
         .pc_IF1(pc_IF1),
         .ecode(IF1_ecode),
         .is_valid(is_valid)

@@ -41,6 +41,10 @@ module IF1(
     input [31: 0] WB_flush_csr_pc,
     input [ 0: 0] WB_flush_csr,
 
+    // 来自cacop
+    input [31: 0] addrs_cacop,
+    input [ 0: 0] flush_cacop,
+
 
     // stall信号
     input [ 0: 0] stall_ICache,
@@ -86,6 +90,9 @@ module IF1(
         end
         else if(WB_flush_csr) begin
             pc_IF1 <= WB_flush_csr_pc;
+        end
+        else if(flush_cacop) begin
+            addrs_cacop <= flush_cacop;
         end
         else if(MEM_br) begin
             pc_IF1 <= pc_BR;
