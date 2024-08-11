@@ -561,7 +561,7 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .MEM_rdcntid(MEM_rdcntid),
 `ifdef DIFFTEST_EN
     .WB_rdcntv(WB_rdcntv),
-    .WB_rdcntid(WB_rdcntid)
+    .WB_rdcntid(WB_rdcntid),
 `endif
     .EX_a_enable(EX_a_enable),
     .EX_b_enable(EX_b_enable),
