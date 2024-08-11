@@ -32,7 +32,9 @@ module RF #(
     input                           we_a,we_b                               //写使能
     
     `ifdef DIFFTEST_EN
-    , output logic [31: 0] regs[ 0:31]
+    ,
+    
+    output logic [31: 0] regs[ 0:31]
     `endif
 
 );

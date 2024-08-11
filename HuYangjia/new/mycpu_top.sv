@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 // `include "Public_Info.sv"
 import Public_Info::*;
+`include "config.vh"
 module mycpu_top(
     input           aclk,
     input           aresetn,

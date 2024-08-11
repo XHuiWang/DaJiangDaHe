@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-// `include "Public_Info.sv"
+`include "Public_Info.sv"
 import Public_Info::*;
 
 module ID_Decode_edi_2(
@@ -32,7 +32,7 @@ module ID_Decode_edi_2(
 
     input [ 0: 0] ID_status,
     input [ 0: 0] data_valid,
-    output PC_set PC_set
+    output PC_set PC_set_edi_2
     );
 
     logic [ 0: 0] o_valid;
@@ -71,34 +71,34 @@ module ID_Decode_edi_2(
     assign ecode_we = ecode[ 7: 7];
 
 
-    assign PC_set.instruction = IF_IR;
-    assign PC_set.PC = PC;
-    assign PC_set.o_inst_lawful = o_inst_lawful;
-    assign PC_set.o_valid = o_valid;
-    assign PC_set.inst_type = inst_type; // TODO: DONE
-    assign PC_set.br_type = br_type;
-    assign PC_set.imm = imm;
-    assign PC_set.rf_rd = rf_rd;
-    assign PC_set.rf_we = rf_we;
-    assign PC_set.alu_src1_sel = alu_src1_sel;
-    assign PC_set.alu_src2_sel = alu_src2_sel;
-    assign PC_set.rf_raddr1 = rf_raddr1;
-    assign PC_set.rf_raddr2 = rf_raddr2;
-    assign PC_set.alu_op = alu_op;
-    assign PC_set.mem_we = mem_we;
-    assign PC_set.ldst_type = ldst_type;
+    assign PC_set_edi_2.instruction = IF_IR;
+    assign PC_set_edi_2.PC = PC;
+    assign PC_set_edi_2.o_inst_lawful = o_inst_lawful;
+    assign PC_set_edi_2.o_valid = o_valid;
+    assign PC_set_edi_2.inst_type = inst_type; // TODO: DONE
+    assign PC_set_edi_2.br_type = br_type;
+    assign PC_set_edi_2.imm = imm;
+    assign PC_set_edi_2.rf_rd = rf_rd;
+    assign PC_set_edi_2.rf_we = rf_we;
+    assign PC_set_edi_2.alu_src1_sel = alu_src1_sel;
+    assign PC_set_edi_2.alu_src2_sel = alu_src2_sel;
+    assign PC_set_edi_2.rf_raddr1 = rf_raddr1;
+    assign PC_set_edi_2.rf_raddr2 = rf_raddr2;
+    assign PC_set_edi_2.alu_op = alu_op;
+    assign PC_set_edi_2.mem_we = mem_we;
+    assign PC_set_edi_2.ldst_type = ldst_type;
     // assign PC_set.wb_sel = wb_sel;
-    assign PC_set.mux_sel = mux_sel;
-    assign PC_set.sign_bit = sign_bit;
-    assign PC_set.rf_rdata1 = 32'd0;
-    assign PC_set.rf_rdata2 = 32'd0;
-    assign PC_set.type_predict = brtype_pcpre[33:32];
-    assign PC_set.PC_pre = brtype_pcpre[31: 0];
-    assign PC_set.csr_type = csr_type;
-    assign PC_set.csr_raddr = csr_raddr;
-    assign PC_set.ecode_in = ecode_out;
-    assign PC_set.ecode_we = ecode_out_we;
-    assign PC_set.code_for_cacop = code_for_cacop;
+    assign PC_set_edi_2.mux_sel = mux_sel;
+    assign PC_set_edi_2.sign_bit = sign_bit;
+    assign PC_set_edi_2.rf_rdata1 = 32'd0;
+    assign PC_set_edi_2.rf_rdata2 = 32'd0;
+    assign PC_set_edi_2.type_predict = brtype_pcpre[33:32];
+    assign PC_set_edi_2.PC_pre = brtype_pcpre[31: 0];
+    assign PC_set_edi_2.csr_type = csr_type;
+    assign PC_set_edi_2.csr_raddr = csr_raddr;
+    assign PC_set_edi_2.ecode_in = ecode_out;
+    assign PC_set_edi_2.ecode_we = ecode_out_we;
+    assign PC_set_edi_2.code_for_cacop = code_for_cacop;
 
 
     // 对每一种指令的存在进行检测

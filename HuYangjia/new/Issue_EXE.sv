@@ -112,8 +112,10 @@ module Issue_EXE(
     output logic [ 0: 0] cacop_en            //cacop指令的使能
 
     `ifdef DIFFTEST_EN
-    ,.output logic [31: 0] EX_a_inst,
-    .output logic [31: 0] EX_b_inst
+    , 
+    
+    output logic [31: 0] EX_a_inst,
+    output logic [31: 0] EX_b_inst
     `endif  
     );
 
