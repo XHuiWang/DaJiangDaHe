@@ -943,10 +943,11 @@ module mycpu_top(
         .ecode_we_b(EX_ecode_we_b),
         .ertn_check(EX_ertn),
         .code_for_cacop(EX_cacop_code),
-        .cacop_en(EX_cacop_en),
+        .cacop_en(EX_cacop_en)
         `ifdef DIFFTEST_EN
-        .EX_a_inst(EX_a_inst),
-        .EX_b_inst(EX_b_inst),
+        ,.EX_a_inst(EX_a_inst),
+        .EX_b_inst(EX_b_inst)
+        `endif 
     );
 
     ex_mem_wb  ex_mem_wb_inst (
