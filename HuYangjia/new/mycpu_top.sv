@@ -50,29 +50,34 @@ module mycpu_top(
 
 
     //debug interface
-    output logic [31: 0] debug_wb_pc,
-    output logic [ 3: 0] debug_wb_rf_we,
-    output logic [ 4: 0] debug_wb_rf_wnum,
-    output logic [31: 0] debug_wb_rf_wdata
+    output logic [31: 0] debug0_wb_pc,
+    output logic [ 3: 0] debug0_wb_rf_we,
+    output logic [ 4: 0] debug0_wb_rf_wnum,
+    output logic [31: 0] debug0_wb_rf_wdata,
+
+    output logic [31: 0] debug1_wb_pc,
+    output logic [ 3: 0] debug1_wb_rf_we,
+    output logic [ 4: 0] debug1_wb_rf_wnum,
+    output logic [31: 0] debug1_wb_rf_wdata
 
 );
     wire clk, rstn;
     assign clk = aclk;
     assign rstn = aresetn;
 
-    logic [31: 0] debug0_wb_pc;
-    logic [ 3: 0] debug0_wb_rf_we;
-    logic [ 4: 0] debug0_wb_rf_wnum;
-    logic [31: 0] debug0_wb_rf_wdata;
+    // logic [31: 0] debug0_wb_pc;
+    // logic [ 3: 0] debug0_wb_rf_we;
+    // logic [ 4: 0] debug0_wb_rf_wnum;
+    // logic [31: 0] debug0_wb_rf_wdata;
 
-    logic [31: 0] debug1_wb_pc;
-    logic [ 3: 0] debug1_wb_rf_we;
-    logic [ 4: 0] debug1_wb_rf_wnum;
-    logic [31: 0] debug1_wb_rf_wdata;
-    assign debug_wb_pc = debug0_wb_pc;
-    assign debug_wb_rf_we = debug0_wb_rf_we;
-    assign debug_wb_rf_wnum = debug0_wb_rf_wnum;
-    assign debug_wb_rf_wdata = debug0_wb_rf_wdata;
+    // logic [31: 0] debug1_wb_pc;
+    // logic [ 3: 0] debug1_wb_rf_we;
+    // logic [ 4: 0] debug1_wb_rf_wnum;
+    // logic [31: 0] debug1_wb_rf_wdata;
+    // assign debug_wb_pc = debug0_wb_pc;
+    // assign debug_wb_rf_we = debug0_wb_rf_we;
+    // assign debug_wb_rf_wnum = debug0_wb_rf_wnum;
+    // assign debug_wb_rf_wdata = debug0_wb_rf_wdata;
     
     
     PC_set PC_set1_front;
