@@ -26,6 +26,7 @@
 
 import Public_Info::*;
 
+
 module Issue_EXE(
     input [ 0: 0] clk,
     input [ 0: 0] rstn,
@@ -109,6 +110,11 @@ module Issue_EXE(
 
     output logic [ 4: 0] code_for_cacop,     //cacop指令的code
     output logic [ 0: 0] cacop_en            //cacop指令的使能
+
+    `ifdef DIFFTEST_EN
+    ,.output logic [31: 0] EX_a_inst,
+    .output logic [31: 0] EX_b_inst
+    `endif  
     );
 
     logic [ 0: 0] flush;
@@ -194,6 +200,10 @@ module Issue_EXE(
             EX_tid            <= 32'h0000_0000;
             code_for_cacop    <= 5'h00;
             cacop_en          <= 1'b0;
+            `ifdef DIFFTEST_EN
+            EX_a_inst         <= 32'h0000_0000;
+            EX_b_inst         <= 32'h0000_0000;
+            `endif
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -245,6 +255,10 @@ module Issue_EXE(
             EX_tid            <= EX_tid;
             code_for_cacop    <= code_for_cacop;
             cacop_en          <= cacop_en;
+            `ifdef DIFFTEST_EN
+            EX_a_inst         <= EX_a_inst;
+            EX_b_inst         <= EX_b_inst;
+            `endif
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
@@ -297,6 +311,10 @@ module Issue_EXE(
                 EX_tid            <= csr_tid;
                 code_for_cacop    <= i_set1.code_for_cacop;
                 cacop_en          <= (i_set1.inst_type == 10'h080) & Issue_a_enable;
+                `ifdef DIFFTEST_EN
+                EX_a_inst         <= i_set2.instruction;
+                EX_b_inst         <= i_set1.instruction;
+                `endif
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -349,6 +367,10 @@ module Issue_EXE(
                 EX_tid            <= csr_tid;
                 code_for_cacop    <= i_set2.code_for_cacop;
                 cacop_en          <= (i_set2.inst_type == 10'h080) & Issue_b_enable;
+                `ifdef DIFFTEST_EN
+                EX_a_inst         <= i_set1.instruction;
+                EX_b_inst         <= i_set2.instruction;
+                `endif
             end
         end
     end

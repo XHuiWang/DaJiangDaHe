@@ -270,6 +270,8 @@ module mycpu_top(
     logic [ 1: 0] type_predict_b;
     logic [31: 0] EX_PC_pre_a;
     logic [31: 0] EX_PC_pre_b;
+    logic [31: 0] EX_a_inst;
+    logic [31: 0] EX_b_inst;
 
     // add for csr
     logic [ 2: 0] EX_csr_type;
@@ -941,7 +943,10 @@ module mycpu_top(
         .ecode_we_b(EX_ecode_we_b),
         .ertn_check(EX_ertn),
         .code_for_cacop(EX_cacop_code),
-        .cacop_en(EX_cacop_en)
+        .cacop_en(EX_cacop_en),
+        `ifdef DIFFTEST_EN
+        .EX_a_inst(EX_a_inst),
+        .EX_b_inst(EX_b_inst),
     );
 
     ex_mem_wb  ex_mem_wb_inst (
