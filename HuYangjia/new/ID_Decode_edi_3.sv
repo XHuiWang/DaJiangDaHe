@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 2024/07/16 15:32:31
+// Create Date: 2024/08/11 22:12:28
 // Design Name: 
-// Module Name: ID_Decode_edi_2
+// Module Name: ID_Decode_edi_3
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -19,11 +19,10 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
+// 实现:output 将Decode_x的信号根据实际的宽度进行输出
 
-`include "Public_Info.sv"
-import Public_Info::*;
 
-module ID_Decode_edi_2(
+module ID_Decode_edi_3(
     input [31: 0] IF_IR,
     input [31: 0] PC,
     input [33: 0] brtype_pcpre,
@@ -31,7 +30,31 @@ module ID_Decode_edi_2(
     input [ 1: 0] plv,
 
     input [ 0: 0] data_valid,
-    output PC_set PC_set_edi_2
+    output logic [31: 0] Decoder_instruction,
+    output logic [31: 0] Decoder_PC,
+    output logic [ 0: 0] Decoder_o_inst_lawful,
+    output logic [ 0: 0] Decoder_o_valid,
+    output logic [ 9: 0] Decoder_inst_type,
+    output logic [ 9: 0] Decoder_br_type,
+    output logic [31: 0] Decoder_imm,
+    output logic [ 4: 0] Decoder_rf_rd,
+    output logic [ 0: 0] Decoder_rf_we,
+    output logic [ 3: 0] Decoder_alu_src1_sel,
+    output logic [ 3: 0] Decoder_alu_src2_sel,
+    output logic [ 4: 0] Decoder_rf_raddr1,
+    output logic [ 4: 0] Decoder_rf_raddr2,
+    output logic [11: 0] Decoder_alu_op,
+    output logic [ 0: 0] Decoder_mem_we,
+    output logic [ 3: 0] Decoder_ldst_type,
+    output logic [ 8: 0] Decoder_mux_sel,
+    output logic [ 0: 0] Decoder_sign_bit,
+    output logic [ 1: 0] Decoder_type_predict,
+    output logic [31: 0] Decoder_PC_pre,
+    output logic [ 2: 0] Decoder_csr_type,
+    output logic [13: 0] Decoder_csr_raddr,
+    output logic [ 6: 0] Decoder_ecode_in,
+    output logic [ 0: 0] Decoder_ecode_we,
+    output logic [ 4: 0] Decoder_code_for_cacop
     );
 
     logic [ 0: 0] o_valid;
@@ -54,7 +77,6 @@ module ID_Decode_edi_2(
     
     logic [ 0: 0] mem_we;
     logic [ 3: 0] ldst_type;
-    // logic [ 0: 0] wb_sel; // TODO: act as mux_sel 
     logic [ 8: 0] mux_sel; // B通道WB来源的选择信号
     logic [ 0: 0] sign_bit; // 符号位,运用于乘除法
 
@@ -70,34 +92,31 @@ module ID_Decode_edi_2(
     assign ecode_we = ecode[ 7: 7];
 
 
-    assign PC_set_edi_2.instruction = IF_IR;
-    assign PC_set_edi_2.PC = PC;
-    assign PC_set_edi_2.o_inst_lawful = o_inst_lawful;
-    assign PC_set_edi_2.o_valid = o_valid;
-    assign PC_set_edi_2.inst_type = inst_type; // TODO: DONE
-    assign PC_set_edi_2.br_type = br_type;
-    assign PC_set_edi_2.imm = imm;
-    assign PC_set_edi_2.rf_rd = rf_rd;
-    assign PC_set_edi_2.rf_we = rf_we;
-    assign PC_set_edi_2.alu_src1_sel = alu_src1_sel;
-    assign PC_set_edi_2.alu_src2_sel = alu_src2_sel;
-    assign PC_set_edi_2.rf_raddr1 = rf_raddr1;
-    assign PC_set_edi_2.rf_raddr2 = rf_raddr2;
-    assign PC_set_edi_2.alu_op = alu_op;
-    assign PC_set_edi_2.mem_we = mem_we;
-    assign PC_set_edi_2.ldst_type = ldst_type;
-    // assign PC_set.wb_sel = wb_sel;
-    assign PC_set_edi_2.mux_sel = mux_sel;
-    assign PC_set_edi_2.sign_bit = sign_bit;
-    assign PC_set_edi_2.rf_rdata1 = 32'd0;
-    assign PC_set_edi_2.rf_rdata2 = 32'd0;
-    assign PC_set_edi_2.type_predict = brtype_pcpre[33:32];
-    assign PC_set_edi_2.PC_pre = brtype_pcpre[31: 0];
-    assign PC_set_edi_2.csr_type = csr_type;
-    assign PC_set_edi_2.csr_raddr = csr_raddr;
-    assign PC_set_edi_2.ecode_in = ecode_out;
-    assign PC_set_edi_2.ecode_we = ecode_out_we;
-    assign PC_set_edi_2.code_for_cacop = code_for_cacop;
+    assign Decoder_instruction = IF_IR;
+    assign Decoder_PC = PC;
+    assign Decoder_o_inst_lawful = o_inst_lawful;
+    assign Decoder_o_valid = o_valid;
+    assign Decoder_inst_type = inst_type; // TODO: DONE
+    assign Decoder_br_type = br_type;
+    assign Decoder_imm = imm;
+    assign Decoder_rf_rd = rf_rd;
+    assign Decoder_rf_we = rf_we;
+    assign Decoder_alu_src1_sel = alu_src1_sel;
+    assign Decoder_alu_src2_sel = alu_src2_sel;
+    assign Decoder_rf_raddr1 = rf_raddr1;
+    assign Decoder_rf_raddr2 = rf_raddr2;
+    assign Decoder_alu_op = alu_op;
+    assign Decoder_mem_we = mem_we;
+    assign Decoder_ldst_type = ldst_type;
+    assign Decoder_mux_sel = mux_sel;
+    assign Decoder_sign_bit = sign_bit;
+    assign Decoder_type_predict = brtype_pcpre[33:32];
+    assign Decoder_PC_pre = brtype_pcpre[31: 0];
+    assign Decoder_csr_type = csr_type;
+    assign Decoder_csr_raddr = csr_raddr;
+    assign Decoder_ecode_in = ecode_out;
+    assign Decoder_ecode_we = ecode_out_we;
+    assign Decoder_code_for_cacop = code_for_cacop;
 
 
     // 对每一种指令的存在进行检测

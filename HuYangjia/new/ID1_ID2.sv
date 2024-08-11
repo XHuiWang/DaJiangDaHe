@@ -62,8 +62,7 @@ module ID1_ID2(
     output logic [ 7: 0] o_ecode_2,
 
     output logic [ 1: 0] o_is_valid,
-    output logic [ 0: 0] o_is_full,
-    output logic [ 0: 0] ID_status
+    output logic [ 0: 0] o_is_full
 
     );
 
@@ -115,7 +114,6 @@ module ID1_ID2(
 
     logic [ 0: 0] signal_length_eq_1; // 信号长度是否等于1
     assign signal_length_eq_1 = (length == 1);
-    assign ID_status = (|o_is_valid);
 
 
     // head

@@ -1,9 +1,27 @@
 `timescale 1ns / 1ps
-
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 2024/08/11 22:49:51
+// Design Name: 
+// Module Name: mycpu_top_edi_2
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
 
 
 `include "config.vh"
-module mycpu_top(
+module mycpu_top_edi_2(
     input           aclk,
     input           aresetn,
     input    [ 7:0] ext_int, 
@@ -82,12 +100,179 @@ module mycpu_top(
     // assign debug_wb_rf_wdata = debug0_wb_rf_wdata;
     
     
-    PC_set PC_set1_front;
-    PC_set PC_set2_front;
-    PC_set PC_set1_back ;
-    PC_set PC_set2_back ;
-    PC_set set_final_1 ;
-    PC_set set_final_2 ;
+    logic [31: 0] Decoder_1_instruction   ;
+    logic [31: 0] Decoder_1_PC            ;
+    logic [ 0: 0] Decoder_1_o_inst_lawful ;
+    logic [ 0: 0] Decoder_1_o_valid       ;
+    logic [ 9: 0] Decoder_1_inst_type     ;
+    logic [ 9: 0] Decoder_1_br_type       ; 
+    logic [31: 0] Decoder_1_imm           ;
+    logic [ 4: 0] Decoder_1_rf_rd         ;
+    logic [ 0: 0] Decoder_1_rf_we         ;
+    logic [ 3: 0] Decoder_1_alu_src1_sel  ;
+    logic [ 3: 0] Decoder_1_alu_src2_sel  ;
+    logic [11: 0] Decoder_1_alu_op        ;
+    logic [ 0: 0] Decoder_1_mem_we        ;
+    logic [ 3: 0] Decoder_1_ldst_type     ;
+    logic [ 8: 0] Decoder_1_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] Decoder_1_rf_raddr1     ;
+    logic [ 4: 0] Decoder_1_rf_raddr2     ;
+    logic [31: 0] Decoder_1_rf_rdata1     ;
+    logic [31: 0] Decoder_1_rf_rdata2     ;
+    logic [ 0: 0] Decoder_1_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] Decoder_1_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] Decoder_1_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] Decoder_1_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] Decoder_1_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] Decoder_1_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] Decoder_1_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] Decoder_1_code_for_cacop; // 用于cacop指令的code
+
+    logic [31: 0] Decoder_2_instruction   ;
+    logic [31: 0] Decoder_2_PC            ;
+    logic [ 0: 0] Decoder_2_o_inst_lawful ;
+    logic [ 0: 0] Decoder_2_o_valid       ;
+    logic [ 9: 0] Decoder_2_inst_type     ;
+    logic [ 9: 0] Decoder_2_br_type       ; 
+    logic [31: 0] Decoder_2_imm           ;
+    logic [ 4: 0] Decoder_2_rf_rd         ;
+    logic [ 0: 0] Decoder_2_rf_we         ;
+    logic [ 3: 0] Decoder_2_alu_src1_sel  ;
+    logic [ 3: 0] Decoder_2_alu_src2_sel  ;
+    logic [11: 0] Decoder_2_alu_op        ;
+    logic [ 0: 0] Decoder_2_mem_we        ;
+    logic [ 3: 0] Decoder_2_ldst_type     ;
+    logic [ 8: 0] Decoder_2_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] Decoder_2_rf_raddr1     ;
+    logic [ 4: 0] Decoder_2_rf_raddr2     ;
+    logic [31: 0] Decoder_2_rf_rdata1     ;
+    logic [31: 0] Decoder_2_rf_rdata2     ;
+    logic [ 0: 0] Decoder_2_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] Decoder_2_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] Decoder_2_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] Decoder_2_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] Decoder_2_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] Decoder_2_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] Decoder_2_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] Decoder_2_code_for_cacop; // 用于cacop指令的code
+    
+    
+    
+    
+    logic [31: 0] ID_REG_1_instruction   ;
+    logic [31: 0] ID_REG_1_PC            ;
+    logic [ 0: 0] ID_REG_1_o_inst_lawful ;
+    logic [ 0: 0] ID_REG_1_o_valid       ;
+    logic [ 9: 0] ID_REG_1_inst_type     ;
+    logic [ 9: 0] ID_REG_1_br_type       ; 
+    logic [31: 0] ID_REG_1_imm           ;
+    logic [ 4: 0] ID_REG_1_rf_rd         ;
+    logic [ 0: 0] ID_REG_1_rf_we         ;
+    logic [ 3: 0] ID_REG_1_alu_src1_sel  ;
+    logic [ 3: 0] ID_REG_1_alu_src2_sel  ;
+    logic [11: 0] ID_REG_1_alu_op        ;
+    logic [ 0: 0] ID_REG_1_mem_we        ;
+    logic [ 3: 0] ID_REG_1_ldst_type     ;
+    logic [ 8: 0] ID_REG_1_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] ID_REG_1_rf_raddr1     ;
+    logic [ 4: 0] ID_REG_1_rf_raddr2     ;
+    logic [31: 0] ID_REG_1_rf_rdata1     ;
+    logic [31: 0] ID_REG_1_rf_rdata2     ;
+    logic [ 0: 0] ID_REG_1_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] ID_REG_1_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] ID_REG_1_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] ID_REG_1_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] ID_REG_1_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] ID_REG_1_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] ID_REG_1_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] ID_REG_1_code_for_cacop; // 用于cacop指令的code
+
+    logic [31: 0] ID_REG_2_instruction   ;
+    logic [31: 0] ID_REG_2_PC            ;
+    logic [ 0: 0] ID_REG_2_o_inst_lawful ;
+    logic [ 0: 0] ID_REG_2_o_valid       ;
+    logic [ 9: 0] ID_REG_2_inst_type     ;
+    logic [ 9: 0] ID_REG_2_br_type       ; 
+    logic [31: 0] ID_REG_2_imm           ;
+    logic [ 4: 0] ID_REG_2_rf_rd         ;
+    logic [ 0: 0] ID_REG_2_rf_we         ;
+    logic [ 3: 0] ID_REG_2_alu_src1_sel  ;
+    logic [ 3: 0] ID_REG_2_alu_src2_sel  ;
+    logic [11: 0] ID_REG_2_alu_op        ;
+    logic [ 0: 0] ID_REG_2_mem_we        ;
+    logic [ 3: 0] ID_REG_2_ldst_type     ;
+    logic [ 8: 0] ID_REG_2_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] ID_REG_2_rf_raddr1     ;
+    logic [ 4: 0] ID_REG_2_rf_raddr2     ;
+    logic [31: 0] ID_REG_2_rf_rdata1     ;
+    logic [31: 0] ID_REG_2_rf_rdata2     ;
+    logic [ 0: 0] ID_REG_2_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] ID_REG_2_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] ID_REG_2_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] ID_REG_2_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] ID_REG_2_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] ID_REG_2_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] ID_REG_2_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] ID_REG_2_code_for_cacop; // 用于cacop指令的code
+    
+    
+    logic [31: 0] Dispatch_1_instruction   ;
+    logic [31: 0] Dispatch_1_PC            ;
+    logic [ 0: 0] Dispatch_1_o_inst_lawful ;
+    logic [ 0: 0] Dispatch_1_o_valid       ;
+    logic [ 9: 0] Dispatch_1_inst_type     ;
+    logic [ 9: 0] Dispatch_1_br_type       ; 
+    logic [31: 0] Dispatch_1_imm           ;
+    logic [ 4: 0] Dispatch_1_rf_rd         ;
+    logic [ 0: 0] Dispatch_1_rf_we         ;
+    logic [ 3: 0] Dispatch_1_alu_src1_sel  ;
+    logic [ 3: 0] Dispatch_1_alu_src2_sel  ;
+    logic [11: 0] Dispatch_1_alu_op        ;
+    logic [ 0: 0] Dispatch_1_mem_we        ;
+    logic [ 3: 0] Dispatch_1_ldst_type     ;
+    logic [ 8: 0] Dispatch_1_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] Dispatch_1_rf_raddr1     ;
+    logic [ 4: 0] Dispatch_1_rf_raddr2     ;
+    logic [31: 0] Dispatch_1_rf_rdata1     ;
+    logic [31: 0] Dispatch_1_rf_rdata2     ;
+    logic [ 0: 0] Dispatch_1_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] Dispatch_1_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] Dispatch_1_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] Dispatch_1_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] Dispatch_1_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] Dispatch_1_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] Dispatch_1_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] Dispatch_1_code_for_cacop; // 用于cacop指令的code
+
+    logic [31: 0] Dispatch_2_instruction   ;
+    logic [31: 0] Dispatch_2_PC            ;
+    logic [ 0: 0] Dispatch_2_o_inst_lawful ;
+    logic [ 0: 0] Dispatch_2_o_valid       ;
+    logic [ 9: 0] Dispatch_2_inst_type     ;
+    logic [ 9: 0] Dispatch_2_br_type       ; 
+    logic [31: 0] Dispatch_2_imm           ;
+    logic [ 4: 0] Dispatch_2_rf_rd         ;
+    logic [ 0: 0] Dispatch_2_rf_we         ;
+    logic [ 3: 0] Dispatch_2_alu_src1_sel  ;
+    logic [ 3: 0] Dispatch_2_alu_src2_sel  ;
+    logic [11: 0] Dispatch_2_alu_op        ;
+    logic [ 0: 0] Dispatch_2_mem_we        ;
+    logic [ 3: 0] Dispatch_2_ldst_type     ;
+    logic [ 8: 0] Dispatch_2_mux_sel       ; // B通道WB来源的选择信号
+    logic [ 4: 0] Dispatch_2_rf_raddr1     ;
+    logic [ 4: 0] Dispatch_2_rf_raddr2     ;
+    logic [31: 0] Dispatch_2_rf_rdata1     ;
+    logic [31: 0] Dispatch_2_rf_rdata2     ;
+    logic [ 0: 0] Dispatch_2_sign_bit      ; // 符号位,运用于乘除法 // 1为有符号数
+    logic [ 1: 0] Dispatch_2_type_predict  ; // using for branch predict, to know t
+    logic [31: 0] Dispatch_2_PC_pre        ; // 用于预测分支时得到的PC
+    logic [ 2: 0] Dispatch_2_csr_type      ; // 用于csr指令的类型
+    logic [13: 0] Dispatch_2_csr_raddr     ; // 用于csr指令的读csr地址
+    logic [ 6: 0] Dispatch_2_ecode_in      ; // 用于异常处理的输入
+    logic [ 0: 0] Dispatch_2_ecode_we      ; // 用于异常处理的写曾经，表示已经修改
+    logic [ 4: 0] Dispatch_2_code_for_cacop; // 用于cacop指令的code
+    
+ 
 
 
     logic [31: 0] pc_predict;
@@ -271,8 +456,8 @@ module mycpu_top(
     logic [ 1: 0] type_predict_b;
     logic [31: 0] EX_PC_pre_a;
     logic [31: 0] EX_PC_pre_b;
-    logic [31: 0] EX_a_inst;
-    logic [31: 0] EX_b_inst;
+    // logic [31: 0] EX_a_inst;
+    // logic [31: 0] EX_b_inst;
 
     // add for csr
     logic [ 2: 0] EX_csr_type;
@@ -723,36 +908,190 @@ module mycpu_top(
         .o_is_full(o_is_full)
     );
 
-    ID_Decode_edi_2  ID_Decode_edi_2_inst_1 (
+    ID_Decode_edi_3  ID_Decode_edi_3_inst_1 (
         .IF_IR(o_IR1),
         .PC(o_PC1),
         .brtype_pcpre(o_brtype_pcpre_1),
         .ecode(ID2_ecode_1),
         .plv(plv),
         .data_valid(o_is_valid[1]),
-        .PC_set(PC_set1_front)
+        .Decoder_instruction(Decoder_1_instruction),
+        .Decoder_PC(Decoder_1_PC),
+        .Decoder_o_inst_lawful(Decoder_1_o_inst_lawful),
+        .Decoder_o_valid(Decoder_1_o_valid),
+        .Decoder_inst_type(Decoder_1_inst_type),
+        .Decoder_br_type(Decoder_1_br_type),
+        .Decoder_imm(Decoder_1_imm),
+        .Decoder_rf_rd(Decoder_1_rf_rd),
+        .Decoder_rf_we(Decoder_1_rf_we),
+        .Decoder_alu_src1_sel(Decoder_1_alu_src1_sel),
+        .Decoder_alu_src2_sel(Decoder_1_alu_src2_sel),
+        .Decoder_rf_raddr1(Decoder_1_rf_raddr1),
+        .Decoder_rf_raddr2(Decoder_1_rf_raddr2),
+        .Decoder_alu_op(Decoder_1_alu_op),
+        .Decoder_mem_we(Decoder_1_mem_we),
+        .Decoder_ldst_type(Decoder_1_ldst_type),
+        .Decoder_mux_sel(Decoder_1_mux_sel),
+        .Decoder_sign_bit(Decoder_1_sign_bit),
+        .Decoder_type_predict(Decoder_1_type_predict),
+        .Decoder_PC_pre(Decoder_1_PC_pre),
+        .Decoder_csr_type(Decoder_1_csr_type),
+        .Decoder_csr_raddr(Decoder_1_csr_raddr),
+        .Decoder_ecode_in(Decoder_1_ecode_in),
+        .Decoder_ecode_we(Decoder_1_ecode_we),
+        .Decoder_code_for_cacop(Decoder_1_code_for_cacop)
     );
-    ID_Decode_edi_2  ID_Decode_edi_2_inst_2 (
+
+  ID_Decode_edi_3  ID_Decode_edi_3_inst_2 (
         .IF_IR(o_IR2),
         .PC(o_PC2),
         .brtype_pcpre(o_brtype_pcpre_2),
         .ecode(ID2_ecode_2),
         .plv(plv),
         .data_valid(o_is_valid[0]),
-        .PC_set(PC_set2_front)
+        .Decoder_instruction(Decoder_2_instruction),
+        .Decoder_PC(Decoder_2_PC),
+        .Decoder_o_inst_lawful(Decoder_2_o_inst_lawful),
+        .Decoder_o_valid(Decoder_2_o_valid),
+        .Decoder_inst_type(Decoder_2_inst_type),
+        .Decoder_br_type(Decoder_2_br_type),
+        .Decoder_imm(Decoder_2_imm),
+        .Decoder_rf_rd(Decoder_2_rf_rd),
+        .Decoder_rf_we(Decoder_2_rf_we),
+        .Decoder_alu_src1_sel(Decoder_2_alu_src1_sel),
+        .Decoder_alu_src2_sel(Decoder_2_alu_src2_sel),
+        .Decoder_rf_raddr1(Decoder_2_rf_raddr1),
+        .Decoder_rf_raddr2(Decoder_2_rf_raddr2),
+        .Decoder_alu_op(Decoder_2_alu_op),
+        .Decoder_mem_we(Decoder_2_mem_we),
+        .Decoder_ldst_type(Decoder_2_ldst_type),
+        .Decoder_mux_sel(Decoder_2_mux_sel),
+        .Decoder_sign_bit(Decoder_2_sign_bit),
+        .Decoder_type_predict(Decoder_2_type_predict),
+        .Decoder_PC_pre(Decoder_2_PC_pre),
+        .Decoder_csr_type(Decoder_2_csr_type),
+        .Decoder_csr_raddr(Decoder_2_csr_raddr),
+        .Decoder_ecode_in(Decoder_2_ecode_in),
+        .Decoder_ecode_we(Decoder_2_ecode_we),
+        .Decoder_code_for_cacop(Decoder_2_code_for_cacop)
     );
 
-    ID_REG  ID_REG_inst (
+
+    ID_REG_edi_2  ID_REG_edi_2_inst (
         .clk(clk),
         .rstn(rstn),
-        .i_PC_set1(PC_set1_front),
-        .i_PC_set2(PC_set2_front),
+        .i_PC_set1_instruction(Decoder_1_instruction),
+        .i_PC_set1_PC(Decoder_1_PC),
+        .i_PC_set1_o_inst_lawful(Decoder_1_o_inst_lawful),
+        .i_PC_set1_o_valid(Decoder_1_o_valid),
+        .i_PC_set1_inst_type(Decoder_1_inst_type),
+        .i_PC_set1_br_type(Decoder_1_br_type),
+        .i_PC_set1_imm(Decoder_1_imm),
+        .i_PC_set1_rf_rd(Decoder_1_rf_rd),
+        .i_PC_set1_rf_we(Decoder_1_rf_we),
+        .i_PC_set1_alu_src1_sel(Decoder_1_alu_src1_sel),
+        .i_PC_set1_alu_src2_sel(Decoder_1_alu_src2_sel),
+        .i_PC_set1_alu_op(Decoder_1_alu_op),
+        .i_PC_set1_mem_we(Decoder_1_mem_we),
+        .i_PC_set1_ldst_type(Decoder_1_ldst_type),
+        .i_PC_set1_mux_sel(Decoder_1_mux_sel),
+        .i_PC_set1_rf_raddr1(Decoder_1_rf_raddr1),
+        .i_PC_set1_rf_raddr2(Decoder_1_rf_raddr2),
+        .i_PC_set1_rf_rdata1(Decoder_1_rf_rdata1),
+        .i_PC_set1_rf_rdata2(Decoder_1_rf_rdata2),
+        .i_PC_set1_sign_bit(Decoder_1_sign_bit),
+        .i_PC_set1_type_predict(Decoder_1_type_predict),
+        .i_PC_set1_PC_pre(Decoder_1_PC_pre),
+        .i_PC_set1_csr_type(Decoder_1_csr_type),
+        .i_PC_set1_csr_raddr(Decoder_1_csr_raddr),
+        .i_PC_set1_ecode_in(Decoder_1_ecode_in),
+        .i_PC_set1_ecode_we(Decoder_1_ecode_we),
+        .i_PC_set1_code_for_cacop(Decoder_1_code_for_cacop),
+        .i_PC_set2_instruction(Decoder_2_instruction),
+        .i_PC_set2_PC(Decoder_2_PC),
+        .i_PC_set2_o_inst_lawful(Decoder_2_o_inst_lawful),
+        .i_PC_set2_o_valid(Decoder_2_o_valid),
+        .i_PC_set2_inst_type(Decoder_2_inst_type),
+        .i_PC_set2_br_type(Decoder_2_br_type),
+        .i_PC_set2_imm(Decoder_2_imm),
+        .i_PC_set2_rf_rd(Decoder_2_rf_rd),
+        .i_PC_set2_rf_we(Decoder_2_rf_we),
+        .i_PC_set2_alu_src1_sel(Decoder_2_alu_src1_sel),
+        .i_PC_set2_alu_src2_sel(Decoder_2_alu_src2_sel),
+        .i_PC_set2_alu_op(Decoder_2_alu_op),
+        .i_PC_set2_mem_we(Decoder_2_mem_we),
+        .i_PC_set2_ldst_type(Decoder_2_ldst_type),
+        .i_PC_set2_mux_sel(Decoder_2_mux_sel),
+        .i_PC_set2_rf_raddr1(Decoder_2_rf_raddr1),
+        .i_PC_set2_rf_raddr2(Decoder_2_rf_raddr2),
+        .i_PC_set2_rf_rdata1(Decoder_2_rf_rdata1),
+        .i_PC_set2_rf_rdata2(Decoder_2_rf_rdata2),
+        .i_PC_set2_sign_bit(Decoder_2_sign_bit),
+        .i_PC_set2_type_predict(Decoder_2_type_predict),
+        .i_PC_set2_PC_pre(Decoder_2_PC_pre),
+        .i_PC_set2_csr_type(Decoder_2_csr_type),
+        .i_PC_set2_csr_raddr(Decoder_2_csr_raddr),
+        .i_PC_set2_ecode_in(Decoder_2_ecode_in),
+        .i_PC_set2_ecode_we(Decoder_2_ecode_we),
+        .i_PC_set2_code_for_cacop(Decoder_2_code_for_cacop),
         .i_usingNUM(i_usingNUM),
         .flush_BR(flush_of_ALL),
         .stall_DCache(stall_DCache),
         .stall_EX(stall_ex),
-        .o_PC_set1(PC_set1_back),
-        .o_PC_set2(PC_set2_back),
+        .o_PC_set1_instruction(ID_REG_1_instruction),
+        .o_PC_set1_PC(ID_REG_1_PC),
+        .o_PC_set1_o_inst_lawful(ID_REG_1_o_inst_lawful),
+        .o_PC_set1_o_valid(ID_REG_1_o_valid),
+        .o_PC_set1_inst_type(ID_REG_1_inst_type),
+        .o_PC_set1_br_type(ID_REG_1_br_type),
+        .o_PC_set1_imm(ID_REG_1_imm),
+        .o_PC_set1_rf_rd(ID_REG_1_rf_rd),
+        .o_PC_set1_rf_we(ID_REG_1_rf_we),
+        .o_PC_set1_alu_src1_sel(ID_REG_1_alu_src1_sel),
+        .o_PC_set1_alu_src2_sel(ID_REG_1_alu_src2_sel),
+        .o_PC_set1_alu_op(ID_REG_1_alu_op),
+        .o_PC_set1_mem_we(ID_REG_1_mem_we),
+        .o_PC_set1_ldst_type(ID_REG_1_ldst_type),
+        .o_PC_set1_mux_sel(ID_REG_1_mux_sel),
+        .o_PC_set1_rf_raddr1(ID_REG_1_rf_raddr1),
+        .o_PC_set1_rf_raddr2(ID_REG_1_rf_raddr2),
+        .o_PC_set1_rf_rdata1(ID_REG_1_rf_rdata1),
+        .o_PC_set1_rf_rdata2(ID_REG_1_rf_rdata2),
+        .o_PC_set1_sign_bit(ID_REG_1_sign_bit),
+        .o_PC_set1_type_predict(ID_REG_1_type_predict),
+        .o_PC_set1_PC_pre(ID_REG_1_PC_pre),
+        .o_PC_set1_csr_type(ID_REG_1_csr_type),
+        .o_PC_set1_csr_raddr(ID_REG_1_csr_raddr),
+        .o_PC_set1_ecode_in(ID_REG_1_ecode_in),
+        .o_PC_set1_ecode_we(ID_REG_1_ecode_we),
+        .o_PC_set1_code_for_cacop(ID_REG_1_code_for_cacop),
+        .o_PC_set2_instruction(ID_REG_2_instruction),
+        .o_PC_set2_PC(ID_REG_2_PC),
+        .o_PC_set2_o_inst_lawful(ID_REG_2_o_inst_lawful),
+        .o_PC_set2_o_valid(ID_REG_2_o_valid),
+        .o_PC_set2_inst_type(ID_REG_2_inst_type),
+        .o_PC_set2_br_type(ID_REG_2_br_type),
+        .o_PC_set2_imm(ID_REG_2_imm),
+        .o_PC_set2_rf_rd(ID_REG_2_rf_rd),
+        .o_PC_set2_rf_we(ID_REG_2_rf_we),
+        .o_PC_set2_alu_src1_sel(ID_REG_2_alu_src1_sel),
+        .o_PC_set2_alu_src2_sel(ID_REG_2_alu_src2_sel),
+        .o_PC_set2_alu_op(ID_REG_2_alu_op),
+        .o_PC_set2_mem_we(ID_REG_2_mem_we),
+        .o_PC_set2_ldst_type(ID_REG_2_ldst_type),
+        .o_PC_set2_mux_sel(ID_REG_2_mux_sel),
+        .o_PC_set2_rf_raddr1(ID_REG_2_rf_raddr1),
+        .o_PC_set2_rf_raddr2(ID_REG_2_rf_raddr2),
+        .o_PC_set2_rf_rdata1(ID_REG_2_rf_rdata1),
+        .o_PC_set2_rf_rdata2(ID_REG_2_rf_rdata2),
+        .o_PC_set2_sign_bit(ID_REG_2_sign_bit),
+        .o_PC_set2_type_predict(ID_REG_2_type_predict),
+        .o_PC_set2_PC_pre(ID_REG_2_PC_pre),
+        .o_PC_set2_csr_type(ID_REG_2_csr_type),
+        .o_PC_set2_csr_raddr(ID_REG_2_csr_raddr),
+        .o_PC_set2_ecode_in(ID_REG_2_ecode_in),
+        .o_PC_set2_ecode_we(ID_REG_2_ecode_we),
+        .o_PC_set2_code_for_cacop(ID_REG_2_code_for_cacop),
         .a_rf_raddr1(raddr_a1),
         .a_rf_raddr2(raddr_a2),
         .b_rf_raddr1(raddr_b1),
@@ -762,7 +1101,7 @@ module mycpu_top(
         .o_is_valid(o_is_valid_2),
         .o_is_full(o_is_full_2)
     );
-    
+
     
 
     RF # (
@@ -863,24 +1202,181 @@ module mycpu_top(
 `endif
     );
 
-    Issue_dispatch  Issue_dispatch_inst (
+    Issue_dispatch_edi_2  Issue_dispatch_inst (
         .clk(clk),
-        .i_set1(PC_set1_back),
-        .i_set2(PC_set2_back),
+        .i_set1_instruction(ID_REG_1_instruction),
+        .i_set1_PC(ID_REG_1_PC),
+        .i_set1_o_inst_lawful(ID_REG_1_o_inst_lawful),
+        .i_set1_o_valid(ID_REG_1_o_valid),
+        .i_set1_inst_type(ID_REG_1_inst_type),
+        .i_set1_br_type(ID_REG_1_br_type),
+        .i_set1_imm(ID_REG_1_imm),
+        .i_set1_rf_rd(ID_REG_1_rf_rd),
+        .i_set1_rf_we(ID_REG_1_rf_we),
+        .i_set1_alu_src1_sel(ID_REG_1_alu_src1_sel),
+        .i_set1_alu_src2_sel(ID_REG_1_alu_src2_sel),
+        .i_set1_alu_op(ID_REG_1_alu_op),
+        .i_set1_mem_we(ID_REG_1_mem_we),
+        .i_set1_ldst_type(ID_REG_1_ldst_type),
+        .i_set1_mux_sel(ID_REG_1_mux_sel),
+        .i_set1_rf_raddr1(ID_REG_1_rf_raddr1),
+        .i_set1_rf_raddr2(ID_REG_1_rf_raddr2),
+        .i_set1_rf_rdata1(ID_REG_1_rf_rdata1),
+        .i_set1_rf_rdata2(ID_REG_1_rf_rdata2),
+        .i_set1_sign_bit(ID_REG_1_sign_bit),
+        .i_set1_type_predict(ID_REG_1_type_predict),
+        .i_set1_PC_pre(ID_REG_1_PC_pre),
+        .i_set1_csr_type(ID_REG_1_csr_type),
+        .i_set1_csr_raddr(ID_REG_1_csr_raddr),
+        .i_set1_ecode_in(ID_REG_1_ecode_in),
+        .i_set1_ecode_we(ID_REG_1_ecode_we),
+        .i_set1_code_for_cacop(ID_REG_1_code_for_cacop),
+        .i_set2_instruction(ID_REG_2_instruction),
+        .i_set2_PC(ID_REG_2_PC),
+        .i_set2_o_inst_lawful(ID_REG_2_o_inst_lawful),
+        .i_set2_o_valid(ID_REG_2_o_valid),
+        .i_set2_inst_type(ID_REG_2_inst_type),
+        .i_set2_br_type(ID_REG_2_br_type),
+        .i_set2_imm(ID_REG_2_imm),
+        .i_set2_rf_rd(ID_REG_2_rf_rd),
+        .i_set2_rf_we(ID_REG_2_rf_we),
+        .i_set2_alu_src1_sel(ID_REG_2_alu_src1_sel),
+        .i_set2_alu_src2_sel(ID_REG_2_alu_src2_sel),
+        .i_set2_alu_op(ID_REG_2_alu_op),
+        .i_set2_mem_we(ID_REG_2_mem_we),
+        .i_set2_ldst_type(ID_REG_2_ldst_type),
+        .i_set2_mux_sel(ID_REG_2_mux_sel),
+        .i_set2_rf_raddr1(ID_REG_2_rf_raddr1),
+        .i_set2_rf_raddr2(ID_REG_2_rf_raddr2),
+        .i_set2_rf_rdata1(ID_REG_2_rf_rdata1),
+        .i_set2_rf_rdata2(ID_REG_2_rf_rdata2),
+        .i_set2_sign_bit(ID_REG_2_sign_bit),
+        .i_set2_type_predict(ID_REG_2_type_predict),
+        .i_set2_PC_pre(ID_REG_2_PC_pre),
+        .i_set2_csr_type(ID_REG_2_csr_type),
+        .i_set2_csr_raddr(ID_REG_2_csr_raddr),
+        .i_set2_ecode_in(ID_REG_2_ecode_in),
+        .i_set2_ecode_we(ID_REG_2_ecode_we),
+        .i_set2_code_for_cacop(ID_REG_2_code_for_cacop),
         .i_is_valid(o_is_valid_2),
         .flush(flush_of_ALL),
         .stall(stall_DCache | stall_ex),
-        .o_set1(set_final_1),
-        .o_set2(set_final_2),
+        .o_set1_instruction(Dispatch_1_instruction),
+        .o_set1_PC(Dispatch_1_PC),
+        .o_set1_o_inst_lawful(Dispatch_1_o_inst_lawful),
+        .o_set1_o_valid(Dispatch_1_o_valid),
+        .o_set1_inst_type(Dispatch_1_inst_type),
+        .o_set1_br_type(Dispatch_1_br_type),
+        .o_set1_imm(Dispatch_1_imm),
+        .o_set1_rf_rd(Dispatch_1_rf_rd),
+        .o_set1_rf_we(Dispatch_1_rf_we),
+        .o_set1_alu_src1_sel(Dispatch_1_alu_src1_sel),
+        .o_set1_alu_src2_sel(Dispatch_1_alu_src2_sel),
+        .o_set1_alu_op(Dispatch_1_alu_op),
+        .o_set1_mem_we(Dispatch_1_mem_we),
+        .o_set1_ldst_type(Dispatch_1_ldst_type),
+        .o_set1_mux_sel(Dispatch_1_mux_sel),
+        .o_set1_rf_raddr1(Dispatch_1_rf_raddr1),
+        .o_set1_rf_raddr2(Dispatch_1_rf_raddr2),
+        .o_set1_rf_rdata1(Dispatch_1_rf_rdata1),
+        .o_set1_rf_rdata2(Dispatch_1_rf_rdata2),
+        .o_set1_sign_bit(Dispatch_1_sign_bit),
+        .o_set1_type_predict(Dispatch_1_type_predict),
+        .o_set1_PC_pre(Dispatch_1_PC_pre),
+        .o_set1_csr_type(Dispatch_1_csr_type),
+        .o_set1_csr_raddr(Dispatch_1_csr_raddr),
+        .o_set1_ecode_in(Dispatch_1_ecode_in),
+        .o_set1_ecode_we(Dispatch_1_ecode_we),
+        .o_set1_code_for_cacop(Dispatch_1_code_for_cacop),
+        .o_set2_instruction(Dispatch_2_instruction),
+        .o_set2_PC(Dispatch_2_PC),
+        .o_set2_o_inst_lawful(Dispatch_2_o_inst_lawful),
+        .o_set2_o_valid(Dispatch_2_o_valid),
+        .o_set2_inst_type(Dispatch_2_inst_type),
+        .o_set2_br_type(Dispatch_2_br_type),
+        .o_set2_imm(Dispatch_2_imm),
+        .o_set2_rf_rd(Dispatch_2_rf_rd),
+        .o_set2_rf_we(Dispatch_2_rf_we),
+        .o_set2_alu_src1_sel(Dispatch_2_alu_src1_sel),
+        .o_set2_alu_src2_sel(Dispatch_2_alu_src2_sel),
+        .o_set2_alu_op(Dispatch_2_alu_op),
+        .o_set2_mem_we(Dispatch_2_mem_we),
+        .o_set2_ldst_type(Dispatch_2_ldst_type),
+        .o_set2_mux_sel(Dispatch_2_mux_sel),
+        .o_set2_rf_raddr1(Dispatch_2_rf_raddr1),
+        .o_set2_rf_raddr2(Dispatch_2_rf_raddr2),
+        .o_set2_rf_rdata1(Dispatch_2_rf_rdata1),
+        .o_set2_rf_rdata2(Dispatch_2_rf_rdata2),
+        .o_set2_sign_bit(Dispatch_2_sign_bit),
+        .o_set2_type_predict(Dispatch_2_type_predict),
+        .o_set2_PC_pre(Dispatch_2_PC_pre),
+        .o_set2_csr_type(Dispatch_2_csr_type),
+        .o_set2_csr_raddr(Dispatch_2_csr_raddr),
+        .o_set2_ecode_in(Dispatch_2_ecode_in),
+        .o_set2_ecode_we(Dispatch_2_ecode_we),
+        .o_set2_code_for_cacop(Dispatch_2_code_for_cacop),
         .o_usingNUM(i_usingNUM)
     );
 
 
-    Issue_EXE  Issue_EXE_inst (
+
+    Issue_EXE_edi_2  Issue_EXE_inst (
         .clk(clk),
         .rstn(rstn),
-        .i_set1(set_final_1),
-        .i_set2(set_final_2),
+        .i_set1_instruction(Dispatch_1_instruction),
+        .i_set1_PC(Dispatch_1_PC),
+        .i_set1_o_inst_lawful(Dispatch_1_o_inst_lawful),
+        .i_set1_o_valid(Dispatch_1_o_valid),
+        .i_set1_inst_type(Dispatch_1_inst_type),
+        .i_set1_br_type(Dispatch_1_br_type),
+        .i_set1_imm(Dispatch_1_imm),
+        .i_set1_rf_rd(Dispatch_1_rf_rd),
+        .i_set1_rf_we(Dispatch_1_rf_we),
+        .i_set1_alu_src1_sel(Dispatch_1_alu_src1_sel),
+        .i_set1_alu_src2_sel(Dispatch_1_alu_src2_sel),
+        .i_set1_alu_op(Dispatch_1_alu_op),
+        .i_set1_mem_we(Dispatch_1_mem_we),
+        .i_set1_ldst_type(Dispatch_1_ldst_type),
+        .i_set1_mux_sel(Dispatch_1_mux_sel),
+        .i_set1_rf_raddr1(Dispatch_1_rf_raddr1),
+        .i_set1_rf_raddr2(Dispatch_1_rf_raddr2),
+        .i_set1_rf_rdata1(Dispatch_1_rf_rdata1),
+        .i_set1_rf_rdata2(Dispatch_1_rf_rdata2),
+        .i_set1_sign_bit(Dispatch_1_sign_bit),
+        .i_set1_type_predict(Dispatch_1_type_predict),
+        .i_set1_PC_pre(Dispatch_1_PC_pre),
+        .i_set1_csr_type(Dispatch_1_csr_type),
+        .i_set1_csr_raddr(Dispatch_1_csr_raddr),
+        .i_set1_ecode_in(Dispatch_1_ecode_in),
+        .i_set1_ecode_we(Dispatch_1_ecode_we),
+        .i_set1_code_for_cacop(Dispatch_1_code_for_cacop),
+        .i_set2_instruction(Dispatch_2_instruction),
+        .i_set2_PC(Dispatch_2_PC),
+        .i_set2_o_inst_lawful(Dispatch_2_o_inst_lawful),
+        .i_set2_o_valid(Dispatch_2_o_valid),
+        .i_set2_inst_type(Dispatch_2_inst_type),
+        .i_set2_br_type(Dispatch_2_br_type),
+        .i_set2_imm(Dispatch_2_imm),
+        .i_set2_rf_rd(Dispatch_2_rf_rd),
+        .i_set2_rf_we(Dispatch_2_rf_we),
+        .i_set2_alu_src1_sel(Dispatch_2_alu_src1_sel),
+        .i_set2_alu_src2_sel(Dispatch_2_alu_src2_sel),
+        .i_set2_alu_op(Dispatch_2_alu_op),
+        .i_set2_mem_we(Dispatch_2_mem_we),
+        .i_set2_ldst_type(Dispatch_2_ldst_type),
+        .i_set2_mux_sel(Dispatch_2_mux_sel),
+        .i_set2_rf_raddr1(Dispatch_2_rf_raddr1),
+        .i_set2_rf_raddr2(Dispatch_2_rf_raddr2),
+        .i_set2_rf_rdata1(Dispatch_2_rf_rdata1),
+        .i_set2_rf_rdata2(Dispatch_2_rf_rdata2),
+        .i_set2_sign_bit(Dispatch_2_sign_bit),
+        .i_set2_type_predict(Dispatch_2_type_predict),
+        .i_set2_PC_pre(Dispatch_2_PC_pre),
+        .i_set2_csr_type(Dispatch_2_csr_type),
+        .i_set2_csr_raddr(Dispatch_2_csr_raddr),
+        .i_set2_ecode_in(Dispatch_2_ecode_in),
+        .i_set2_ecode_we(Dispatch_2_ecode_we),
+        .i_set2_code_for_cacop(Dispatch_2_code_for_cacop),
         .rdata_a1(rdata_a1),
         .rdata_a2(rdata_a2),
         .rdata_b1(rdata_b1),
