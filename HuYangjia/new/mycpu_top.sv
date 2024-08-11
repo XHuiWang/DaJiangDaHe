@@ -447,8 +447,48 @@ module mycpu_top(
   
     `ifdef DIFFTEST_EN
     // signs for difftest
-    logic [31: 0] regs[31: 0];
+    logic [31: 0]   EX_a_inst;          //A指令指令码
+    logic [31: 0]   EX_b_inst;          //B指令指令码
+    logic [31: 0]   WB_a_inst;          //A指令指令码
+    logic [31: 0]   WB_b_inst;          //B指令指令码
+    logic           WB_a_enable_diff;
+    logic           WB_b_enable_diff;
+    logic [63: 0]   WB_rdcntv;
+    logic [31: 0]   WB_rdcntid;
+    logic [ 7: 0]   WB_st_valid;        //{5'b0, st_w, st_h, st_b}
+    logic [ 7: 0]   WB_ld_valid;        //{3'b0, ld_w, ld_hu, ld_h, ld_bu, ld_b}
+    logic [31: 0]   WB_mem_addr;        //虚拟访存地址
+    logic [31: 0]   WB_mem_addr_p;      //物理访存地址
+    logic [31: 0]   WB_mem_wdata;
 
+    logic [31:0] csr_crmd_diff_0;
+    logic [31:0] csr_prmd_diff_0;
+    logic [31:0] csr_ecfg_diff_0;
+    logic [31:0] csr_estat_diff_0;
+    logic [31:0] csr_era_diff_0;
+    logic [31:0] csr_badv_diff_0;
+    logic [31:0] csr_eentry_diff_0;
+    logic [31:0] csr_tlbidx_diff_0;
+    logic [31:0] csr_tlbehi_diff_0;
+    logic [31:0] csr_tlbelo0_diff_0;
+    logic [31:0] csr_tlbelo1_diff_0;
+    logic [31:0] csr_asid_diff_0;
+    logic [31:0] csr_pgdl_diff_0;
+    logic [31:0] csr_pgdh_diff_0;
+    logic [31:0] csr_save0_diff_0;
+    logic [31:0] csr_save1_diff_0;
+    logic [31:0] csr_save2_diff_0;
+    logic [31:0] csr_save3_diff_0;
+    logic [31:0] csr_tid_diff_0;
+    logic [31:0] csr_tcfg_diff_0;
+    logic [31:0] csr_tval_diff_0;
+    logic [31:0] csr_ticlr_diff_0;
+    logic [31:0] csr_llbctl_diff_0;
+    logic [31:0] csr_tlbrentry_diff_0;
+    logic [31:0] csr_dmw0_diff_0;
+    logic [31:0] csr_dmw1_diff_0;
+
+    logic [31: 0] regs[31: 0];
     `endif
 
     
@@ -792,6 +832,35 @@ module mycpu_top(
         .dmw1_mat (dmw1_mat),
         .dmw1_vseg (dmw1_vseg),
         .dmw1_pseg (dmw1_pseg)
+`ifdef DIFFTEST_EN
+,
+        .csr_crmd_diff_0(csr_crmd_diff_0),
+        .csr_prmd_diff_0(csr_prmd_diff_0),
+        .csr_ecfg_diff_0(csr_ecfg_diff_0),
+        .csr_estat_diff_0(csr_estat_diff_0),
+        .csr_era_diff_0(csr_era_diff_0),
+        .csr_badv_diff_0(csr_badv_diff_0),
+        .csr_eentry_diff_0(csr_eentry_diff_0),
+        .csr_tlbidx_diff_0(csr_tlbidx_diff_0),
+        .csr_tlbehi_diff_0(csr_tlbehi_diff_0),
+        .csr_tlbelo0_diff_0(csr_tlbelo0_diff_0),
+        .csr_tlbelo1_diff_0(csr_tlbelo1_diff_0),
+        .csr_asid_diff_0(csr_asid_diff_0),
+        .csr_pgdl_diff_0(csr_pgdl_diff_0),
+        .csr_pgdh_diff_0(csr_pgdh_diff_0),
+        .csr_save0_diff_0(csr_save0_diff_0),
+        .csr_save1_diff_0(csr_save1_diff_0),
+        .csr_save2_diff_0(csr_save2_diff_0),
+        .csr_save3_diff_0(csr_save3_diff_0),
+        .csr_tid_diff_0(csr_tid_diff_0),
+        .csr_tcfg_diff_0(csr_tcfg_diff_0),
+        .csr_tval_diff_0(csr_tval_diff_0),
+        .csr_ticlr_diff_0(csr_ticlr_diff_0),
+        .csr_llbctl_diff_0(csr_llbctl_diff_0),
+        .csr_tlbrentry_diff_0(csr_tlbrentry_diff_0),
+        .csr_dmw0_diff_0(csr_dmw0_diff_0),
+        .csr_dmw1_diff_0(csr_dmw1_diff_0)
+`endif
     );
 
     Issue_dispatch  Issue_dispatch_inst (
@@ -984,6 +1053,24 @@ module mycpu_top(
         .debug1_wb_rf_we(debug1_wb_rf_we),
         .debug1_wb_rf_wnum(debug1_wb_rf_wnum),
         .debug1_wb_rf_wdata(debug1_wb_rf_wdata)
+
+`ifdef DIFFTEST_EN
+        ,
+        .EX_a_inst(EX_a_inst),
+        .EX_b_inst(EX_b_inst),
+        .WB_a_inst(WB_a_inst),
+        .WB_b_inst(WB_b_inst),
+        .WB_a_enable_diff(WB_a_enable_diff),
+        .WB_b_enable_diff(WB_b_enable_diff),
+        .WB_rdcntv(WB_rdcntv),
+        .WB_rdcntid(WB_rdcntid),
+        .WB_st_valid(WB_st_valid),
+        .WB_ld_valid(WB_ld_valid),
+        .EX_mem_addr_p(p_addr_EX),  //经data_mmu_lite模块翻译后的物理地址
+        .WB_mem_addr(WB_mem_addr),
+        .WB_mem_addr_p(WB_mem_addr_p),
+        .WB_mem_wdata(WB_mem_wdata)
+`endif
     );
 
     data_mmu_lite  data_mmu_lite_inst (
@@ -1142,7 +1229,107 @@ module mycpu_top(
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
 
-    `ifdef DIFFTEST_EN
+`ifdef DIFFTEST_EN
+  DifftestInstrCommit DifftestInstrCommit0  //A指令
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(0),
+        .valid(WB_a_enable_diff),
+        .pc({32'd0,debug1_wb_pc}),
+        .instr(WB_a_inst),
+        .skip(0),
+        .is_TLBFILL(WB_a_inst[31:10]=='b0000011001001000001101),
+        .TLBFILL_index(0),
+        .is_CNTinst(WB_a_inst[31:11]=='b000000000000000001100),
+        .timer_64_value(WB_rdcntv),
+        .wen(debug1_wb_rf_we),
+        .wdest({3'd0,debug1_wb_rf_wnum}),
+        .wdata({32'd0,debug1_wb_rf_wdata}),
+        .csr_rstat(WB_a_inst[31:24]=='b00000100&&WB_a_inst[23:10]==5),
+        .csr_data(csr_estat_diff_0) //本意是指令读取到的CSR.ESTAT数据，这里直接连了CSR.ESTAT
+    );
+
+    DifftestInstrCommit DifftestInstrCommit1    //B指令
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(1),
+        .valid(WB_b_enable_diff),
+        .pc({32'd0,debug0_wb_pc}),
+        .instr(WB_b_inst),
+        .skip(0),
+        .is_TLBFILL(0),
+        .TLBFILL_index(0),
+        .is_CNTinst(WB_b_inst[31:11]=='b000000000000000001100),
+        .timer_64_value(WB_rdcntv),
+        .wen(debug0_wb_rf_we),
+        .wdest({3'd0,debug0_wb_rf_wnum}),
+        .wdata({32'd0,debug0_wb_rf_wdata}),
+        .csr_rstat(WB_b_inst[31:24]=='b00000100&&WB_b_inst[23:10]==5),
+        .csr_data(csr_estat_diff_0) //本意是指令读取到的CSR.ESTAT数据，这里直接连了CSR.ESTAT
+    );
+    DifftestTrapEvent DifftestTrapEvent(
+    .clock              (aclk           ),
+    .coreid             (0              ),
+    .valid              (0              ),
+    .code               (0              ),
+    .pc                 (0              ),
+    .cycleCnt           (0              ),
+    .instrCnt           (0              )
+    );
+
+    DifftestStoreEvent DifftestStoreEvent(
+    .clock              (aclk           ),
+    .coreid             (0              ),
+    .index              (1              ),  //B指令
+    .valid              (WB_st_valid    ),
+    .storePAddr         (WB_mem_addr_p  ),
+    .storeVAddr         (WB_mem_addr    ),
+    .storeData          (WB_mem_wdata   )
+    );
+
+    DifftestLoadEvent DifftestLoadEvent(
+    .clock              (aclk           ),
+    .coreid             (0              ),
+    .index              (1              ),  //B指令
+    .valid              (WB_ld_valid    ),
+    .paddr              (WB_mem_addr_p  ),
+    .vaddr              (WB_mem_addr    )
+    );
+
+    DifftestCSRRegState DifftestCSRRegState(
+    .clock              (aclk               ),
+    .coreid             (0                  ),
+    .crmd               (csr_crmd_diff_0    ),
+    .prmd               (csr_prmd_diff_0    ),
+    .euen               (0                  ),
+    .ecfg               (csr_ecfg_diff_0    ),
+    .estat              (csr_estat_diff_0   ),
+    .era                (csr_era_diff_0     ),
+    .badv               (csr_badv_diff_0    ),
+    .eentry             (csr_eentry_diff_0  ),
+    .tlbidx             (csr_tlbidx_diff_0  ),
+    .tlbehi             (csr_tlbehi_diff_0  ),
+    .tlbelo0            (csr_tlbelo0_diff_0 ),
+    .tlbelo1            (csr_tlbelo1_diff_0 ),
+    .asid               (csr_asid_diff_0    ),
+    .pgdl               (csr_pgdl_diff_0    ),
+    .pgdh               (csr_pgdh_diff_0    ),
+    .save0              (csr_save0_diff_0   ),
+    .save1              (csr_save1_diff_0   ),
+    .save2              (csr_save2_diff_0   ),
+    .save3              (csr_save3_diff_0   ),
+    .tid                (csr_tid_diff_0     ),
+    .tcfg               (csr_tcfg_diff_0    ),
+    .tval               (csr_tval_diff_0    ),
+    .ticlr              (csr_ticlr_diff_0   ),
+    .llbctl             (csr_llbctl_diff_0  ),
+    .tlbrentry          (csr_tlbrentry_diff_0),
+    .dmw0               (csr_dmw0_diff_0    ),
+    .dmw1               (csr_dmw1_diff_0    )
+    );
+
     DifftestGRegState DifftestGRegState(
         .clock              (aclk       ),
         .coreid             (0          ),
@@ -1180,6 +1367,6 @@ module mycpu_top(
         .gpr_31             (regs[31]   )
     );
 
-    `endif
+`endif
 
 endmodule
