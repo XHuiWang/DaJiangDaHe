@@ -1,3 +1,4 @@
+`include "config.vh"
 module Pipeline_Register(
     input                       clk,
     input                       rstn,

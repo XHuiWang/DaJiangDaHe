@@ -1,3 +1,4 @@
+`include "config.vh"
 module Pipeline_Register_CSR(
     input                       clk,
     input                       rstn,

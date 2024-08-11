@@ -1,3 +1,4 @@
+`include "config.vh"
 module ex_mem_wb(
     input                       clk,
     input                       rstn,

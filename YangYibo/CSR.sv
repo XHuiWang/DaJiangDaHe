@@ -1,4 +1,5 @@
 `include "CSR_h.vh"
+`include "config.vh"
 module CSR(
     input                           clk,
     input                           stable_clk, //遗留接口，直接连接clk
