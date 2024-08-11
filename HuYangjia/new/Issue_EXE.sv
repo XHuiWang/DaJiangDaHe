@@ -193,6 +193,7 @@ module Issue_EXE(
             ecode_we_b        <= 1'b0;
             EX_tid            <= 32'h0000_0000;
             code_for_cacop    <= 5'h00;
+            cacop_en          <= 1'b0;
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -243,6 +244,7 @@ module Issue_EXE(
             ecode_we_b        <= ecode_we_b;
             EX_tid            <= EX_tid;
             code_for_cacop    <= code_for_cacop;
+            cacop_en          <= cacop_en;
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
