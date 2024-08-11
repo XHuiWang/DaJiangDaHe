@@ -122,14 +122,32 @@ module ex_mem_wb(
     //UnCache
     output  wire                EX_UnCache,         //是否在访问外设
     //Debug
-    output  wire      [31: 0]   debug0_wb_pc,       //写回段 A指令的pc
-    output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 A指令的寄存器写使能
-    output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 A指令的寄存器写地址
-    output  wire      [31: 0]   debug0_wb_rf_wdata, //写回段 A指令的寄存器写数据
-    output  wire      [31: 0]   debug1_wb_pc,       //写回段 B指令的pc
-    output  wire      [ 3: 0]   debug1_wb_rf_we,    //写回段 B指令的寄存器写使能
-    output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 B指令的寄存器写地址
-    output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 B指令的寄存器写数据
+    output  wire      [31: 0]   debug0_wb_pc,       //写回段 B指令的pc
+    output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 B指令的寄存器写使能
+    output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 B指令的寄存器写地址
+    output  wire      [31: 0]   debug0_wb_rf_wdata, //写回段 B指令的寄存器写数据
+    output  wire      [31: 0]   debug1_wb_pc,       //写回段 A指令的pc
+    output  wire      [ 3: 0]   debug1_wb_rf_we,    //写回段 A指令的寄存器写使能
+    output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 A指令的寄存器写地址
+    output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 A指令的寄存器写数据
+
+`ifdef DIFFTEST_EN
+,
+    input   logic     [31: 0]   EX_a_inst,          //A指令指令码
+    input   logic     [31: 0]   EX_b_inst,          //B指令指令码
+    output  logic     [31: 0]   WB_a_inst,          //A指令指令码
+    output  logic     [31: 0]   WB_b_inst,          //B指令指令码
+    output  logic               WB_a_enable_diff,
+    output  logic               WB_b_enable_diff,
+    output  logic     [63: 0]   WB_rdcntv,
+    output  logic     [31: 0]   WB_rdcntid,
+    output  logic     [ 7: 0]   WB_st_valid,        //{5'b0, st_w, st_h, st_b}
+    output  logic     [ 7: 0]   WB_ld_valid,        //{3'b0, ld_w, ld_hu, ld_h, ld_bu, ld_b}
+    input   logic     [31: 0]   EX_mem_addr_p,      //经data_mmu_lite处理后的实际访存地址
+    output  logic     [31: 0]   WB_mem_addr,        //虚拟访存地址
+    output  logic     [31: 0]   WB_mem_addr_p,      //物理访存地址
+    output  logic     [31: 0]   WB_mem_wdata
+`endif    
 );
 logic   [31: 0]     MEM_pc_a;                       //A指令的PC
 logic   [31: 0]     MEM_pc_b;                       //B指令的PC
@@ -237,6 +255,14 @@ logic   [63: 0]   EX_rdcntv;
 logic   [63: 0]   MEM_rdcntv;
 logic   [31: 0]   EX_rdcntid;
 logic   [31: 0]   MEM_rdcntid;
+
+`ifdef DIFFTEST_EN
+logic             WB_a_enable;
+logic             WB_b_enable;
+logic   [ 7: 0]   EX_st_valid;
+logic   [ 7: 0]   EX_ld_valid;
+`endif
+
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
@@ -496,6 +522,23 @@ Pipeline_Register  Pipeline_Register_inst (
     .WB_rf_waddr_b(WB_rf_waddr_b),
     .WB_rf_wdata_a(WB_rf_wdata_a),
     .WB_rf_wdata_b(WB_rf_wdata_b)
+`ifdef DIFFTEST_EN
+,
+    .EX_a_inst(EX_a_inst),
+    .EX_b_inst(EX_b_inst),
+    .WB_a_inst(WB_a_inst),
+    .WB_b_inst(WB_b_inst),
+    .EX_st_valid(EX_st_valid),
+    .EX_ld_valid(EX_ld_valid),
+    .WB_st_valid(WB_st_valid),
+    .WB_ld_valid(WB_ld_valid),
+    .EX_mem_addr(EX_mem_addr),
+    .EX_mem_addr_p(EX_mem_addr_p),
+    .EX_mem_wdata(EX_mem_wdata),
+    .WB_mem_addr(WB_mem_addr),
+    .WB_mem_addr_p(WB_mem_addr_p),
+    .WB_mem_wdata(WB_mem_wdata)
+`endif
   );
 Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .clk(clk),
@@ -515,10 +558,18 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .WB_csr_wdata(WB_csr_wdata),
     .MEM_rdcntv(MEM_rdcntv),
     .MEM_rdcntid(MEM_rdcntid),
+`ifdef DIFFTEST_EN
+    .WB_rdcntv(WB_rdcntv),
+    .WB_rdcntid(WB_rdcntid)
+`endif
     .EX_a_enable(EX_a_enable),
     .EX_b_enable(EX_b_enable),
     .MEM_a_enable(MEM_a_enable),
     .MEM_b_enable(MEM_b_enable),
+`ifdef DIFFTEST_EN
+    .WB_a_enable(WB_a_enable),
+    .WB_b_enable(WB_b_enable),
+`endif
     .MEM_interrupt(MEM_interrupt),
     .MEM_interrupt_buf(MEM_interrupt_buf),
     .EX_ertn(EX_ertn),
@@ -617,4 +668,21 @@ assign debug1_wb_pc = WB_pc_a;
 assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_ex_buf)}};
 assign debug1_wb_rf_wnum = WB_rf_waddr_a;
 assign debug1_wb_rf_wdata = WB_rf_wdata_a;
+
+`ifdef DIFFTEST_EN
+assign WB_a_enable_diff = WB_a_enable & (~stall_dcache_buf) & (~stall_ex_buf);
+assign WB_b_enable_diff = WB_b_enable & (~stall_dcache_buf) & (~stall_ex_buf);
+
+assign EX_st_valid[0] = EX_mem_wvalid & EX_mem_type==3'b110;  //st.b
+assign EX_st_valid[1] = EX_mem_wvalid & EX_mem_type==3'b111;  //st.h
+assign EX_st_valid[2] = EX_mem_wvalid & EX_mem_type==3'b001;  //st.w
+assign EX_st_valid[7:3] = 5'b0;
+
+assign EX_ld_valid[0] = EX_mem_rvalid & EX_mem_type==3'b010;  //ld.b
+assign EX_ld_valid[1] = EX_mem_rvalid & EX_mem_type==3'b100;  //ld.bu
+assign EX_ld_valid[2] = EX_mem_rvalid & EX_mem_type==3'b011;  //ld.h
+assign EX_ld_valid[3] = EX_mem_rvalid & EX_mem_type==3'b101;  //ld.hu
+assign EX_ld_valid[4] = EX_mem_rvalid & EX_mem_type==3'b000;  //ld.w
+assign EX_ld_valid[7:5]= 3'b0;
+`endif
 endmodule

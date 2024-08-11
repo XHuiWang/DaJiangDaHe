@@ -52,6 +52,36 @@ module CSR(
 
     //timer
     output [31:0] tid
+
+`ifdef DIFFTEST_EN
+    ,
+    output [31:0] csr_crmd_diff_0,
+    output [31:0] csr_prmd_diff_0,
+    output [31:0] csr_ecfg_diff_0,
+    output [31:0] csr_estat_diff_0,
+    output [31:0] csr_era_diff_0,
+    output [31:0] csr_badv_diff_0,
+    output [31:0] csr_eentry_diff_0,
+    output [31:0] csr_tlbidx_diff_0,
+    output [31:0] csr_tlbehi_diff_0,
+    output [31:0] csr_tlbelo0_diff_0,
+    output [31:0] csr_tlbelo1_diff_0,
+    output [31:0] csr_asid_diff_0,
+    output [31:0] csr_pgdl_diff_0,
+    output [31:0] csr_pgdh_diff_0,
+    output [31:0] csr_save0_diff_0,
+    output [31:0] csr_save1_diff_0,
+    output [31:0] csr_save2_diff_0,
+    output [31:0] csr_save3_diff_0,
+    output [31:0] csr_tid_diff_0,
+    output [31:0] csr_tcfg_diff_0,
+    output [31:0] csr_tval_diff_0,
+    output [31:0] csr_ticlr_diff_0,
+    output [31:0] csr_llbctl_diff_0,
+    output [31:0] csr_tlbrentry_diff_0,
+    output [31:0] csr_dmw0_diff_0,
+    output [31:0] csr_dmw1_diff_0
+`endif
 );
 reg timer_int;      //定时器中断
 //CRMD
@@ -704,6 +734,8 @@ always @* begin
     `CSR_TVAL     : rdata_a = csr_tval     ;
     `CSR_TICLR    : rdata_a = csr_ticlr    ;
     `CSR_CTAG     : rdata_a = csr_ctag     ;
+    `CSR_DMW0     : rdata_a = csr_dmw0     ;
+    `CSR_DMW1     : rdata_a = csr_dmw1     ;
     default       : rdata_a = 0            ;
     endcase
 
@@ -724,6 +756,8 @@ always @* begin
     `CSR_TVAL     : rdata_b = csr_tval     ;
     `CSR_TICLR    : rdata_b = csr_ticlr    ;
     `CSR_CTAG     : rdata_b = csr_ctag     ;
+    `CSR_DMW0     : rdata_b = csr_dmw0     ;
+    `CSR_DMW1     : rdata_b = csr_dmw1     ;
     default       : rdata_b = 0            ;
     endcase
 end
@@ -738,4 +772,34 @@ assign direct_d_mat = crmd_datm;
 assign ecode = estat_ecode;
 assign tid = csr_tid;
 //end CSR read
+
+
+`ifdef DIFFTEST_EN
+assign csr_crmd_diff_0 = csr_crmd;
+assign csr_prmd_diff_0 = csr_prmd;
+assign csr_ecfg_diff_0 = csr_ecfg;
+assign csr_estat_diff_0 = csr_estat;
+assign csr_era_diff_0 = csr_era;
+assign csr_badv_diff_0 = csr_badv;
+assign csr_eentry_diff_0 = csr_eentry;
+assign csr_tlbidx_diff_0 = 32'h0;
+assign csr_tlbehi_diff_0 = 32'h0;
+assign csr_tlbelo0_diff_0 = 32'h0;
+assign csr_tlbelo1_diff_0 = 32'h0;
+assign csr_asid_diff_0 = 32'h0;
+assign csr_pgdl_diff_0 = 32'h0;
+assign csr_pgdh_diff_0 = 32'h0;
+assign csr_save0_diff_0 = csr_save0;
+assign csr_save1_diff_0 = csr_save1;
+assign csr_save2_diff_0 = csr_save2;
+assign csr_save3_diff_0 = csr_save3;
+assign csr_tid_diff_0 = csr_tid;
+assign csr_tcfg_diff_0 = csr_tcfg;
+assign csr_tval_diff_0 = csr_tval;
+assign csr_ticlr_diff_0 = csr_ticlr;
+assign csr_llbctl_diff_0 = 32'h0;
+assign csr_tlbrentry_diff_0 = 32'h0;
+assign csr_dmw0_diff_0 = csr_dmw0;
+assign csr_dmw1_diff_0 = csr_dmw1;
+`endif
 endmodule

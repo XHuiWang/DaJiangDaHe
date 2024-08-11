@@ -21,12 +21,20 @@ module Pipeline_Register_CSR(
     output  reg     [31: 0]     WB_csr_wdata,
     output  reg     [63: 0]     MEM_rdcntv,
     output  reg     [31: 0]     MEM_rdcntid,
+`ifdef DIFFTEST_EN
+    output  reg     [63: 0]     WB_rdcntv,
+    output  reg     [31: 0]     WB_rdcntid,
+`endif
 
     //CSR控制
     input                       EX_a_enable,
     input                       EX_b_enable,
     output  reg                 MEM_a_enable,
     output  reg                 MEM_b_enable,
+    `ifdef DIFFTEST_EN 
+    output  reg                 WB_a_enable,
+    output  reg                 WB_b_enable,
+    `endif
     input                       MEM_interrupt,
     output  reg                 MEM_interrupt_buf,  //若MEM_a_enable MEM_b_enable均为0，MEM_interrupt在MEM段保留一拍
     input                       EX_ertn,
@@ -143,6 +151,10 @@ always@(posedge clk)begin
         WB_flush_csr<=1'b0;
         WB_flush_csr_pc<=32'h0000_0000;
         WB_interrupt<=1'b0;
+`ifdef DIFFTEST_EN
+        WB_a_enable<=1'b0;
+        WB_b_enable<=1'b0;
+`endif
     end
     else if(WB_flush_csr)begin  //TOFIX: 要考虑中断在MEM，例外在WB时，MEM_interrupt_buf在本级保留直到新的有效指令到来
         MEM_interrupt_buf <= (~MEM_a_enable&~MEM_b_enable&(MEM_interrupt|MEM_interrupt_buf)) & ~WB_interrupt;
@@ -159,6 +171,10 @@ always@(posedge clk)begin
         WB_flush_csr<=interrupt & ~WB_interrupt;
         WB_flush_csr_pc<=MEM_flush_csr_pc;
         WB_interrupt<=interrupt;
+`ifdef DIFFTEST_EN
+        WB_a_enable<=1'b0;
+        WB_b_enable<=1'b0;
+`endif
     end
     else if(!stall_dcache&&!stall_ex)begin
         //存在尚未处理的中断且本轮MEM段不能处理中断，中断信号保留一拍
@@ -176,6 +192,10 @@ always@(posedge clk)begin
         WB_flush_csr_pc<=MEM_flush_csr_pc;
         WB_interrupt<=(MEM_a_enable | MEM_b_enable) & (MEM_interrupt | MEM_interrupt_buf);
             //WB_interrupt记录MEM段的中断是否被处理
+`ifdef DIFFTEST_EN
+        WB_a_enable<=MEM_a_enable;
+        WB_b_enable<=MEM_b_enable;
+`endif
     end
 end
 
@@ -195,6 +215,10 @@ always@(posedge clk) begin
         WB_ecode_in<=MEM_ecode_in;
         WB_badv_in<=MEM_badv_in;
         WB_era_in<=MEM_era_in;
+`ifdef DIFFTEST_EN
+        WB_rdcntv<=MEM_rdcntv;
+        WB_rdcntid<=MEM_rdcntid;
+`endif
     end
     else begin end
 end
