@@ -676,7 +676,7 @@ module mycpu_top_edi_2(
     logic [31:0] csr_dmw0_diff_0;
     logic [31:0] csr_dmw1_diff_0;
 
-    logic [31: 0] regs[31: 0];
+    logic [31: 0] regs[ 0:31];
     `endif
 
     
