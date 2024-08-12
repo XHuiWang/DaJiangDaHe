@@ -76,7 +76,7 @@ module IF1(
             is_valid_temp <= 1;
         end
     end
-    assign is_valid = ~stall & is_valid_temp & ~BR_predecoder & ~MEM_br & ~BR_era & ~BR_eentry;
+    assign is_valid = ~stall_full_instr & is_valid_temp & ~BR_predecoder & ~MEM_br & ~BR_era & ~BR_eentry;
 
     always @(posedge clk) begin
         if( !rstn ) begin
