@@ -167,36 +167,6 @@ module ID_REG_edi_2(
     assign flush = flush_BR;
     assign stall = stall_DCache | stall_EX;
 
-    typedef struct {
-        logic [31:0] instruction;
-        logic [31:0] PC;
-        logic o_inst_lawful;
-        logic o_valid;
-        logic [9:0] inst_type;
-        logic [9:0] br_type;
-        logic [31:0] imm;
-        logic [4:0] rf_rd;
-        logic rf_we;
-        logic [2:0] alu_src1_sel;
-        logic [2:0] alu_src2_sel;
-        logic [11:0] alu_op;
-        logic mem_we;
-        logic [3:0] ldst_type;
-        logic [8:0] mux_sel;
-        logic [4:0] rf_raddr1;
-        logic [4:0] rf_raddr2;
-        logic [31:0] rf_rdata1;
-        logic [31:0] rf_rdata2;
-        logic sign_bit;
-        logic [1:0] type_predict;
-        logic [31:0] PC_pre;
-        logic [2:0] csr_type;
-        logic [13:0] csr_raddr;
-        logic [6:0] ecode_in;
-        logic ecode_we;
-        logic [4:0] code_for_cacop;
-    } PC_set;
-
     logic [31: 0] instruction   [0:NUM-1];
     logic [31: 0] PC            [0:NUM-1];
     logic [ 0: 0] o_inst_lawful [0:NUM-1];
