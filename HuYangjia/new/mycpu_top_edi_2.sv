@@ -977,6 +977,15 @@ module mycpu_top_edi_2(
     );
 
 
+    // 由于未读取RF带来的rf_data的空悬
+    assign Decoder_1_rf_rdata1 = 0;
+    assign Decoder_1_rf_rdata2 = 0;
+    
+    assign Decoder_2_rf_rdata1 = 0;
+    assign Decoder_2_rf_rdata2 = 0;
+    
+
+
     ID_REG_edi_2  ID_REG_edi_2_inst (
         .clk(clk),
         .rstn(rstn),
