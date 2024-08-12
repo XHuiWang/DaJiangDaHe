@@ -492,6 +492,25 @@ module mycpu_top(
     logic [31:0] csr_dmw1_diff_0;
 
     logic [31: 0] regs[31: 0];
+
+    logic        WB_a_enable_diff_0;    //迟一拍，无视stall和flush
+    logic        WB_b_enable_diff_0;
+    logic [31:0] WB_a_inst_0;
+    logic [31:0] WB_b_inst_0;
+    logic [63:0] WB_rdcntv_0;
+    logic [ 7:0] WB_st_valid_0;
+    logic [ 7:0] WB_ld_valid_0;
+    logic [31:0] WB_mem_addr_0;
+    logic [31:0] WB_mem_addr_p_0;
+    logic [31:0] WB_mem_wdata_0;
+    logic [31:0] debug1_wb_pc_0;
+    logic [31:0] debug0_wb_pc_0;
+    logic        debug1_wb_rf_we_0;
+    logic        debug0_wb_rf_we_0;
+    logic [ 4:0] debug1_wb_rf_wnum_0;
+    logic [ 4:0] debug0_wb_rf_wnum_0;
+    logic [31:0] debug1_wb_rf_wdata_0;
+    logic [31:0] debug0_wb_rf_wdata_0;
     `endif
 
     
@@ -1234,23 +1253,43 @@ module mycpu_top(
     );
 
 `ifdef DIFFTEST_EN
+     always @(posedge clk)begin
+        WB_a_enable_diff_0 <= WB_a_enable_diff;
+        WB_b_enable_diff_0 <= WB_b_enable_diff;
+        WB_a_inst_0 <= WB_a_inst;
+        WB_b_inst_0 <= WB_b_inst;
+        WB_rdcntv_0 <= WB_rdcntv;
+        WB_st_valid_0 <= WB_st_valid;
+        WB_ld_valid_0 <= WB_ld_valid;
+        WB_mem_addr_0 <= WB_mem_addr;
+        WB_mem_addr_p_0 <= WB_mem_addr_p;
+        WB_mem_wdata_0 <= WB_mem_wdata;
+        debug1_wb_pc_0 <= debug1_wb_pc;
+        debug1_wb_rf_we_0 <= debug1_wb_rf_we;
+        debug1_wb_rf_wnum_0 <= debug1_wb_rf_wnum;
+        debug1_wb_rf_wdata_0 <= debug1_wb_rf_wdata;
+        debug0_wb_pc_0 <= debug0_wb_pc;
+        debug0_wb_rf_we_0 <= debug0_wb_rf_we;
+        debug0_wb_rf_wnum_0 <= debug0_wb_rf_wnum;
+        debug0_wb_rf_wdata_0 <= debug0_wb_rf_wdata;
+    end
   DifftestInstrCommit DifftestInstrCommit0  //A指令
     (
         .clock(aclk),
         .coreid(0),
         .index(0),
-        .valid(WB_a_enable_diff),
-        .pc({32'd0,debug1_wb_pc}),
-        .instr(WB_a_inst),
+        .valid(WB_a_enable_diff_0),
+        .pc({32'd0,debug1_wb_pc_0}),
+        .instr(WB_a_inst_0),
         .skip(0),
-        .is_TLBFILL(WB_a_inst[31:10]=='b0000011001001000001101),
+        .is_TLBFILL(WB_a_inst_0[31:10]=='b0000011001001000001101),
         .TLBFILL_index(0),
-        .is_CNTinst(WB_a_inst[31:11]=='b000000000000000001100),
-        .timer_64_value(WB_rdcntv),
-        .wen(debug1_wb_rf_we),
-        .wdest({3'd0,debug1_wb_rf_wnum}),
-        .wdata({32'd0,debug1_wb_rf_wdata}),
-        .csr_rstat(WB_a_inst[31:24]=='b00000100&&WB_a_inst[23:10]==5),
+        .is_CNTinst(WB_a_inst_0[31:11]=='b000000000000000001100),
+        .timer_64_value(WB_rdcntv_0),
+        .wen(debug1_wb_rf_we_0),
+        .wdest({3'd0,debug1_wb_rf_wnum_0}),
+        .wdata({32'd0,debug1_wb_rf_wdata_0}),
+        .csr_rstat(WB_a_inst_0[31:24]=='b00000100&&WB_a_inst_0[23:10]==5),
         .csr_data(csr_estat_diff_0) //本意是指令读取到的CSR.ESTAT数据，这里直接连了CSR.ESTAT
     );
 
@@ -1259,18 +1298,18 @@ module mycpu_top(
         .clock(aclk),
         .coreid(0),
         .index(1),
-        .valid(WB_b_enable_diff),
-        .pc({32'd0,debug0_wb_pc}),
-        .instr(WB_b_inst),
+        .valid(WB_b_enable_diff_0),
+        .pc({32'd0,debug0_wb_pc_0}),
+        .instr(WB_b_inst_0),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
-        .is_CNTinst(WB_b_inst[31:11]=='b000000000000000001100),
-        .timer_64_value(WB_rdcntv),
-        .wen(debug0_wb_rf_we),
-        .wdest({3'd0,debug0_wb_rf_wnum}),
-        .wdata({32'd0,debug0_wb_rf_wdata}),
-        .csr_rstat(WB_b_inst[31:24]=='b00000100&&WB_b_inst[23:10]==5),
+        .is_CNTinst(WB_b_inst_0[31:11]=='b000000000000000001100),
+        .timer_64_value(WB_rdcntv_0),
+        .wen(debug0_wb_rf_we_0),
+        .wdest({3'd0,debug0_wb_rf_wnum_0}),
+        .wdata({32'd0,debug0_wb_rf_wdata_0}),
+        .csr_rstat(WB_b_inst_0[31:24]=='b00000100&&WB_b_inst_0[23:10]==5),
         .csr_data(csr_estat_diff_0) //本意是指令读取到的CSR.ESTAT数据，这里直接连了CSR.ESTAT
     );
     DifftestTrapEvent DifftestTrapEvent(
@@ -1287,19 +1326,19 @@ module mycpu_top(
     .clock              (aclk           ),
     .coreid             (0              ),
     .index              (1              ),  //B指令
-    .valid              (WB_st_valid    ),
-    .storePAddr         (WB_mem_addr_p  ),
-    .storeVAddr         (WB_mem_addr    ),
-    .storeData          (WB_mem_wdata   )
+    .valid              (WB_st_valid_0  ),
+    .storePAddr         (WB_mem_addr_p_0),
+    .storeVAddr         (WB_mem_addr_0  ),
+    .storeData          (WB_mem_wdata_0 )
     );
 
     DifftestLoadEvent DifftestLoadEvent(
     .clock              (aclk           ),
     .coreid             (0              ),
     .index              (1              ),  //B指令
-    .valid              (WB_ld_valid    ),
-    .paddr              (WB_mem_addr_p  ),
-    .vaddr              (WB_mem_addr    )
+    .valid              (WB_ld_valid_0  ),
+    .paddr              (WB_mem_addr_p_0),
+    .vaddr              (WB_mem_addr_0  )
     );
 
     DifftestCSRRegState DifftestCSRRegState(
