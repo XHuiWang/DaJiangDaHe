@@ -112,11 +112,11 @@ always@(posedge clk)
 begin
     if(!rstn | WB_flush_csr | MEM_br)
     begin
-        MEM_a_enable<=1'b0;
+        MEM_a_enable<=MEM_br & (stall_dcache | stall_ex) & MEM_a_enable; //防止进入MEM段的BR指令，因同时stall和MEM_br，enable没有传到下一级就被清除
         MEM_ecode_we_a<=1'b0;
         MEM_badv_we_a<=1'b0;
 
-        MEM_b_enable_ori<=1'b0;
+        MEM_b_enable_ori<=MEM_br & (stall_dcache | stall_ex) & MEM_b_enable_ori;
         MEM_ecode_we_b_ori<=1'b0;
         MEM_badv_we_b_ori<=1'b0;
         MEM_csr_we_ori<=32'h0000_0000;
