@@ -26,7 +26,7 @@ module IF1(
 
     input [31: 0] pc_predict,
     input [31: 0] pc_BR,
-    input [ 0: 0] EX_BR,
+    input [ 0: 0] MEM_br,
     input [ 1: 0] plv,
 
     // 来自预译码的信号
@@ -40,6 +40,10 @@ module IF1(
     input [ 0: 0] WB_eentry_en,
     input [31: 0] WB_flush_csr_pc,
     input [ 0: 0] WB_flush_csr,
+
+    // 来自cacop
+    input [31: 0] addrs_cacop,
+    input [ 0: 0] flush_cacop,
 
 
     // stall信号
@@ -72,7 +76,7 @@ module IF1(
             is_valid_temp <= 1;
         end
     end
-    assign is_valid = ~stall & is_valid_temp & ~BR_predecoder & ~EX_BR & ~BR_era & ~BR_eentry;
+    assign is_valid = ~stall & is_valid_temp & ~BR_predecoder & ~MEM_br & ~BR_era & ~BR_eentry;
 
     always @(posedge clk) begin
         if( !rstn ) begin
@@ -87,7 +91,10 @@ module IF1(
         else if(WB_flush_csr) begin
             pc_IF1 <= WB_flush_csr_pc;
         end
-        else if(EX_BR) begin
+        else if(flush_cacop) begin
+            pc_IF1 <= addrs_cacop;
+        end
+        else if(MEM_br) begin
             pc_IF1 <= pc_BR;
         end
         else if(BR_predecoder) begin

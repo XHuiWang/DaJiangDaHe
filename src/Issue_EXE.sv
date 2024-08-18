@@ -26,6 +26,7 @@
 
 import Public_Info::*;
 
+
 module Issue_EXE(
     input [ 0: 0] clk,
     input [ 0: 0] rstn,
@@ -46,7 +47,7 @@ module Issue_EXE(
     // stall&flush
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_DCache,
-    input [ 0: 0] stall_div,
+    input [ 0: 0] stall_EX,
 
     output logic [ 0: 0] EX_a_enable,        //A指令是否有效
     output logic [ 0: 0] EX_b_enable,        //B指令是否有效
@@ -76,8 +77,8 @@ module Issue_EXE(
     output logic [11: 0] EX_alu_op_a,        //A指令的运算类型
     output logic [11: 0] EX_alu_op_b,        //B指令的运算类型
 
-    output logic [ 3: 0] EX_br_type_a,       //A指令的分支类型
-    output logic [ 3: 0] EX_br_type_b,       //B指令的分支类型
+    output logic [ 9: 0] EX_br_type_a,       //A指令的分支类型
+    output logic [ 9: 0] EX_br_type_b,       //B指令的分支类型
     output logic [ 0: 0] EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转
     output logic [ 0: 0] EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转
 
@@ -105,14 +106,21 @@ module Issue_EXE(
     output logic [ 0: 0] ecode_we_a,         //异常处理的写曾经，表示已经修改过ecode_in
     output logic [ 6: 0] ecode_in_b,         //异常处理的输入
     output logic [ 0: 0] ecode_we_b,         //异常处理的写曾经，表示已经修改过ecode_in
-    output logic [ 0: 0] ertn_check          //ertn检查
+    output logic [ 0: 0] ertn_check,         //ertn检查
 
+    output logic [ 4: 0] code_for_cacop,     //cacop指令的code
+    output logic [ 0: 0] cacop_en            //cacop指令的使能
+
+    `ifdef DIFFTEST_EN
+    ,.output logic [31: 0] EX_a_inst,
+    .output logic [31: 0] EX_b_inst
+    `endif  
     );
 
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
     assign flush = flush_BR;
-    assign stall = stall_DCache | stall_div;
+    assign stall = stall_DCache | stall_EX;
 
     logic [ 0: 0] Issue_a_enable;
     logic [ 0: 0] Issue_b_enable;
@@ -142,7 +150,7 @@ module Issue_EXE(
     
 
     always @(posedge clk) begin
-        if( !rstn ) begin
+        if( !rstn | flush) begin
             EX_pc_a           <= 32'h0000_0000;
             EX_pc_b           <= 32'h0000_0000;
             EX_rf_raddr_a1    <= 5'h00;
@@ -161,8 +169,8 @@ module Issue_EXE(
             EX_alu_src_sel_b2 <= 3'h0;
             EX_alu_op_a       <= 12'h000;
             EX_alu_op_b       <= 12'h000;
-            EX_br_type_a      <= 4'h0;
-            EX_br_type_b      <= 4'h0;
+            EX_br_type_a      <= 10'h001;
+            EX_br_type_b      <= 10'h001;
             EX_br_pd_a        <= 1'b0;
             EX_br_pd_b        <= 1'b0;
             EX_rf_we_a        <= 1'b0;
@@ -179,8 +187,8 @@ module Issue_EXE(
             EX_sign_bit       <= 1'b0;
             type_predict_a    <= 2'h0;
             type_predict_b    <= 2'h0;
-            EX_PC_pre_a       <= 32'h0000_0000;
-            EX_PC_pre_b       <= 32'h0000_0000;
+            EX_PC_pre_a       <= 32'h0000_0004;
+            EX_PC_pre_b       <= 32'h0000_0004;
             csr_type          <= 3'h0;
             csr_raddr         <= 14'h0000;
             csr_rdata         <= 32'h0000_0000;
@@ -190,6 +198,12 @@ module Issue_EXE(
             ecode_in_b        <= 7'h00;
             ecode_we_b        <= 1'b0;
             EX_tid            <= 32'h0000_0000;
+            code_for_cacop    <= 5'h00;
+            cacop_en          <= 1'b0;
+            `ifdef DIFFTEST_EN
+            EX_a_inst         <= 32'h0000_0000;
+            EX_b_inst         <= 32'h0000_0000;
+            `endif
         end
         else if(stall) begin
             EX_pc_a           <= EX_pc_a;
@@ -239,10 +253,16 @@ module Issue_EXE(
             ecode_in_b        <= ecode_in_b;
             ecode_we_b        <= ecode_we_b;
             EX_tid            <= EX_tid;
+            code_for_cacop    <= code_for_cacop;
+            cacop_en          <= cacop_en;
+            `ifdef DIFFTEST_EN
+            EX_a_inst         <= EX_a_inst;
+            EX_b_inst         <= EX_b_inst;
+            `endif
         end
         else begin
             if( i_set1.inst_type != 10'h001 ) begin
-                EX_pc_a           <= 32'hffff_ffff;
+                EX_pc_a           <= 32'h0000_0000;
                 EX_pc_b           <= i_set1.PC;
                 EX_rf_raddr_a1    <= i_set2.rf_raddr1;
                 EX_rf_raddr_a2    <= i_set2.rf_raddr2;
@@ -260,8 +280,8 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set1.alu_src2_sel;
                 EX_alu_op_a       <= i_set2.alu_op;
                 EX_alu_op_b       <= i_set1.alu_op;
-                EX_br_type_a      <= i_set2.br_type & {4{Issue_b_enable}};
-                EX_br_type_b      <= i_set1.br_type & {4{Issue_a_enable}};
+                EX_br_type_a      <= (Issue_b_enable) ? i_set2.br_type : 10'h001;
+                EX_br_type_b      <= (Issue_a_enable) ? i_set1.br_type : 10'h001;
                 EX_br_pd_a        <= ~(i_set2.PC_pre == i_set2.PC + 4);
                 EX_br_pd_b        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_rf_we_a        <= i_set2.rf_we & Issue_b_enable;
@@ -278,8 +298,8 @@ module Issue_EXE(
                 EX_mul_en         <= (i_set1.inst_type == 10'h004) & Issue_a_enable;
                 type_predict_a    <= i_set2.type_predict;
                 type_predict_b    <= i_set1.type_predict;
-                EX_PC_pre_a       <= i_set2.PC_pre;
-                EX_PC_pre_b       <= i_set1.PC_pre;
+                EX_PC_pre_a       <= 32'h0000_0004;
+                EX_PC_pre_b       <= (Issue_a_enable) ? i_set1.PC_pre : i_set1.PC + 4;
                 csr_type          <= i_set1.csr_type & {3{Issue_a_enable}};
                 csr_raddr         <= i_set1.csr_raddr;
                 csr_rdata         <= csr_rdata_1;
@@ -289,6 +309,12 @@ module Issue_EXE(
                 ecode_in_b        <= i_set1.ecode_in & {7{Issue_a_enable}};
                 ecode_we_b        <= i_set1.ecode_we & Issue_a_enable;
                 EX_tid            <= csr_tid;
+                code_for_cacop    <= i_set1.code_for_cacop;
+                cacop_en          <= (i_set1.inst_type == 10'h080) & Issue_a_enable;
+                `ifdef DIFFTEST_EN
+                EX_a_inst         <= i_set2.instruction;
+                EX_b_inst         <= i_set1.instruction;
+                `endif
             end
             else begin
                 EX_pc_a           <= i_set1.PC;
@@ -309,8 +335,8 @@ module Issue_EXE(
                 EX_alu_src_sel_b2 <= i_set2.alu_src2_sel;
                 EX_alu_op_a       <= i_set1.alu_op;
                 EX_alu_op_b       <= i_set2.alu_op;
-                EX_br_type_a      <= i_set1.br_type & {4{Issue_a_enable}};
-                EX_br_type_b      <= i_set2.br_type & {4{Issue_b_enable}};
+                EX_br_type_a      <= (Issue_a_enable) ? i_set1.br_type : 10'h001;
+                EX_br_type_b      <= (Issue_b_enable) ? i_set2.br_type : 10'h001;
                 EX_br_pd_a        <= ~(i_set1.PC_pre == i_set1.PC + 4);
                 EX_br_pd_b        <= ~(i_set2.PC_pre == i_set2.PC + 4);
                 // TODO: 预测跳转
@@ -328,8 +354,8 @@ module Issue_EXE(
                 EX_mul_en         <= (i_set2.inst_type == 10'h004) & Issue_b_enable;
                 type_predict_a    <= i_set1.type_predict;
                 type_predict_b    <= i_set2.type_predict;
-                EX_PC_pre_a       <= i_set1.PC_pre;
-                EX_PC_pre_b       <= i_set2.PC_pre;
+                EX_PC_pre_a       <= (Issue_a_enable) ? i_set1.PC_pre : i_set1.PC + 4;
+                EX_PC_pre_b       <= (Issue_b_enable) ? i_set2.PC_pre : i_set2.PC + 4;
                 csr_type          <= i_set2.csr_type & {3{Issue_b_enable}};
                 csr_raddr         <= i_set2.csr_raddr;
                 csr_rdata         <= csr_rdata_2;
@@ -339,6 +365,12 @@ module Issue_EXE(
                 ecode_in_b        <= i_set2.ecode_in & {7{Issue_b_enable}};
                 ecode_we_b        <= i_set2.ecode_we & Issue_b_enable;
                 EX_tid            <= csr_tid;
+                code_for_cacop    <= i_set2.code_for_cacop;
+                cacop_en          <= (i_set2.inst_type == 10'h080) & Issue_b_enable;
+                `ifdef DIFFTEST_EN
+                EX_a_inst         <= i_set1.instruction;
+                EX_b_inst         <= i_set2.instruction;
+                `endif
             end
         end
     end

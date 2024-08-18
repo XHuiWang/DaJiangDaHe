@@ -39,9 +39,49 @@ module CSR(
     output [1:0] translate_mode,    //01: direct, 10: paged
     output [1:0] direct_i_mat, //处于直接地址翻译模式时，存储访问类型
     output [1:0] direct_d_mat, //0: 非缓存, 1: 可缓存
+    //直接映射窗口0
+    output reg dmw0_plv0,
+    output reg dmw0_plv3,
+    output reg [1:0] dmw0_mat,
+    output reg [31:29] dmw0_vseg,dmw0_pseg,
+    //直接映射窗口1
+    output reg dmw1_plv0,
+    output reg dmw1_plv3,
+    output reg [1:0] dmw1_mat,
+    output reg [31:29] dmw1_vseg,dmw1_pseg,
 
     //timer
     output [31:0] tid
+
+`ifdef DIFFTEST_EN
+    ,
+    output [31:0] csr_crmd_diff_0,
+    output [31:0] csr_prmd_diff_0,
+    output [31:0] csr_ecfg_diff_0,
+    output [31:0] csr_estat_diff_0,
+    output [31:0] csr_era_diff_0,
+    output [31:0] csr_badv_diff_0,
+    output [31:0] csr_eentry_diff_0,
+    output [31:0] csr_tlbidx_diff_0,
+    output [31:0] csr_tlbehi_diff_0,
+    output [31:0] csr_tlbelo0_diff_0,
+    output [31:0] csr_tlbelo1_diff_0,
+    output [31:0] csr_asid_diff_0,
+    output [31:0] csr_pgdl_diff_0,
+    output [31:0] csr_pgdh_diff_0,
+    output [31:0] csr_save0_diff_0,
+    output [31:0] csr_save1_diff_0,
+    output [31:0] csr_save2_diff_0,
+    output [31:0] csr_save3_diff_0,
+    output [31:0] csr_tid_diff_0,
+    output [31:0] csr_tcfg_diff_0,
+    output [31:0] csr_tval_diff_0,
+    output [31:0] csr_ticlr_diff_0,
+    output [31:0] csr_llbctl_diff_0,
+    output [31:0] csr_tlbrentry_diff_0,
+    output [31:0] csr_dmw0_diff_0,
+    output [31:0] csr_dmw1_diff_0
+`endif
 );
 reg timer_int;      //定时器中断
 //CRMD
@@ -101,6 +141,26 @@ assign csr_eentry[`EENTRY_VA]   = eentry_va;
 //SAVE0~3
 reg [31:0] csr_save0,csr_save1,csr_save2,csr_save3;
 
+
+//DMW0~1
+wire [31:0] csr_dmw0, csr_dmw1;
+assign csr_dmw0[`DMW_PLV0]      = dmw0_plv0;
+assign csr_dmw0[`DMW_ZERO_0]    = 0;
+assign csr_dmw0[`DMW_PLV3]      = dmw0_plv3;
+assign csr_dmw0[`DMW_MAT]       = dmw0_mat;
+assign csr_dmw0[`DMW_ZERO_1]    = 0;
+assign csr_dmw0[`DMW_PSEG]      = dmw0_pseg;
+assign csr_dmw0[`DMW_ZERO_2]    = 0;
+assign csr_dmw0[`DMW_VSEG]      = dmw0_vseg;
+assign csr_dmw1[`DMW_PLV0]      = dmw1_plv0;
+assign csr_dmw1[`DMW_ZERO_0]    = 0;
+assign csr_dmw1[`DMW_PLV3]      = dmw1_plv3;
+assign csr_dmw1[`DMW_MAT]       = dmw1_mat;
+assign csr_dmw1[`DMW_ZERO_1]    = 0;
+assign csr_dmw1[`DMW_PSEG]      = dmw1_pseg;
+assign csr_dmw1[`DMW_ZERO_2]    = 0;
+assign csr_dmw1[`DMW_VSEG]      = dmw1_vseg;
+
 //TID
 reg [31:0] csr_tid;
 //TCFG
@@ -141,9 +201,13 @@ always @(posedge clk)
         if(we[1]) crmd_plv[1]  <= wdata[1];
         if(we[2]) crmd_ie[2]   <= wdata[2];
         if(we[5]) crmd_datf[5] <= wdata[5];
+        else if (we[4]&wdata[4]) crmd_datf[5] <= 1;//当软件将 PG 置为 1 时，推荐同时将 DATF 域置为 0b01，即一致可缓存类型
         if(we[6]) crmd_datf[6] <= wdata[6];
+        else if (we[4]&wdata[4]) crmd_datf[6] <= 0;
         if(we[7]) crmd_datm[7] <= wdata[7];
+        else if (we[4]&wdata[4]) crmd_datm[7] <= 1;//当软件将 PG 置为 1 时，推荐同时将 DATM 置为 0b01，即一致可缓存类型
         if(we[8]) crmd_datm[8] <= wdata[8];
+        else if (we[4]&wdata[4]) crmd_datm[8] <= 0;
         //只在{pg,da}处在合法状态时更新
         if(we[3]||we[4]) begin
             if(pg_da_next[0]^pg_da_next[1])
@@ -458,6 +522,48 @@ always @(posedge clk)
         if(we[30]) csr_save3[30]<=wdata[30];
         if(we[31]) csr_save3[31]<=wdata[31];
     end
+
+//DMW0~1
+always @(posedge clk)
+    if(~rstn) begin
+        dmw0_plv0<=0;
+        dmw0_plv3<=0;
+        dmw0_mat<=0;
+        dmw0_pseg<=0;
+        dmw0_vseg<=0;
+    end else if(software_we&&waddr==`CSR_DMW0) begin
+        if(we[ 0]) dmw0_plv0    <=wdata[ 0];
+        if(we[ 3]) dmw0_plv3    <=wdata[ 3];
+        if(we[ 4]) dmw0_mat[ 0] <=wdata[ 4];
+        if(we[ 5]) dmw0_mat[ 1] <=wdata[ 5];
+        if(we[25]) dmw0_pseg[29]<=wdata[25];
+        if(we[26]) dmw0_pseg[30]<=wdata[26];
+        if(we[27]) dmw0_pseg[31]<=wdata[27];
+        if(we[29]) dmw0_vseg[29]<=wdata[29];
+        if(we[30]) dmw0_vseg[30]<=wdata[30];
+        if(we[31]) dmw0_vseg[31]<=wdata[31];
+    end
+
+always @(posedge clk)
+    if(~rstn) begin
+        dmw1_plv0<=0;
+        dmw1_plv3<=0;
+        dmw1_mat<=0;
+        dmw1_pseg<=0;
+        dmw1_vseg<=0;
+    end else if(software_we&&waddr==`CSR_DMW1) begin
+        if(we[ 0]) dmw1_plv0    <=wdata[ 0];
+        if(we[ 3]) dmw1_plv3    <=wdata[ 3];
+        if(we[ 4]) dmw1_mat[ 0] <=wdata[ 4];
+        if(we[ 5]) dmw1_mat[ 1] <=wdata[ 5];
+        if(we[25]) dmw1_pseg[29]<=wdata[25];
+        if(we[26]) dmw1_pseg[30]<=wdata[26];
+        if(we[27]) dmw1_pseg[31]<=wdata[27];
+        if(we[29]) dmw1_vseg[29]<=wdata[29];
+        if(we[30]) dmw1_vseg[30]<=wdata[30];
+        if(we[31]) dmw1_vseg[31]<=wdata[31];
+    end
+
 //TID
 always @(posedge clk)
     if(~rstn) begin
@@ -628,6 +734,8 @@ always @* begin
     `CSR_TVAL     : rdata_a = csr_tval     ;
     `CSR_TICLR    : rdata_a = csr_ticlr    ;
     `CSR_CTAG     : rdata_a = csr_ctag     ;
+    `CSR_DMW0     : rdata_a = csr_dmw0     ;
+    `CSR_DMW1     : rdata_a = csr_dmw1     ;
     default       : rdata_a = 0            ;
     endcase
 
@@ -648,6 +756,8 @@ always @* begin
     `CSR_TVAL     : rdata_b = csr_tval     ;
     `CSR_TICLR    : rdata_b = csr_ticlr    ;
     `CSR_CTAG     : rdata_b = csr_ctag     ;
+    `CSR_DMW0     : rdata_b = csr_dmw0     ;
+    `CSR_DMW1     : rdata_b = csr_dmw1     ;
     default       : rdata_b = 0            ;
     endcase
 end
@@ -662,4 +772,34 @@ assign direct_d_mat = crmd_datm;
 assign ecode = estat_ecode;
 assign tid = csr_tid;
 //end CSR read
+
+
+`ifdef DIFFTEST_EN
+assign csr_crmd_diff_0 = csr_crmd;
+assign csr_prmd_diff_0 = csr_prmd;
+assign csr_ecfg_diff_0 = csr_ecfg;
+assign csr_estat_diff_0 = csr_estat;
+assign csr_era_diff_0 = csr_era;
+assign csr_badv_diff_0 = csr_badv;
+assign csr_eentry_diff_0 = csr_eentry;
+assign csr_tlbidx_diff_0 = 32'h0;
+assign csr_tlbehi_diff_0 = 32'h0;
+assign csr_tlbelo0_diff_0 = 32'h0;
+assign csr_tlbelo1_diff_0 = 32'h0;
+assign csr_asid_diff_0 = 32'h0;
+assign csr_pgdl_diff_0 = 32'h0;
+assign csr_pgdh_diff_0 = 32'h0;
+assign csr_save0_diff_0 = csr_save0;
+assign csr_save1_diff_0 = csr_save1;
+assign csr_save2_diff_0 = csr_save2;
+assign csr_save3_diff_0 = csr_save3;
+assign csr_tid_diff_0 = csr_tid;
+assign csr_tcfg_diff_0 = csr_tcfg;
+assign csr_tval_diff_0 = csr_tval;
+assign csr_ticlr_diff_0 = csr_ticlr;
+assign csr_llbctl_diff_0 = 32'h0;
+assign csr_tlbrentry_diff_0 = 32'h0;
+assign csr_dmw0_diff_0 = csr_dmw0;
+assign csr_dmw1_diff_0 = csr_dmw1;
+`endif
 endmodule

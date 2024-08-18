@@ -110,7 +110,7 @@ module BTB0 #(    //参数化 btb_depth
         else
         begin
             br_type = 0; //miss,
-            br_target = pc + 1;
+            br_target = pc ; //外部处理
         end
 
 

@@ -25,6 +25,8 @@ module IF2_predecoder_TOP(
     input [31: 0] IR2,
     input [31: 0] PC1,
     input [31: 0] PC2,
+    input [31: 0] PC1_plus_4,
+    input [31: 0] PC2_plus_4,
     input [33: 0] brtype_pcpre1,
     input [33: 0] brtype_pcpre2,
     input [ 1: 0] i_is_valid,
@@ -41,11 +43,17 @@ module IF2_predecoder_TOP(
     logic [31: 0] PC_fact1;
     logic [31: 0] PC_fact2;
 
+    wire [ 0: 0] data_valid_1;
+    wire [ 0: 0] data_valid_0;
+    assign data_valid_1 = i_is_valid[1];
+    assign data_valid_0 = i_is_valid[0];
+
     IF2_PreDecoder  IF2_PreDecoder_inst_1 (
         .IF_IR(IR1),
         .PC(PC1),
+        .PC_plus_4(PC1_plus_4),
         .brtype_pcpre(brtype_pcpre1),
-        .data_valid(i_is_valid[1]),
+        .data_valid(data_valid_1),
         .o_valid(o_valid1),
         .PC_fact(PC_fact1),
         .type_pcpre(type_pcpre_1)
@@ -53,8 +61,9 @@ module IF2_predecoder_TOP(
     IF2_PreDecoder  IF2_PreDecoder_inst_2 (
         .IF_IR(IR2),
         .PC(PC2),
+        .PC_plus_4(PC2_plus_4),
         .brtype_pcpre(brtype_pcpre2),
-        .data_valid(i_is_valid[0]),
+        .data_valid(data_valid_0),
         .o_valid(o_valid2),
         .PC_fact(PC_fact2),
         .type_pcpre(type_pcpre_2)

@@ -8,11 +8,15 @@ module dcache(
     input                  rvalid,
     input                  wvalid,
     input      [31:0]      wdata,
-    input      [31:0]      addr,
+    input      [31:0]      paddr,
     input      [2:0]       mem_type,
     input                  uncache,
-    //来自cpu的flush信号,好像不需要？
-    //input                  flush,
+
+    input                  cacop_en,
+    input      [1:0]       cacop_code,
+    input      [31:0]      cacop_va,
+    output reg             cacop_finish,
+
     /* mem_type */
     // support h/b operation
     // 000 others or ld.w
@@ -56,7 +60,7 @@ module dcache(
     output reg             d_bready
 
     );
-
+    reg   [31:0]  addr ;
     wire  [31:0]  address ;
     wire  [2:0]   mem_type_pipe ;
     wire  [31:0]  wdata_pipe ;
@@ -65,7 +69,7 @@ module dcache(
     wire  [31:0]  mem_we ;
     wire  [7:0]   r_index ;
     wire  [7:0]   w_index ;
-    wire  [21:0]  w_tagdv ;
+    reg   [21:0]  w_tagdv ;
     wire  [21:0]  r_tagdv1 ;
     wire  [21:0]  r_tagdv2 ;
     wire  [19:0]  Tag ;
@@ -83,7 +87,7 @@ module dcache(
     wire          data_from_mem_sel ;
     wire          way_sel ;
     wire          LRU_update ;
-    wire          dirty ;
+    reg           dirty ;
     wire  [31:0]  rdata_temp ;
     wire          mbuf_we ;
     wire          wbuf_we ;
@@ -92,6 +96,8 @@ module dcache(
     wire          wfsm_en ;
     wire          wfsm_rset ;
     wire          write_finish ;
+    wire  [1:0]   cacop_code_pipe ;
+    wire          cacop_en_pipe ;
     
     //valid信号流水
     wire          wvalid_pipe ;
@@ -102,12 +108,18 @@ module dcache(
     reg   [31:0]  wdata_pipe_temp ;
     reg   [3:0]   d_wstrb_temp ;
     assign d_awlen = uncache_pipe ? 8'd0 : 8'd3;
-    assign d_awsize = 3'd4;
+    assign d_awsize = 3'd2;
     assign d_wstrb = uncache_pipe ? d_wstrb_temp : 4'b1111;
     assign d_arlen = uncache_pipe ? 8'd0 : 8'd3;
-    assign d_arsize = 3'd4;
-    assign d_awaddr = uncache_pipe ? address : d_awaddr_cache;
+    assign d_arsize = 3'd2;
+    assign d_awaddr = uncache_pipe ? {address[31:2],2'b00} : d_awaddr_cache;
     assign d_wdata = uncache_pipe ? wdata_pipe_temp : d_wdata_cache;
+
+    always @(*) begin
+        if(!cacop_en) addr = paddr;
+        else if(cacop_code == 2'b10) addr = paddr;
+        else addr = cacop_va;
+    end
 
     assign r_index = addr[11:4];
     assign w_index = address[11:4];
@@ -117,10 +129,24 @@ module dcache(
     assign hit = {hit2,hit1};
     assign offset = address[3:2];
 
-    //产生w_tagdv的逻辑,决定是否写dirty
-    assign w_tagdv = {address[31:12],(wvalid_pipe == 1'b1 ? 1'b1:1'b0),1'b1};
+    //产生w_tagdv的逻辑
+    always @(*) begin
+        if(!cacop_en_pipe) w_tagdv = {address[31:12],(wvalid_pipe == 1'b1 ? 1'b1:1'b0),1'b1};
+        else if(cacop_code_pipe == 2'b00) w_tagdv = {20'b0, 1'b0, 1'b0};
+        else w_tagdv = {20'b0, 1'b0, 1'b0};
+    end
+
+
     //产生dirty的逻辑
-    assign dirty = way_sel == 1'b1 ? r_tagdv2[1] : r_tagdv1[1];
+    always @(*) begin
+        if(!cacop_en_pipe) dirty = way_sel == 1'b1 ? r_tagdv2[1] : r_tagdv1[1];
+        else if(cacop_code_pipe == 2'b01 ) dirty = address[0] == 1'b0 ? r_tagdv1[1] : r_tagdv2[1];
+        else begin
+            if(hit == 2'b01) dirty = r_tagdv1[1];
+            else if(hit == 2'b10) dirty = r_tagdv2[1];
+            else dirty = 1'b0;
+        end
+    end
 
     always @(*)begin
         case(mem_type_pipe)
@@ -142,7 +168,7 @@ module dcache(
                 case(address[1:0])//st.h
                     2'b00: wdata_pipe_temp = {16'h0, wdata_pipe[15:0]};
                     2'b10: wdata_pipe_temp = {wdata_pipe[15:0], 16'h0};
-                    default: wdata_pipe_temp = 4'b1111;
+                    default: wdata_pipe_temp = wdata_pipe;
                 endcase
             end
         endcase
@@ -174,13 +200,13 @@ module dcache(
         endcase
     end
 
-    register# ( .WIDTH(70), .RST_VAL(0))
+    register# ( .WIDTH(73), .RST_VAL(0))
     request_buffer (              
         .clk    (clk),
         .rstn   (rstn),
         .en     (rbuf_we),
-        .d      ({addr,wdata,mem_type,wvalid,rvalid,uncache}),
-        .q      ({address,wdata_pipe,mem_type_pipe,wvalid_pipe,rvalid_pipe,uncache_pipe})
+        .d      ({addr,wdata,mem_type,wvalid,rvalid,uncache,cacop_en,cacop_code}),
+        .q      ({address,wdata_pipe,mem_type_pipe,wvalid_pipe,rvalid_pipe,uncache_pipe,cacop_en_pipe,cacop_code_pipe})
     );
 
     TagDV_mem TagDV_mem1(
@@ -319,15 +345,22 @@ module dcache(
         .r_tagv1 (r_tagdv1[21:2]),
         .r_tagv2 (r_tagdv2[21:2]),
         .mbuf_we (mbuf_we),
+        .hit (hit),
+        .cacop_en_pipe (cacop_en_pipe),
+        .cacop_code_pipe (cacop_code_pipe),
         .d_awaddr_cache (d_awaddr_cache)
     );
 
     Write_buffer Write_buffer1(
         .clk (clk),
+        .address (address),
         .way_sel (way_sel),
         .r_data1 (r_data1),
         .r_data2 (r_data2),
         .wbuf_we (wbuf_we),
+        .hit (hit),
+        .cacop_en_pipe (cacop_en_pipe),
+        .cacop_code_pipe (cacop_code_pipe),
         .d_wready (d_wready),
         .d_wdata_cache (d_wdata_cache)
     );
@@ -348,6 +381,9 @@ module dcache(
         .address (address),
         .mem_type_pipe (mem_type_pipe),
         .uncache_pipe (uncache_pipe),
+        .cacop_en (cacop_en),
+        .cacop_code_pipe (cacop_code_pipe),
+        .cacop_finish (cacop_finish),
         .mem_we (mem_we),
         .TagDV_we (TagDV_we),
         .d_arvalid (d_arvalid),

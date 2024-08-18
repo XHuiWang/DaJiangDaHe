@@ -36,6 +36,9 @@ module FSM_dcache(
     input         [31:0]     address,
     input         [2:0]      mem_type_pipe,
     input                    uncache_pipe,
+    input                    cacop_en,
+    input         [1:0]      cacop_code_pipe,
+    output   reg             cacop_finish,
     output   reg  [31:0]     mem_we,
     output   reg  [1:0]      TagDV_we,
     output   reg             d_arvalid,
@@ -63,6 +66,8 @@ module FSM_dcache(
     parameter MISS = 3'h2;
     parameter REFILL = 3'h3;
     parameter WAIT_WRITE = 3'h4;
+    parameter CACOP_EX = 3'h6;
+    parameter CACOP_EX_WAIT = 3'h7;
     //state change
     always @(posedge clk)begin
         if(!rstn) current_state <= IDLE;
@@ -72,7 +77,8 @@ module FSM_dcache(
     always @(*) begin
         case(current_state)
             IDLE:begin
-                if(rvalid||wvalid) next_state = LOOKUP;
+                if(cacop_en) next_state = CACOP_EX;
+                else if(rvalid||wvalid) next_state = LOOKUP;
                 else next_state = IDLE;
                 mem_we = 32'h0;
                 TagDV_we = 2'h0;
@@ -90,6 +96,7 @@ module FSM_dcache(
                 miss_LRU_update = 1'b0;
                 miss_lru_way = 1'b0;
                 d_rready  = 1'b0;
+                cacop_finish = 1'b0;
             end
             LOOKUP:begin
                 if(uncache_pipe) begin
@@ -111,6 +118,7 @@ module FSM_dcache(
                         miss_LRU_update = 1'b0;
                         miss_lru_way = 1'b0;
                         d_rready  = 1'b0;
+                        cacop_finish = 1'b0;
                     end
                     else begin
                         next_state = WAIT_WRITE;
@@ -130,6 +138,7 @@ module FSM_dcache(
                         miss_LRU_update = 1'b0;
                         miss_lru_way = 1'b0;
                         d_rready  = 1'b0;
+                        cacop_finish = 1'b0;
                     end
                 end
                 else if((hit != 2'h0)&&(wvalid||rvalid))begin
@@ -209,6 +218,7 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b0;
+                    cacop_finish = 1'b0;
                 end
                 else if((hit != 2'h0)&&!wvalid&&!rvalid)begin
                     next_state = IDLE;
@@ -287,6 +297,7 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b0;
+                    cacop_finish = 1'b0;
                 end
                 else if(hit == 2'b0)begin
                     next_state = MISS_A;
@@ -306,6 +317,7 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b0;
+                    cacop_finish = 1'b0;
                 end
                 else begin
                     next_state = MISS_A;
@@ -325,7 +337,9 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b0;
+                    cacop_finish = 1'b0;
                 end
+
             end
             MISS_A:begin
                 if(d_arready) next_state = MISS;
@@ -337,7 +351,7 @@ module FSM_dcache(
                 mbuf_we = 1'b0;
                 wbuf_we = 1'b0;
                 data_from_mem_sel = 1'b1;
-                d_araddr = {address[31:4],4'b0};
+                d_araddr = uncache_pipe ? {address[31:2],2'b0} : {address[31:4],4'b0};
                 rready = 1'b0;
                 wready = 1'b0;
                 LRU_update = 1'b0;
@@ -345,7 +359,8 @@ module FSM_dcache(
                 wfsm_rset = 1'b0;
                 miss_LRU_update = 1'b0;
                 miss_lru_way = 1'b0;
-                d_rready  = 1'b0;    
+                d_rready  = 1'b0;   
+                cacop_finish = 1'b0; 
             end
             MISS:begin
                 if(d_rlast&&d_rvalid)begin
@@ -371,6 +386,7 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b1;
+                    cacop_finish = 1'b0;
             end
             REFILL:begin
                 next_state = WAIT_WRITE;
@@ -390,6 +406,7 @@ module FSM_dcache(
                     miss_LRU_update = 1'b1;
                     miss_lru_way = way_sel == 1'b0 ? 1'b0 : 1'b1;
                     d_rready  = 1'b0; 
+                    cacop_finish = 1'b0;
             end
             WAIT_WRITE:begin
                 if(write_finish)begin
@@ -414,26 +431,103 @@ module FSM_dcache(
                     miss_LRU_update = 1'b0;
                     miss_lru_way = 1'b0;
                     d_rready  = 1'b0; 
+                    cacop_finish = 1'b0;
             end
-            default: begin
+            CACOP_EX:begin
+                if(cacop_code_pipe == 2'b00) begin
                     next_state = IDLE;
-                    mem_we = 32'h0;
-                    TagDV_we = 2'b00;
-                    d_arvalid = 1'b0;
-                    rbuf_we = 1'b0;
+                    cacop_finish = 1'b1;
+                    TagDV_we = address[0] == 1'b0 ? 2'b01 : 2'b10;
                     mbuf_we = 1'b0;
                     wbuf_we = 1'b0;
-                    data_from_mem_sel = 1'b1;
-                    d_araddr = 32'd0;
-                    rready = 1'b0;
-                    wready = 1'b0;
-                    LRU_update = 1'b0;
                     wfsm_en = 1'b0;
-                    wfsm_rset = 1'b0;
-                    miss_LRU_update = 1'b0;
-                    miss_lru_way = 1'b0;
-                    d_rready  = 1'b0;
+                end
+                else begin
+                    if(cacop_code_pipe == 2'b01) begin
+                        next_state = CACOP_EX_WAIT;
+                        cacop_finish = 1'b0;
+                        TagDV_we = address[0] == 1'b0 ? 2'b01 : 2'b10;
+                        mbuf_we = 1'b1;
+                        wbuf_we = 1'b1;
+                        wfsm_en = 1'b1;
+                    end
+                    else begin
+                        TagDV_we = hit;
+                        if(hit != 2'b00) begin
+                            mbuf_we = 1'b1;
+                            wbuf_we = 1'b1;
+                            wfsm_en = 1'b1;
+                            next_state = CACOP_EX_WAIT;
+                            cacop_finish = 1'b0;
+                        end
+                        else begin
+                            mbuf_we = 1'b0;
+                            wbuf_we = 1'b0;
+                            wfsm_en = 1'b0;
+                            next_state = IDLE;
+                            cacop_finish = 1'b1;
+                        end
+                    end
+                end
+                mem_we = 32'h0;
+                d_arvalid = 1'b0;
+                rbuf_we = 1'b0;
+                data_from_mem_sel = 1'b1;
+                d_araddr = 32'd0;
+                rready = 1'b0;
+                wready = 1'b0;
+                LRU_update = 1'b0;
+                wfsm_rset = 1'b0;
+                miss_LRU_update = 1'b0;
+                miss_lru_way = 1'b0;
+                d_rready  = 1'b0;
             end
+            CACOP_EX_WAIT:begin
+                if(write_finish) begin
+                    next_state = IDLE;
+                    cacop_finish = 1'b1;
+                end
+                else begin
+                    next_state = CACOP_EX_WAIT;
+                    cacop_finish = 1'b0;
+                end
+                mem_we = 32'h0;
+                TagDV_we = 2'b00;
+                d_arvalid = 1'b0;
+                rbuf_we = 1'b0;
+                mbuf_we = 1'b0;
+                wbuf_we = 1'b0;
+                data_from_mem_sel = 1'b1;
+                d_araddr = 32'd0;
+                rready = 1'b0;
+                wready = 1'b0;
+                LRU_update = 1'b0;
+                wfsm_en = 1'b0;
+                wfsm_rset = 1'b0;
+                miss_LRU_update = 1'b0;
+                miss_lru_way = 1'b0;
+                d_rready  = 1'b0;
+            end
+            default: begin
+                next_state = IDLE;
+                mem_we = 32'h0;
+                TagDV_we = 2'b00;
+                d_arvalid = 1'b0;
+                rbuf_we = 1'b0;
+                mbuf_we = 1'b0;
+                wbuf_we = 1'b0;
+                data_from_mem_sel = 1'b1;
+                d_araddr = 32'd0;
+                rready = 1'b0;
+                wready = 1'b0;
+                LRU_update = 1'b0;
+                wfsm_en = 1'b0;
+                wfsm_rset = 1'b0;
+                miss_LRU_update = 1'b0;
+                miss_lru_way = 1'b0;
+                d_rready  = 1'b0;
+                cacop_finish = 1'b0;
+        end
         endcase
     end
 

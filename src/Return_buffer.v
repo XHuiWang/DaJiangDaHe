@@ -27,6 +27,7 @@ module Return_buffer(
     input              i_rvalid,
     input              i_rlast,
     input     [31:0]   i_rdata,
+    input              uncache_pipe,
     output  reg  [127:0]  w_data,
     output  reg  [63:0]   inst_from_retbuf
     );
@@ -38,12 +39,15 @@ module Return_buffer(
     end
 
     always @(*) begin
-        case(offset)
+        if(uncache_pipe) inst_from_retbuf = w_data[127:64];
+        else begin
+            case(offset)
             2'b00: inst_from_retbuf = w_data[63:0];
             2'b01: inst_from_retbuf = w_data[95:32];
             2'b10: inst_from_retbuf = w_data[127:64];
             2'b11: inst_from_retbuf = {32'b0, w_data[127:96]};
         endcase
+        end
     end
 
 

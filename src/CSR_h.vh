@@ -16,6 +16,8 @@
 `define CSR_TICLR       14'h044 //定时器中断清除
 `define CSR_LLBCTL      14'h060 //LLBit控制
 `define CSR_CTAG        14'h098 //高速缓存标签
+`define CSR_DMW0        14'h180 //直接映射配置窗口
+`define CSR_DMW1        14'h181 //直接映射配置窗口
 //CRMD
 `define CRMD_PLV    1:0     //当前特权等级。0: highest, 3: lowest
 `define CRMD_IE     2:2     //当前中断使能
@@ -53,3 +55,12 @@
 `define TCFG_INITVAL   31:2 //取定时器有效位数为32位
 //TICLR
 `define TICLR_CLR       0:0
+//DMW
+`define DMW_PLV0  0:0
+`define DMW_ZERO_0 2:1
+`define DMW_PLV3  3:3 
+`define DMW_MAT   5:4
+`define DMW_ZERO_1 24:6
+`define DMW_PSEG  27:25
+`define DMW_ZERO_2 28:28
+`define DMW_VSEG  31:29

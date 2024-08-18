@@ -39,7 +39,7 @@ module ID_REG (
     // stall&flush
     input [ 0: 0] flush_BR,
     input [ 0: 0] stall_DCache,
-    input [ 0: 0] stall_div,
+    input [ 0: 0] stall_EX,
 
 
     output PC_set o_PC_set1,
@@ -64,7 +64,7 @@ module ID_REG (
     logic [ 0: 0] flush;
     logic [ 0: 0] stall;
     assign flush = flush_BR;
-    assign stall = stall_DCache | stall_div;
+    assign stall = stall_DCache | stall_EX;
 
 
     PC_set PC_set_Buffer[NUM];
@@ -101,7 +101,7 @@ module ID_REG (
     assign error_set.o_inst_lawful = 1'b0;
     assign error_set.o_valid = 1'b0;
     assign error_set.inst_type = 10'd1;
-    assign error_set.br_type = 4'd0;
+    assign error_set.br_type = 10'd1;
     assign error_set.imm = 32'd0;
     assign error_set.rf_rd = 5'd0;
     assign error_set.rf_we = 1'b0;
@@ -122,6 +122,7 @@ module ID_REG (
     assign error_set.csr_raddr = 14'd0;
     assign error_set.ecode_in = 7'd0;
     assign error_set.ecode_we = 1'b0;
+    assign error_set.code_for_cacop = 5'd0;
 
 
 
@@ -213,7 +214,7 @@ module ID_REG (
         if( !rstn ) begin
             o_is_full <= 1'b0;
         end
-        else if(length_left >= NUM - 6) begin
+        else if(length_left >= NUM - 8) begin
             o_is_full <= 1'b1;
         end
         else begin

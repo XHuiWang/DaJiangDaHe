@@ -45,7 +45,7 @@ module wb_fsm(
     parameter FINISH = 3'h2;
     parameter WRITE_A = 3'h3;
     //state change
-    always @(posedge clk)begin
+    always @(posedge clk,negedge rstn)begin
         if(!rstn) current_state <= IDLE;
         else current_state <= next_state;
     end

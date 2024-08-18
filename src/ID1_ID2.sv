@@ -133,6 +133,9 @@ module ID1_ID2(
             if( !(|length) || signal_length_eq_1 || length == 2) begin
                 head <= 5'd0;
             end
+            else if(length == 3 && length_add == 2) begin
+                head <= head;
+            end
             else begin
                 head <= next_head;
             end
@@ -153,6 +156,9 @@ module ID1_ID2(
         else begin
             if( !(|length) || signal_length_eq_1 || length == 2) begin
                 tail <= 5'd0;
+            end
+            else if(length == 3 && length_add == 2) begin
+                tail <= tail;
             end
             else begin
                 tail <= tail_plus_2;
@@ -197,7 +203,7 @@ module ID1_ID2(
                     o_ecode_1 <= ecode_Buffer[tail];
                 end
             end
-            else begin
+            else if(length == 2) begin
                 // 2对有效
                 if(is_valid[1]) begin
                     if(is_valid[0]) begin
@@ -231,6 +237,27 @@ module ID1_ID2(
                     o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
                     o_ecode_2 <= ecode_Buffer[tail_plus_1];
                 end
+            end
+            else if(length == 3 && length_add == 2) begin
+                o_PC1 <= PC_Buffer[tail];
+                o_IR1 <= IR_Buffer[tail];
+                o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                o_ecode_1 <= ecode_Buffer[tail];
+                o_PC2 <= i_PC1;
+                o_IR2 <= i_IR1;
+                o_brtype_pcpre_2 <= i_brtype_pcpre_1;
+                o_ecode_2 <= i_ecode_1;
+            end
+            else begin
+                // 有剩余
+                o_PC1 <= PC_Buffer[tail];
+                o_IR1 <= IR_Buffer[tail];
+                o_brtype_pcpre_1 <= brtype_pcpre_Buffer[tail];
+                o_ecode_1 <= ecode_Buffer[tail];
+                o_PC2 <= PC_Buffer[tail_plus_1];
+                o_IR2 <= IR_Buffer[tail_plus_1];
+                o_brtype_pcpre_2 <= brtype_pcpre_Buffer[tail_plus_1];
+                o_ecode_2 <= ecode_Buffer[tail_plus_1];
             end
         end
     end
@@ -279,6 +306,12 @@ module ID1_ID2(
         else begin
             if(signal_length_eq_1 || length == 2 || !(|length)) begin
                 
+            end
+            else if(length == 3 && length_add == 2)begin
+                PC_Buffer[tail] <= i_PC2;
+                IR_Buffer[tail] <= i_IR2;
+                brtype_pcpre_Buffer[tail] <= i_brtype_pcpre_2;
+                ecode_Buffer[tail] <= i_ecode_2;
             end
             else begin
                 case (length_add)
@@ -456,6 +489,13 @@ endmodule
     //                 end
     //             end
     //         end
+                // else if (length == 3 && length_add == 2) begin
+                //     head <= head;
+                //     tail <= tail;
+                //     o_PC1 <= PC_Buffer[tail];
+                //     o_PC2 <= i_PC1;
+                //     PC_Buffer[tail] <= i_PC2;
+                // end
     //         else begin
     //             // 有剩余
     //             head <= next_head;

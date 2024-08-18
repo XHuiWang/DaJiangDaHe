@@ -40,11 +40,13 @@ module IF2_ID1(
     input [ 0: 0] stall_full_instr,
 
     output logic [31: 0] o_PC1,
+    output logic [31: 0] o_PC1_plus_4,
     output logic [31: 0] o_IR1,
     output logic [33: 0] o_brtype_pcpre_1,
     output logic [ 7: 0] o_ecode_1,
 
     output logic [31: 0] o_PC2,
+    output logic [31: 0] o_PC2_plus_4,
     output logic [31: 0] o_IR2,
     output logic [33: 0] o_brtype_pcpre_2,
     output logic [ 7: 0] o_ecode_2,
@@ -79,30 +81,36 @@ module IF2_ID1(
     always @(posedge clk) begin
         if( !rstn ) begin
             o_IR1 <= 32'h0;
+            o_PC1_plus_4 <= 32'h0;
             o_PC1 <= 32'h0;
             o_brtype_pcpre_1 <= 34'h0;
             o_ecode_1 <= 8'h0;
             o_IR2 <= 32'h0;
+            o_PC2_plus_4 <= 32'h0;
             o_PC2 <= 32'h0;
             o_brtype_pcpre_2 <= 34'h0;
             o_ecode_2 <= 8'h0;
         end
         else if(stall) begin
             o_IR1 <= o_IR1;
+            o_PC1_plus_4 <= o_PC1_plus_4;
             o_PC1 <= o_PC1;
             o_brtype_pcpre_1 <= o_brtype_pcpre_1;
             o_ecode_1 <= o_ecode_1;
             o_IR2 <= o_IR2;
+            o_PC2_plus_4 <= o_PC2_plus_4;
             o_PC2 <= o_PC2;
             o_brtype_pcpre_2 <= o_brtype_pcpre_2;
             o_ecode_2 <= o_ecode_2;
         end
         else begin
             o_IR1 <= i_IR1;
+            o_PC1_plus_4 <= i_PC1 + 32'd4;
             o_PC1 <= i_PC1;
             o_brtype_pcpre_1 <= i_brtype_pcpre_1;
             o_ecode_1 <= i_ecode_1;
             o_IR2 <= i_IR2;
+            o_PC2_plus_4 <= i_PC2 + 32'd4;
             o_PC2 <= i_PC2;
             o_brtype_pcpre_2 <= i_brtype_pcpre_2;
             o_ecode_2 <= i_ecode_2;

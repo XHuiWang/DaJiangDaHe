@@ -77,7 +77,7 @@ module ex_mem_wb(
 
     output  reg     [ 6: 0]     WB_ecode_in,        //例外码 WB段写入
     output  reg                 WB_ecode_we,        //例外码写使能/是否产生例外
-    output  reg     [31: 0]     WB_badv_in,         //取指地址错记录PC，地址非对齐记录地址
+    output  reg     [31: 0]     WB_badv_in,         //取指地址错（非对齐）记录PC，地址非对齐记录地址
     output  reg                 WB_badv_we,         //出错虚地址写使能
     output  reg     [31: 0]     WB_era_in,          //产生例外的指令PC
     output  reg                 WB_era_we,          //产生例外的指令PC写使能
@@ -89,33 +89,65 @@ module ex_mem_wb(
     output  reg     [31: 0]     WB_flush_csr_pc,    //CSRWR/CSRXCHG，清空流水线时pc跳转的位置
     
     //BR
-    input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
-    input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    // input           [ 3: 0]     EX_br_type_a,       //A指令的分支类型
+    // input           [ 3: 0]     EX_br_type_b,       //B指令的分支类型
+    input           [ 9: 0]     EX_br_type_a,       //A指令的分支类型
+    input           [ 9: 0]     EX_br_type_b,       //B指令的分支类型
     input                       EX_br_pd_a,         //predict A指令的分支预测，1预测跳转，0预测不跳转                  
     input                       EX_br_pd_b,         //predict B指令的分支预测，1预测跳转，0预测不跳转   
     input           [31: 0]     EX_pc_pd_a,         //A指令的分支预测的跳转结果PC
     input           [31: 0]     EX_pc_pd_b,         //B指令的分支预测的跳转结果PC
-    output          [ 0: 0]     EX_br,              //是否需要修正预测的结果
-    output          [31: 0]     EX_pc_br,           //修正时应跳转到的地址
+    output          [ 0: 0]     MEM_br,             //是否需要修正预测的结果
+    output          [31: 0]     MEM_pc_br,           //修正时应跳转到的地址
     //发给分支预测的信号
-    output          [31: 0]     EX_pc_of_br,        //分支指令的PC
-    input           [ 1: 0]     EX_pd_type_a,       //A指令的分支类型（与分支预测交互）
-    input           [ 1: 0]     EX_pd_type_b,       //B指令的分支类型（与分支预测交互）
-    output          [ 1: 0]     EX_pd_type,         //分支指令的分支类型（与分支预测交互）
-    output          [31: 0]     EX_br_target,       //分支指令原本的目标地址
-    output                      EX_br_jump,         //分支指令原本是否跳转     
+    output          [31: 0]     MEM_pc_of_br,        //分支指令的PC
+    input           [ 1: 0]     EX_pd_type_a,        //A指令的分支类型（与分支预测交互）
+    input           [ 1: 0]     EX_pd_type_b,        //B指令的分支类型（与分支预测交互）
+    output          [ 1: 0]     MEM_pd_type,         //分支指令的分支类型（与分支预测交互）
+    output          [31: 0]     MEM_br_target,       //分支指令原本的目标地址
+    output                      MEM_br_jump,         //分支指令原本是否跳转     
+
+    //CACOP
+    input                       EX_cacop_en,          //是否是cacop指令 单发B指令
+    input           [ 4: 0]     EX_cacop_code,        //cacop指令的code码
+    input                       EX_cacop_finish_i,    //I_CACOP指令是否完成，作为stall解除信号
+    input                       EX_cacop_finish_d,    //D_CACOP指令是否完成，作为stall解除信号
+    // output  logic               stall_cacop,          //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
+    output  logic               EX_cacop_en_i,        //EX段B指令是否是有效I_CACOP指令
+    output  logic               EX_cacop_en_d,        //EX段B指令是否是有效D_CACOP指令
+    output  logic   [ 1: 0]     EX_cacop_code_i,      //EX_cacop_code[4:3]
+    output  logic   [ 1: 0]     EX_cacop_code_d,      //EX_cacop_code[4:3]
+    output  logic   [31: 0]     EX_cacop_va_i,        //EX_alu_result_b[31:0] / EX_mem_addr[31:0]
 
     //UnCache
     output  wire                EX_UnCache,         //是否在访问外设
     //Debug
-    output  wire      [31: 0]   debug0_wb_pc,       //写回段 A指令的pc
-    output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 A指令的寄存器写使能
-    output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 A指令的寄存器写地址
-    output  wire      [31: 0]   debug0_wb_rf_wdata, //写回段 A指令的寄存器写数据
-    output  wire      [31: 0]   debug1_wb_pc,       //写回段 B指令的pc
-    output  wire      [ 3: 0]   debug1_wb_rf_we,    //写回段 B指令的寄存器写使能
-    output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 B指令的寄存器写地址
-    output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 B指令的寄存器写数据
+    output  wire      [31: 0]   debug0_wb_pc,       //写回段 B指令的pc
+    output  wire      [ 3: 0]   debug0_wb_rf_we,    //写回段 B指令的寄存器写使能
+    output  wire      [ 4: 0]   debug0_wb_rf_wnum,  //写回段 B指令的寄存器写地址
+    output  wire      [31: 0]   debug0_wb_rf_wdata, //写回段 B指令的寄存器写数据
+    output  wire      [31: 0]   debug1_wb_pc,       //写回段 A指令的pc
+    output  wire      [ 3: 0]   debug1_wb_rf_we,    //写回段 A指令的寄存器写使能
+    output  wire      [ 4: 0]   debug1_wb_rf_wnum,  //写回段 A指令的寄存器写地址
+    output  wire      [31: 0]   debug1_wb_rf_wdata  //写回段 A指令的寄存器写数据
+
+`ifdef DIFFTEST_EN
+,
+    input   logic     [31: 0]   EX_a_inst,          //A指令指令码
+    input   logic     [31: 0]   EX_b_inst,          //B指令指令码
+    output  logic     [31: 0]   WB_a_inst,          //A指令指令码
+    output  logic     [31: 0]   WB_b_inst,          //B指令指令码
+    output  logic               WB_a_enable_diff,
+    output  logic               WB_b_enable_diff,
+    output  logic     [63: 0]   WB_rdcntv,
+    output  logic     [31: 0]   WB_rdcntid,
+    output  logic     [ 7: 0]   WB_st_valid,        //{5'b0, st_w, st_h, st_b}
+    output  logic     [ 7: 0]   WB_ld_valid,        //{3'b0, ld_w, ld_hu, ld_h, ld_bu, ld_b}
+    input   logic     [31: 0]   EX_mem_addr_p,      //经data_mmu_lite处理后的实际访存地址
+    output  logic     [31: 0]   WB_mem_addr,        //虚拟访存地址
+    output  logic     [31: 0]   WB_mem_addr_p,      //物理访存地址
+    output  logic     [31: 0]   WB_mem_wdata
+`endif    
 );
 logic   [31: 0]     MEM_pc_a;                       //A指令的PC
 logic   [31: 0]     MEM_pc_b;                       //B指令的PC
@@ -146,9 +178,23 @@ logic   [63: 0]     MEM_mul_res;                    //乘法结果
 logic   [31: 0]     MEM_div_quo;                    //除法商
 logic   [31: 0]     MEM_div_rem;                    //除法余数
 
+//BR
 logic               EX_br_a;                        //A指令是否需要修正预测的结果
+logic               EX_br_b;                        //B指令是否需要修正预测的结果
+logic   [31: 0]     EX_pc_br_a;                     //A指令修正时应跳转到的地址
+logic   [31: 0]     EX_pc_br_b;                     //B指令修正时应跳转到的地址
+logic               EX_br_a_ori;                    //A跳转指令是否本应跳转
+logic               EX_br_b_ori;                    //B跳转指令是否本应跳转
+logic   [31: 0]     EX_pc_br_a_ori;                 //无分支预测时，A应跳转到的地址
+logic   [31: 0]     EX_pc_br_b_ori;                 //无分支预测时，B应跳转到的地址
+
+logic               MEM_br_a;                       //在MEM段组合地抑制B路关键信号
+
+//Dcache
 logic               EX_mem_we;                      //内存写使能 由DCache考虑STORE指令的W/H/B分类
 logic               EX_mem_we_bb;                   //考虑A为BR时修正后，B指令内存写使能
+logic   [31: 0]     MEM_mem_rdata_buf;              //Dcache读出的MEM_mem_rdata只能保持一个周期，需要保存
+logic               MEM_mem_rdata_valid;            //Dcache读出的MEM_mem_rdata有效, 常态为1, stall后为0
 
 // logic   [31: 0]     MEM_mem_rdata_orig;             //内存读数据，尚未考虑LOAD指令的W/B/H/BU/HU分类
 logic   [31: 0]     MEM_rf_wdata_a;                 //A指令寄存器写数据
@@ -159,6 +205,7 @@ logic               stall_dcache;                   //~MEM_mem_ready
 logic               stall_dcache_buf;               //留存一级stall信号，EX(BR)MEM(MISS)时仅第一个周期EX_br可以置1
 logic               stall_mul;                      //乘法器暂停信号
 logic               stall_div;                      //除法器暂停信号
+logic               stall_cacop;                    //EX段B指令是否是有效CACOP指令，作为stall信号，受finish组合抑制
 logic               stall_ex_buf;                   //乘除法暂停信号保留一级
 
 //CSR读写
@@ -208,20 +255,29 @@ logic   [63: 0]   EX_rdcntv;
 logic   [63: 0]   MEM_rdcntv;
 logic   [31: 0]   EX_rdcntid;
 logic   [31: 0]   MEM_rdcntid;
+
+`ifdef DIFFTEST_EN
+logic             WB_a_enable;
+logic             WB_b_enable;
+logic   [ 7: 0]   EX_st_valid;
+logic   [ 7: 0]   EX_ld_valid;
+`endif
+
 assign EX_rdcntid = EX_tid;
 //寄存器写相关
 assign  EX_mem_we    = EX_mem_we_bb;      //访存指令单发B指令
-assign  EX_mem_we_bb = ( EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn | (|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
+assign  EX_mem_we_bb = ( /*EX_br_a | (|EX_ecode_in_aa) | (|EX_ecode_in_bb) | EX_ertn |*/ 
+        EX_ecode_we_b | EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr) 
         ?1'b0:EX_mem_we_b;//A修正预测/A非中断例外/B非中断例外，B指令不能写内存
 assign  EX_mem_wdata = EX_rf_rdata_b2_f;  //访存指令单发B指令
 assign  EX_mem_addr  = EX_alu_result_b;   //访存指令单发B指令
 
 assign  EX_mem_type  = EX_mem_type_b;     //访存指令单发B指令
 //乘除法暂停信号
-assign  stall_ex = stall_mul | stall_div;
+assign  stall_ex = stall_mul | stall_div | stall_cacop; //尝试加入cacop暂停信号，已接受finish抑制处理
 //MEM Mux of rf_wdata
 assign MEM_rf_wdata_a = MEM_alu_result_a;
-assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&MEM_mem_rdata      )   | 
+assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {32{MEM_wb_mux_select_b[1]}}&( MEM_mem_rdata_valid ? MEM_mem_rdata : MEM_mem_rdata_buf)  )   | 
                           ( {32{MEM_wb_mux_select_b[2]}}&MEM_mul_res[31:0]  | {32{MEM_wb_mux_select_b[3]}}&MEM_mul_res[63:32] ) ) | 
                         ( ( {32{MEM_wb_mux_select_b[4]}}&MEM_div_quo        | {32{MEM_wb_mux_select_b[5]}}&MEM_div_rem        )   |
                           ( {32{MEM_wb_mux_select_b[6]}}&MEM_rdcntv[31:0]   | {32{MEM_wb_mux_select_b[7]}}&MEM_rdcntv[63:32]  ) ) |
@@ -236,6 +292,16 @@ assign MEM_rf_wdata_b = ( ( {32{MEM_wb_mux_select_b[0]}}&MEM_alu_result_b   | {3
 // 9'b0_0100_0000: RDCNTVL.W 取低32位
 // 9'b0_1000_0000: RDCNTVH.W 取高32位
 // 9'b1_0000_0000: RDCNTID
+
+//CACOP
+assign  stall_cacop   = (EX_cacop_finish_i | EX_cacop_finish_d| EX_ecode_we_b | 
+    EX_badv_we_b | MEM_br |(|MEM_ecode_in_a) | (|MEM_ecode_in_b) | MEM_ertn | WB_flush_csr)
+    ?1'b0:EX_cacop_en;
+assign  EX_cacop_en_i = stall_cacop & EX_cacop_code[2:0]==3'b000;
+assign  EX_cacop_en_d = stall_cacop & EX_cacop_code[2:0]==3'b001;
+assign  EX_cacop_code_i = EX_cacop_code[4:3];
+assign  EX_cacop_code_d = EX_cacop_code[4:3];
+assign  EX_cacop_va_i = EX_alu_result_b;
 Forward  Forward_inst (
     .EX_rf_rdata_a1(EX_rf_rdata_a1),
     .EX_rf_rdata_a2(EX_rf_rdata_a2),
@@ -286,10 +352,10 @@ FU_ALU  FU_ALU_inst (
 FU_BR  FU_BR_inst (
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
-    .EX_rf_rdata_a1(EX_rf_rdata_a1_f),
-    .EX_rf_rdata_a2(EX_rf_rdata_a2_f),
-    .EX_rf_rdata_b1(EX_rf_rdata_b1_f),
-    .EX_rf_rdata_b2(EX_rf_rdata_b2_f),
+    .EX_rf_rdata_a1_f(EX_rf_rdata_a1_f),
+    .EX_rf_rdata_a2_f(EX_rf_rdata_a2_f),
+    .EX_rf_rdata_b1_f(EX_rf_rdata_b1_f),
+    .EX_rf_rdata_b2_f(EX_rf_rdata_b2_f),
     .EX_imm_a(EX_imm_a),
     .EX_imm_b(EX_imm_b),
     .EX_br_type_a(EX_br_type_a),
@@ -298,18 +364,14 @@ FU_BR  FU_BR_inst (
     .EX_br_pd_b(EX_br_pd_b),
     .EX_pc_pd_a(EX_pc_pd_a),
     .EX_pc_pd_b(EX_pc_pd_b),
-    // .stall_dcache(stall_dcache),
-    .stall_dcache_buf(stall_dcache_buf),
-    .stall_ex_buf(stall_ex_buf),
     .EX_br_a(EX_br_a),
-    .EX_br(EX_br),
-    .EX_pc_br(EX_pc_br),
-    .EX_pc_of_br(EX_pc_of_br),
-    .EX_pd_type_a(EX_pd_type_a),
-    .EX_pd_type_b(EX_pd_type_b),
-    .EX_pd_type(EX_pd_type),
-    .EX_br_target(EX_br_target),
-    .EX_br_jump(EX_br_jump)
+    .EX_br_b(EX_br_b),
+    .EX_pc_br_a(EX_pc_br_a),
+    .EX_pc_br_b(EX_pc_br_b),
+    .EX_br_a_ori(EX_br_a_ori),
+    .EX_br_b_ori(EX_br_b_ori),
+    .EX_pc_br_a_ori(EX_pc_br_a_ori),
+    .EX_pc_br_b_ori(EX_pc_br_b_ori)
   );
 Mul  Mul_inst (
     .clk(clk),
@@ -404,12 +466,30 @@ FU_CSR2  FU_CSR2_inst (
 Pipeline_Register  Pipeline_Register_inst (
     .clk(clk),
     .rstn(rstn),
-    .stall_dcache(stall_dcache),
     .stall_ex(stall_ex),
-    .EX_br_a(EX_br_a),
+    .stall_ex_buf(stall_ex_buf),
+    .stall_dcache(stall_dcache),
+    .stall_dcache_buf(stall_dcache_buf),
     .MEM_ecode_in_a(MEM_ecode_in_a),
     .MEM_ecode_in_b(MEM_ecode_in_b),
     .WB_flush_csr(WB_flush_csr),
+    .EX_br_a(EX_br_a),
+    .EX_br_b(EX_br_b),
+    .EX_pc_br_a(EX_pc_br_a),
+    .EX_pc_br_b(EX_pc_br_b),
+    .EX_br_a_ori(EX_br_a_ori),
+    .EX_br_b_ori(EX_br_b_ori),
+    .EX_pc_br_a_ori(EX_pc_br_a_ori),
+    .EX_pc_br_b_ori(EX_pc_br_b_ori),
+    .EX_pd_type_a(EX_pd_type_a),
+    .EX_pd_type_b(EX_pd_type_b),
+    .MEM_br_a(MEM_br_a),
+    .MEM_br(MEM_br),
+    .MEM_pc_br(MEM_pc_br),
+    .MEM_pc_of_br(MEM_pc_of_br),
+    .MEM_pd_type(MEM_pd_type),
+    .MEM_br_target(MEM_br_target),
+    .MEM_br_jump(MEM_br_jump),
     .EX_pc_a(EX_pc_a),
     .EX_pc_b(EX_pc_b),
     .MEM_pc_a(MEM_pc_a),
@@ -420,8 +500,6 @@ Pipeline_Register  Pipeline_Register_inst (
     .EX_alu_result_b(EX_alu_result_b),
     .MEM_alu_result_a(MEM_alu_result_a),
     .MEM_alu_result_b(MEM_alu_result_b),
-    // .WB_alu_result_a(WB_alu_result_a),
-    // .WB_alu_result_b(WB_alu_result_b),
     .EX_mul_tmp1(EX_mul_tmp1),
     .EX_mul_tmp2(EX_mul_tmp2),
     .MEM_mul_tmp1(MEM_mul_tmp1),
@@ -444,13 +522,31 @@ Pipeline_Register  Pipeline_Register_inst (
     .WB_rf_waddr_b(WB_rf_waddr_b),
     .WB_rf_wdata_a(WB_rf_wdata_a),
     .WB_rf_wdata_b(WB_rf_wdata_b)
+`ifdef DIFFTEST_EN
+,
+    .EX_a_inst(EX_a_inst),
+    .EX_b_inst(EX_b_inst),
+    .WB_a_inst(WB_a_inst),
+    .WB_b_inst(WB_b_inst),
+    .EX_st_valid(EX_st_valid),
+    .EX_ld_valid(EX_ld_valid),
+    .WB_st_valid(WB_st_valid),
+    .WB_ld_valid(WB_ld_valid),
+    .EX_mem_addr(EX_mem_addr),
+    .EX_mem_addr_p(EX_mem_addr_p),
+    .EX_mem_wdata(EX_mem_wdata),
+    .WB_mem_addr(WB_mem_addr),
+    .WB_mem_addr_p(WB_mem_addr_p),
+    .WB_mem_wdata(WB_mem_wdata)
+`endif
   );
 Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .clk(clk),
     .rstn(rstn),
-    .stall_dcache(stall_dcache),
     .stall_ex(stall_ex),
-    .EX_br_a(EX_br_a),
+    .stall_dcache(stall_dcache),
+    .MEM_br_a(MEM_br_a),
+    .MEM_br(MEM_br),
     .EX_csr_waddr(EX_csr_waddr),
     .EX_csr_we(EX_csr_we),
     .EX_csr_wdata(EX_csr_wdata),
@@ -462,10 +558,18 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .WB_csr_wdata(WB_csr_wdata),
     .MEM_rdcntv(MEM_rdcntv),
     .MEM_rdcntid(MEM_rdcntid),
+`ifdef DIFFTEST_EN
+    .WB_rdcntv(WB_rdcntv),
+    .WB_rdcntid(WB_rdcntid)
+`endif
     .EX_a_enable(EX_a_enable),
     .EX_b_enable(EX_b_enable),
     .MEM_a_enable(MEM_a_enable),
     .MEM_b_enable(MEM_b_enable),
+`ifdef DIFFTEST_EN
+    .WB_a_enable(WB_a_enable),
+    .WB_b_enable(WB_b_enable),
+`endif
     .MEM_interrupt(MEM_interrupt),
     .MEM_interrupt_buf(MEM_interrupt_buf),
     .EX_ertn(EX_ertn),
@@ -513,22 +617,22 @@ Pipeline_Register_CSR  Pipeline_Register_CSR_inst (
     .WB_flush_csr_pc(WB_flush_csr_pc)
   );
 
-
 assign EX_mem_rvalid = EX_wb_mux_select_b[1];
 assign EX_mem_wvalid = EX_mem_we;
 assign MEM_mem_ready = MEM_mem_rready | MEM_mem_wready;
 assign stall_dcache  = ~MEM_mem_ready;
-assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 |
-                        EX_mem_addr==32'hbfaf_8020 | EX_mem_addr==32'hbfaf_8030 |
-                        EX_mem_addr==32'hbfaf_8040 | EX_mem_addr==32'hbfaf_8050 |
-                        EX_mem_addr==32'hbfaf_8060 | EX_mem_addr==32'hbfaf_8070 |
-                        EX_mem_addr==32'hbfaf_f020 | EX_mem_addr==32'hbfaf_f030 |
-                        EX_mem_addr==32'hbfaf_f040 | EX_mem_addr==32'hbfaf_f050 |
-                        EX_mem_addr==32'hbfaf_f060 | EX_mem_addr==32'hbfaf_f070 |
-                        EX_mem_addr==32'hbfaf_f080 | EX_mem_addr==32'hbfaf_f090 |
-                        EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
-                        EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
-                        EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
+// assign EX_UnCache    =  EX_mem_addr==32'hbfaf_8000 | EX_mem_addr==32'hbfaf_8010 |
+//                         EX_mem_addr==32'hbfaf_8020 | EX_mem_addr==32'hbfaf_8030 |
+//                         EX_mem_addr==32'hbfaf_8040 | EX_mem_addr==32'hbfaf_8050 |
+//                         EX_mem_addr==32'hbfaf_8060 | EX_mem_addr==32'hbfaf_8070 |
+//                         EX_mem_addr==32'hbfaf_f020 | EX_mem_addr==32'hbfaf_f030 |
+//                         EX_mem_addr==32'hbfaf_f040 | EX_mem_addr==32'hbfaf_f050 |
+//                         EX_mem_addr==32'hbfaf_f060 | EX_mem_addr==32'hbfaf_f070 |
+//                         EX_mem_addr==32'hbfaf_f080 | EX_mem_addr==32'hbfaf_f090 |
+//                         EX_mem_addr==32'hbfaf_e000 | EX_mem_addr==32'hbfaf_ff00 |
+//                         EX_mem_addr==32'hbfaf_ff10 | EX_mem_addr==32'hbfaf_ff20 |
+//                         EX_mem_addr==32'hbfaf_ff30 | EX_mem_addr==32'hbfaf_ff40; 
+assign EX_UnCache    = 1'b0;  //弃用，但保留接口
 always @(posedge clk) begin
   if(!rstn | WB_flush_csr)begin
     stall_dcache_buf <= 1'b0;
@@ -539,7 +643,22 @@ always @(posedge clk) begin
     stall_ex_buf <= stall_ex;
   end
 end
-
+//Dcache读数据保存
+always @(posedge clk) begin
+  if(!rstn | WB_flush_csr)begin
+    MEM_mem_rdata_buf <= 32'h0;
+    MEM_mem_rdata_valid <= 1'b1;
+  end
+  else if(~stall_dcache & ~stall_ex)begin //无stall信号，流水线正常流动，原数据或保存的数据被使用，清空保存的数据
+    MEM_mem_rdata_buf <= 32'h0;
+    MEM_mem_rdata_valid <= 1'b1;
+  end
+  else if(MEM_wb_mux_select_b[1] & ~stall_dcache & MEM_mem_rdata_valid)begin  //MEM段B为LOAD，Dcache已准备好数据，并确认数据有效，保存数据
+    MEM_mem_rdata_buf <= MEM_mem_rdata;
+    MEM_mem_rdata_valid <= 1'b0;
+  end
+  else begin end  //流水线不能流动，已保存的数据还不能被使用，要继续保存
+end
 //debug interface
 assign debug0_wb_pc = WB_pc_b;
 assign debug0_wb_rf_we = {4{WB_rf_we_b&(~stall_dcache_buf)&(~stall_ex_buf)}};
@@ -549,4 +668,21 @@ assign debug1_wb_pc = WB_pc_a;
 assign debug1_wb_rf_we = {4{WB_rf_we_a&(~stall_dcache_buf)&(~stall_ex_buf)}};
 assign debug1_wb_rf_wnum = WB_rf_waddr_a;
 assign debug1_wb_rf_wdata = WB_rf_wdata_a;
+
+`ifdef DIFFTEST_EN
+assign WB_a_enable_diff = WB_a_enable & (~stall_dcache_buf) & (~stall_ex_buf);
+assign WB_b_enable_diff = WB_b_enable & (~stall_dcache_buf) & (~stall_ex_buf);
+
+assign EX_st_valid[0] = EX_mem_wvalid & EX_mem_type==3'b110;  //st.b
+assign EX_st_valid[1] = EX_mem_wvalid & EX_mem_type==3'b111;  //st.h
+assign EX_st_valid[2] = EX_mem_wvalid & EX_mem_type==3'b001;  //st.w
+assign EX_st_valid[7:3] = 5'b0;
+
+assign EX_ld_valid[0] = EX_mem_rvalid & EX_mem_type==3'b010;  //ld.b
+assign EX_ld_valid[1] = EX_mem_rvalid & EX_mem_type==3'b100;  //ld.bu
+assign EX_ld_valid[2] = EX_mem_rvalid & EX_mem_type==3'b011;  //ld.h
+assign EX_ld_valid[3] = EX_mem_rvalid & EX_mem_type==3'b101;  //ld.hu
+assign EX_ld_valid[4] = EX_mem_rvalid & EX_mem_type==3'b000;  //ld.w
+assign EX_ld_valid[7:5]= 3'b0;
+`endif
 endmodule

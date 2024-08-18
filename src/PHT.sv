@@ -38,14 +38,14 @@ module PHT(
         .clk(clk),
         .rstn(rstn),
         //读口1，用于预测
-        .addrb1(pc[10:1]),
+        .addrb1(pc[11:2]),
         .doutb1(pht_out1),
         //读口2，用于更新，读出后组合给出pht_in
-        .addrb2(update_pc[10:1]),
+        .addrb2(update_pc[11:2]),
         .doutb2(pht_out2),
         //写口
         .wea(update),
-        .addra(update_pc[10:1]),
+        .addra(update_pc[11:2]),
         .dina(pht_in)
     );
 

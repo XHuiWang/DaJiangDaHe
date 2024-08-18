@@ -36,16 +36,16 @@ module Forward(
 );
 //rd为0时译码段会使we为0
 always @(*) begin
-    if      (~|(EX_rf_raddr_a1^MEM_rf_waddr_b) && (MEM_rf_we_b&&MEM_wb_mux_select_b[0])) begin
+    if      (!(EX_rf_raddr_a1^MEM_rf_waddr_b) && (MEM_rf_we_b&&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_a1_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
+    else if (!(EX_rf_raddr_a1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_a1_f=MEM_alu_result_a;
     end
-    else if (~|(EX_rf_raddr_a1^WB_rf_waddr_b) &&  WB_rf_we_b) begin
+    else if (!(EX_rf_raddr_a1^WB_rf_waddr_b) &&  WB_rf_we_b) begin
         EX_rf_rdata_a1_f=WB_rf_wdata_b;
     end
-    else if (~|(EX_rf_raddr_a1^WB_rf_waddr_a) &&  WB_rf_we_a) begin
+    else if (!(EX_rf_raddr_a1^WB_rf_waddr_a) &&  WB_rf_we_a) begin
         EX_rf_rdata_a1_f=WB_rf_wdata_a;
     end
     else begin
@@ -54,16 +54,16 @@ always @(*) begin
 end
 
 always @(*)begin
-    if     (~|(EX_rf_raddr_a2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
+    if     (!(EX_rf_raddr_a2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_a2_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_a2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
+    else if (!(EX_rf_raddr_a2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_a2_f=MEM_alu_result_a;
     end
-    else if (~|(EX_rf_raddr_a2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
+    else if (!(EX_rf_raddr_a2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
         EX_rf_rdata_a2_f=WB_rf_wdata_b;
     end
-    else if (~|(EX_rf_raddr_a2^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
+    else if (!(EX_rf_raddr_a2^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
         EX_rf_rdata_a2_f=WB_rf_wdata_a;
     end
     else begin
@@ -72,16 +72,16 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (~|(EX_rf_raddr_b1^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
+    if      (!(EX_rf_raddr_b1^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_b1_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_b1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
+    else if (!(EX_rf_raddr_b1^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_b1_f=MEM_alu_result_a;
     end
-    else if (~|(EX_rf_raddr_b1^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
+    else if (!(EX_rf_raddr_b1^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
         EX_rf_rdata_b1_f=WB_rf_wdata_b;
     end
-    else if (~|(EX_rf_raddr_b1^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
+    else if (!(EX_rf_raddr_b1^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
         EX_rf_rdata_b1_f=WB_rf_wdata_a;
     end
     else begin
@@ -90,16 +90,16 @@ always @(*)begin
 end
 
 always @(*)begin
-    if      (~|(EX_rf_raddr_b2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
+    if      (!(EX_rf_raddr_b2^MEM_rf_waddr_b) && (MEM_rf_we_b &&MEM_wb_mux_select_b[0])) begin
         EX_rf_rdata_b2_f=MEM_alu_result_b;
     end
-    else if (~|(EX_rf_raddr_b2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
+    else if (!(EX_rf_raddr_b2^MEM_rf_waddr_a) && MEM_rf_we_a) begin
         EX_rf_rdata_b2_f=MEM_alu_result_a;
     end
-    else if (~|(EX_rf_raddr_b2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
+    else if (!(EX_rf_raddr_b2^ WB_rf_waddr_b) &&  WB_rf_we_b) begin
         EX_rf_rdata_b2_f=WB_rf_wdata_b;
     end
-    else if (~|(EX_rf_raddr_b2^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
+    else if (!(EX_rf_raddr_b2^ WB_rf_waddr_a) &&  WB_rf_we_a) begin
         EX_rf_rdata_b2_f=WB_rf_wdata_a;
     end
     else begin
